@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""Membuat tabel lampiran LaTeX (matriks bukti C1) dari matriks_bukti.csv.
+"""Membuat tabel lampiran LaTeX (matriks bukti C1) dan daftar kajian bahan tambahan.
 
 Kode di bukti/mekanisme_C1.txt (M0-M5, V/D/S/T/1) hanya kunci internal berkas
-data. Tabel menuliskannya dengan nama, sama seperti naskah dan gambar, sehingga
-pembaca tidak perlu menghafal kode. Keluaran:
-manuscript/source/main6-appendix-c1.tex
+data. Keluaran menuliskannya dengan nama, sama seperti naskah dan gambar, sehingga
+pembaca tidak perlu menghafal kode. Nama kelompok (KATEGORI) dan alasan eksklusi
+(ALASAN) juga dipakai gambar_tinjauan.py. Keluaran:
+- manuscript/source/main6-appendix-c1.tex (Lampiran A, Tabel A1)
+- manuscript/output/papers/main6-supplementary-studies.csv: satu baris per laporan
+  yang dinilai dari teks lengkap, yaitu kajian yang masuk dan laporan yang
+  dikeluarkan beserta alasannya (PRISMA 2020 butir 16b)
+
+Jalankan sesudah kode_bukti.py: python3 tools/scopus/tabel_lampiran.py
 """
 import csv
 import re
@@ -16,6 +22,22 @@ ROOT = Path(__file__).resolve().parents[2]
 MAT = ROOT / "literature/scopus-2026-09/topik/bukti/matriks_bukti.csv"
 TEMUAN = ROOT / "literature/scopus-2026-09/topik/bukti/temuan_C1.tsv"
 OUT = ROOT / "manuscript/source/main6-appendix-c1.tex"
+KORPUS = ROOT / "literature/scopus-2026-09"
+DAFTAR = ROOT / "manuscript/output/papers/main6-supplementary-studies.csv"
+
+KATEGORI = {
+    "C1": "Multi-observation studies",
+    "C2": "Single-view counting studies",
+    "C3": "Oil-palm studies",
+    "C4": "Single-image class-wise counting studies",
+    "C5": "Depth and 3D sensing studies",
+    "R": "Earlier reviews",
+    "T": "Methods papers from outside agriculture",
+}
+ALASAN = [("E1", "Not fruit on the plant"), ("E2", "Postharvest or laboratory only"),
+          ("E3", "Yield model without fruit-level detection"), ("E4", "Picking or manipulation only"),
+          ("E5", "Detection without counting or evaluation"), ("E6", "Non-imaging sensor"),
+          ("E7", "Not in English"), ("E8", "Second report of an included study")]
 
 PLAT = {"UAV": "UAV", "ground vehicle/robot": "Ground vehicle or robot", "handheld/smartphone": "Handheld",
         "fixed camera": "Fixed camera", "conveyor/lab": "Laboratory"}
@@ -124,6 +146,41 @@ def sel_dasar(r):
     return DASAR.get(v, "Abstract")
 
 
+def kunci_disitasi():
+    kunci = set()
+    for p in (ROOT / "manuscript/source").glob("main6*.tex"):
+        for m in re.finditer(r"\\cite[a-z]*\*?(?:\[[^\]]*\])*\{([^}]*)\}", p.read_text(encoding="utf-8")):
+            kunci.update(k.strip() for k in m.group(1).split(","))
+    return kunci
+
+
+def daftar_kajian():
+    from kode_bukti import muat_teks_lengkap
+    mat = list(csv.DictReader(open(MAT, encoding="utf-8")))
+    kandidat = {int(r["idx"]): r for r in csv.DictReader(
+        open(KORPUS / "topik/penyaringan/kandidat_abstrak.csv", encoding="utf-8"))}
+    keluar = sorted((i, e) for i, (s, k, e) in muat_teks_lengkap(KORPUS / "topik").items()
+                    if s == "dinilai" and k == "X")
+    alasan, urut, sitasi = dict(ALASAN), list(KATEGORI), kunci_disitasi()
+
+    def baris(r, status, kelompok, sebab, c1):
+        return {"status": status, "group": KATEGORI.get(kelompok, ""), "exclusion_reason": sebab,
+                "first_author": r["first_author"], "year": r["year"], "title": r["title"],
+                "source": r["source"], "doi": r["doi"],
+                "association_mechanism": nama_mekanisme(r["mekanisme"]) if c1 else "",
+                "acquisition": AKUISISI.get(r["akuisisi_manual"], "Not stated") if c1 else "",
+                "cited_in_article": "yes" if r["key"] in sitasi else "no"}
+
+    masuk = sorted(mat, key=lambda r: (urut.index(r["kode"]), r["first_author"].lower(), r["year"]))
+    out = [baris(r, "Included", r["kode"], "", r["kode"] == "C1") for r in masuk]
+    out += [baris(kandidat[i], "Excluded at full text", "", alasan[e], False) for i, e in keluar]
+    with open(DAFTAR, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(out[0]), lineterminator="\n")
+        w.writeheader()
+        w.writerows(out)
+    print(len(masuk), "kajian masuk dan", len(keluar), "laporan dikeluarkan ->", DAFTAR)
+
+
 def main():
     rows = [r for r in csv.DictReader(open(MAT, encoding="utf-8")) if r["kode"] == "C1"]
     rows.sort(key=lambda r: (int(r["year"]), r["first_author"]))
@@ -160,6 +217,7 @@ def main():
 """ % (len(rows), judul, judul, akronim_tabel("\n".join(baris)))
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")
     print(len(rows), "baris ->", OUT)
+    daftar_kajian()
 
 
 if __name__ == "__main__":

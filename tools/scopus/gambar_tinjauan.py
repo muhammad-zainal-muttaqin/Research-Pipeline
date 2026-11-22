@@ -23,6 +23,8 @@ from collections import Counter, defaultdict
 from itertools import combinations
 from pathlib import Path
 
+from tabel_lampiran import ALASAN, KATEGORI
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -62,15 +64,6 @@ plt.rcParams.update({
     "pdf.fonttype": 42,
 })
 
-KATEGORI = {
-    "C1": "Multi-observation studies",
-    "C2": "Single-view counting studies",
-    "C3": "Oil-palm studies",
-    "C4": "Single-image class-wise counting studies",
-    "C5": "Depth and 3D sensing studies",
-    "R": "Earlier reviews",
-    "T": "Methods papers from outside agriculture",
-}
 WARNA_KAT = {"C1": C["biru"], "C2": C["biru_muda"], "C3": C["merah"],
              "C4": C["oranye"], "C5": C["hijau"], "R": C["ungu"], "T": C["abu"]}
 
@@ -139,10 +132,6 @@ def muat_c3():
 
 
 # ---------------------------------------------------------------- F1 PRISMA
-ALASAN = [("E1", "Not fruit on the plant"), ("E2", "Postharvest or laboratory only"),
-          ("E3", "Yield model without fruit-level detection"), ("E4", "Picking or manipulation only"),
-          ("E5", "Detection without counting or evaluation"), ("E6", "Non-imaging sensor"),
-          ("E7", "Not in English"), ("E8", "Second report of an included study")]
 
 
 def gambar_prisma():
