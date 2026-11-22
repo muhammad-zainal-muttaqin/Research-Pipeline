@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `guo2023real` |
 | Judul asli | Real-time Production Prediction of Kiwifruit in Orchard Based on Video Tracking Algorithm |
-| Penulis | Guo, M.; others |
+| Penulis | Guo, Mingyue; Liu, Yachen; Li, Weifu; Chen, Hong; Li, Shanjun; Chen, Yaohui |
 | Tahun | 2023 |
 | Venue | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery |
 | Kode | C1 (Gabungan beberapa pengamatan) |

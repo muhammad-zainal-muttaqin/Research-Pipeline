@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `kassim2012oil` |
 | Judul asli | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation |
-| Penulis | Kassim, M.S.M.; others |
+| Penulis | Saufi, M. K. Muhamad; Ishak, W. I. Wan; Ramli, Abdul Rahman; Bejo, Siti Khairunniza |
 | Tahun | 2012 |
 | Venue | Journal of Food Agriculture and Environment |
 | Kode | C1 (Gabungan beberapa pengamatan) |

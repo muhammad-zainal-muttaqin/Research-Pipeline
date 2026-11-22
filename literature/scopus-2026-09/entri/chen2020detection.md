@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `chen2020detection` |
 | Judul asli | Detection, counting and maturity assessment of cherry tomatoes using multi-spectral images and machine learning techniques |
-| Penulis | Chen, I.T.; others |
+| Penulis | Chen, I-Tzu; Lin, Huei-Yung |
 | Tahun | 2020 |
 | Venue | Visigrapp 2020 Proceedings of the 15th International Joint Conference on Computer Vision Imaging and Computer Graphics Theory and Applications |
 | Kode | C1 (Gabungan beberapa pengamatan) |

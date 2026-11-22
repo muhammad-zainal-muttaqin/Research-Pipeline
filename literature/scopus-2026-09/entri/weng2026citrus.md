@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `weng2026citrus` |
 | Judul asli | Citrus tracking and counting using UAV remote sensing video imagery with improved YOLO11 |
-| Penulis | Weng, H.; others |
+| Penulis | Weng, Haiyong; Du, Lu; Zhang, Boyu; Su, Leilei; Xu, Jinchai; Xiao, Guimiao; Sun, Dawei; Ye, Dapeng |
 | Tahun | 2026 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

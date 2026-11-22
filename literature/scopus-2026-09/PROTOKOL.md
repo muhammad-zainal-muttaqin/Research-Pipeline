@@ -45,8 +45,8 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
 | Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 208 |
 | Dinilai dari teks lengkap (805 Scopus dan 5 metode lain) | 810 |
-| Dikeluarkan pada tahap teks lengkap (E1 1, E2 7, E3 2, E5 10, E8 2) | 22 |
-| Total masuk peta (783 Scopus dan 5 metode lain) | 788 |
+| Dikeluarkan pada tahap teks lengkap (E1 1, E2 9, E3 2, E5 10, E8 2) | 24 |
+| Total masuk peta (781 Scopus dan 5 metode lain) | 786 |
 
 Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026 dan 3 PDF baru pada 21 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
@@ -72,11 +72,11 @@ Kode yang sama dipakai pada tahap teks lengkap.
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 237 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 236 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 132 |
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 107 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 92 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 91 |
 | R | Tinjauan terdahulu | 105 |
 | T | Metode yang dapat dipindahkan dari luar pertanian, termasuk model deteksi, segmentasi, dan estimasi kedalaman umum yang menjadi dasar pipeline | 82 |
 

@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `prasetyo2020automatic` |
 | Judul asli | Automatic detection and calculation of palm oil fresh fruit bunches using faster R-CNN |
-| Penulis | Prasetyo, N.A.; others |
+| Penulis | Prasetyo, Novian Adi; Pranowo; Santoso, Albertus Joko |
 | Tahun | 2020 |
 | Venue | International Journal of Applied Science and Engineering |
 | Kode | C3 (Pencitraan TBS kelapa sawit) |

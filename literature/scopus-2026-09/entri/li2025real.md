@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `li2025real` |
 | Judul asli | Real-time detecting and counting of citrus fruits in hilly and mountainous areas using UAV imagery |
-| Penulis | Li, C.; others |
+| Penulis | Li, Chuanhong; Fu, Xinglan; Fu, Hanwen; Song, Jie; Li, Guanglin |
 | Tahun | 2025 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

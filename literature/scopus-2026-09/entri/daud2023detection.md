@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `daud2023detection` |
 | Judul asli | Detection of Oil Palm Tree and Loose Fruitlets for Fresh Fruit Bunch's Ready-to-Harvest Prediction via Deep Learning Approach |
-| Penulis | Daud, M.M.; others |
+| Penulis | Daud, Marizuana Mat; Kadim, Zulaikha; Woon, Hon Hock |
 | Tahun | 2023 |
 | Venue | Iaeng International Journal of Computer Science |
 | Kode | C1 (Gabungan beberapa pengamatan) |

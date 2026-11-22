@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `hutapea2025comparison` |
 | Judul asli | COMPARISON OF PALM OIL FRUIT RIPENESS DETECTION AND CLASSIFICATION METHODS USING DEEP LEARNING |
-| Penulis | Hutapea, R.R.; others |
+| Penulis | Hutapea, Rael Russel; Hanun, Taqiyya; Irwansyah, Edy |
 | Tahun | 2025 |
 | Venue | Icic Express Letters Part B Applications |
 | Kode | C3 (Pencitraan TBS kelapa sawit) |

@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `meinhardt2022trackformer` |
 | Judul asli | TrackFormer: Multi-Object Tracking with Transformers |
-| Penulis | Meinhardt, Tim; Kirillov, Alexander; Leal-Taixe, Laura; Feichtenhofer, Christoph |
+| Penulis | Meinhardt, Tim; Kirillov, Alexander; Leal-Taix\'e, Laura; Feichtenhofer, Christoph |
 | Tahun | 2022 |
 | Venue | Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition |
 | Kode | T (Metode dari luar pertanian) |

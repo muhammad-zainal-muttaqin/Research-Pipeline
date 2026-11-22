@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `cao2018survey` |
 | Judul asli | A Survey on Feature Tracking Methods for SFM |
-| Penulis | Cao, M.W.; others |
+| Penulis | Cao, Ming-Wei; Li, Shu-Jie; Jia, Wei; Liu, Xiao-Ping |
 | Tahun | 2018 |
 | Venue | Jisuanji Xuebao Chinese Journal of Computers |
 | Kode | T (Metode dari luar pertanian) |

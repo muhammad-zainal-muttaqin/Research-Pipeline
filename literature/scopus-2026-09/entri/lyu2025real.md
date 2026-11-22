@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `lyu2025real` |
 | Judul asli | Real-time detecting and counting dual-association bagged grape clusters using EMO-YOLOv5s |
-| Penulis | Lyu, J.; others |
+| Penulis | Lyu, Jia; Zhang, Cuiping |
 | Tahun | 2025 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

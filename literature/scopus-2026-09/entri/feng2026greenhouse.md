@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `feng2026greenhouse` |
 | Judul asli | Greenhouse Tomato Fruit Inspection and Counting Method Based on Improved YOLO v8n ByteTrack |
-| Penulis | Feng, Q.; others |
+| Penulis | Feng, Qingchun; Li, Haobo; Chen, Shiqi; Liu, Jing; Li, Yajun |
 | Tahun | 2026 |
 | Venue | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery |
 | Kode | C1 (Gabungan beberapa pengamatan) |

@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `yang2024depthb` |
 | Judul asli | Depth Anything V2 |
-| Penulis | Yang, L.; others |
+| Penulis | Yang, Lihe; Kang, Bingyi; Huang, Zilong; Zhao, Zhen; Xu, Xiaogang; Feng, Jiashi; Zhao, Hengshuang |
 | Tahun | 2024 |
 | Venue | Advances in Neural Information Processing Systems |
 | Kode | T (Metode dari luar pertanian) |

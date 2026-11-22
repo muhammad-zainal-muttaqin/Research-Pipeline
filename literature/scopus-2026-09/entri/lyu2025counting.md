@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `lyu2025counting` |
 | Judul asli | Counting bagging grape using improved YOLOv9s and adaptive Kalman filter |
-| Penulis | Lyu, J.; others |
+| Penulis | Lyu, Jia; Ran, Jie |
 | Tahun | 2025 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

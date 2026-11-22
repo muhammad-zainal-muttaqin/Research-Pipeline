@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `saechen2023oil` |
 | Judul asli | Oil Palm Fresh Fruit Bunch Ripeness Classification by Deep Learning |
-| Penulis | Saechen, P.; others |
+| Penulis | , |
 | Tahun | 2023 |
 | Venue | Science and Engineering Connect |
 | Kode | C3 (Pencitraan TBS kelapa sawit) |

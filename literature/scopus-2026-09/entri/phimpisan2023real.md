@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `phimpisan2023real` |
 | Judul asli | Real-Time oil palm ripeness classification of fresh fruit bunches using fluorescence technology |
-| Penulis | Phimpisan, P.; others |
+| Penulis | Phimpisan, Phaireepinas; Chungchoo, Chatchapol |
 | Tahun | 2023 |
 | Venue | Agriculture and Natural Resources |
 | Kode | C3 (Pencitraan TBS kelapa sawit) |

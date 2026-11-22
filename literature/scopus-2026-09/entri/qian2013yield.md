@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `qian2013yield` |
 | Judul asli | Yield estimation model of single tree of Fuji apples based on bilateral image identification |
-| Penulis | Qian, J.; others |
+| Penulis | Qian, Jianping; Li, Ming; Yang, Xinting; Baoguo, Wu; Zhang, Yong; YaNan, Wang |
 | Tahun | 2013 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

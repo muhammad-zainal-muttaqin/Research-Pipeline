@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `teed2021droid` |
 | Judul asli | DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras |
-| Penulis | Teed, Z.; others |
+| Penulis | Teed, Zachary; Deng, Jia |
 | Tahun | 2021 |
 | Venue | Advances in Neural Information Processing Systems |
 | Kode | T (Metode dari luar pertanian) |

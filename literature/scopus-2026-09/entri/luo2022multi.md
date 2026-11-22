@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `luo2022multi` |
 | Judul asli | Multi-Class on-Tree Peach Detection Using Improved YOLOv5s and Multi-Modal Images |
-| Penulis | Luo, Q.; others |
+| Penulis | Qing, LUO; Yuan, RAO; Xiu, JIN; Zhaohui, JIANG; Tan, WANG; WANG, Fengyi; Wu, ZHANG |
 | Tahun | 2022 |
 | Venue | Smart Agriculture |
 | Kode | C5 (Depth, 3D, dan non-RGB) |

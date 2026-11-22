@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `si2026citrus` |
 | Judul asli | Citrus yield estimation based on multi- object tracking in video streams using an improved YOLOv8n model |
-| Penulis | Si, N.; others |
+| Penulis | Si, Naijin; JianRong, Cai; Chen, Wang; Wenhui, ZHU; Bingke, PAN; Zhiguo, SHI |
 | Tahun | 2026 |
 | Venue | Journal of Fruit Science |
 | Kode | C1 (Gabungan beberapa pengamatan) |

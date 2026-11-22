@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `wang2024camellia` |
 | Judul asli | Camellia oleifera Fruit Static and Dynamic Detection Counting Based on Improved COF-YOLO v8n |
-| Penulis | Wang, J.; others |
+| Penulis | Wang, Jinpeng; He, Meng; Zhen, Qianguang; Zhou, Hongping |
 | Tahun | 2024 |
 | Venue | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery |
 | Kode | C1 (Gabungan beberapa pengamatan) |

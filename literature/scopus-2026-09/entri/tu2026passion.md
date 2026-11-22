@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `tu2026passion` |
 | Judul asli | Passion Fruit Counting Method Based on Lightweight YOLO lln CLL and BoT SORT |
-| Penulis | Tu, S.; others |
+| Penulis | Tu, Shuqin; Guo, Yunfeng; Mao, Liang; Zhang, Yu; Zhang, Lei; Tan, Baiyang |
 | Tahun | 2026 |
 | Venue | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery |
 | Kode | C1 (Gabungan beberapa pengamatan) |

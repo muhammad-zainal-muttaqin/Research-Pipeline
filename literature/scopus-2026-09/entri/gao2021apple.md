@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `gao2021apple` |
 | Judul asli | Apple detection and counting using real-time video based on deep learning and object tracking |
-| Penulis | Gao, F.; others |
+| Penulis | Gao, Fangfang; Wu, Zhenchao; Suo, Rui; Zhou, Zhongxian; Li, Rui; Fu, Longsheng; Zhang, Zhao |
 | Tahun | 2021 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

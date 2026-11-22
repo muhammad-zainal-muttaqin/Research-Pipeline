@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 788 kajian korpus `main6` yang PDF-nya tersedia, dari 788 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 237 | 237 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 236 | 236 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 132 | 132 |
 | C3 | Pencitraan TBS kelapa sawit | 107 | 107 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 | 33 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 92 | 92 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 91 | 91 |
 | R | Tinjauan terdahulu | 105 | 105 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 82 | 82 |
-| | **Jumlah** | 788 | 788 |
+| | **Jumlah** | 786 | 786 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (237)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (236)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -225,7 +225,6 @@ Katalog ini memuat 788 kajian korpus `main6` yang PDF-nya tersedia, dari 788 kaj
 | 2020 | Gené-Mola J. | LFuji-air dataset: Annotated 3D LiDAR point clouds of Fuji apple trees for fruit detection scanned under different forced air flow conditions | Data in Brief | [PDF](pdf/genemola2020lfuji.pdf) | [DOI](https://doi.org/10.1016/j.dib.2020.105248) |
 | 2020 | Häni N. | A comparative study of fruit detection and counting methods for yield mapping in apple orchards | Journal of Field Robotics | [PDF](pdf/hani2020comparative.pdf) | [DOI](https://doi.org/10.1002/rob.21902) |
 | 2020 | Mekhalfi M.L. | Vision system for automatic on-tree kiwifruit counting and yield estimation | Sensors Switzerland | [PDF](pdf/mekhalfi2020vision.pdf) | [DOI](https://doi.org/10.3390/s20154214) |
-| 2020 | Ni X. | Blueberry harvestability trait extraction from 2D images and 3D point clouds based on deep learning and photogrammetric reconstruction | Asabe 2020 Annual International Meeting | [PDF](pdf/ni2020blueberry.pdf) | [DOI](https://doi.org/10.13031/aim.202001338) |
 | 2020 | Santos T.T. | Grape detection, segmentation, and tracking using deep neural networks and three-dimensional association | Computers and Electronics in Agriculture | [PDF](pdf/santos2020grape.pdf) | [DOI](https://doi.org/10.1016/j.compag.2020.105247) |
 | 2020 | Serafino S.E. | Detection and Counting of Lemons using Artificial Vision and Tracking Techniques for Real Time Harvest Estimation | Proceedings 2020 46th Latin American Computing Conference Clei 2020 | [PDF](pdf/serafino2020detection.pdf) | [DOI](https://doi.org/10.1109/clei52000.2020.00064) |
 | 2020 | Sun S. | Three-dimensional photogrammetric mapping of cotton bolls in situ based on point cloud segmentation and clustering | ISPRS Journal of Photogrammetry and Remote Sensing | [PDF](pdf/sun2020three.pdf) | [DOI](https://doi.org/10.1016/j.isprsjprs.2019.12.011) |
@@ -544,7 +543,7 @@ Katalog ini memuat 788 kajian korpus `main6` yang PDF-nya tersedia, dari 788 kaj
 | 2017 | Lal S. | Identification and counting of mature apple fruit based on BP feed forward neural network | Proceedings of 2017 3rd IEEE International Conference on Sensing Signal Processing and Security Icsss 2017 | [PDF](pdf/lal2017identification.pdf) | [DOI](https://doi.org/10.1109/ssps.2017.8071621) |
 | 2017 | Ramos P.J. | Automatic fruit count on coffee branches using computer vision | Computers and Electronics in Agriculture | [PDF](pdf/ramos2017automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.03.010) |
 
-## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (92)
+## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (91)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -612,7 +611,6 @@ Katalog ini memuat 788 kajian korpus `main6` yang PDF-nya tersedia, dari 788 kaj
 | 2021 | Le Louëdec J. | 3D shape sensing and deep learning-based segmentation of strawberries | Computers and Electronics in Agriculture | [PDF](pdf/le20213d.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106374) |
 | 2021 | Li D. | Fast detection and location of longan fruits using UAV images | Computers and Electronics in Agriculture | [PDF](pdf/li2021fast.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106465) |
 | 2021 | Neupane C. | Evaluation of depth cameras for use in fruit localization and sizing: Finding a successor to kinect v2 | Agronomy | [PDF](pdf/neupane2021evaluation.pdf) | [DOI](https://doi.org/10.3390/agronomy11091780) |
-| 2021 | Ni X. | Three-dimensional photogrammetry with deep learning instance segmentation to extract berry fruit harvestability traits | ISPRS Journal of Photogrammetry and Remote Sensing | [PDF](pdf/ni2021three.pdf) | [DOI](https://doi.org/10.1016/j.isprsjprs.2020.11.010) |
 | 2021 | Yu L. | A litchi fruit recognition method in a natural environment using RGB-D images | Biosystems Engineering | [PDF](pdf/yu2021litchi.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2021.01.015) |
 | 2021 | Zhang C. | A method for organs classification and fruit counting on pomegranate trees based on multi-features fusion and support vector machine by 3D point cloud | Scientia Horticulturae | [PDF](pdf/zhang2021method.pdf) | [DOI](https://doi.org/10.1016/j.scienta.2020.109791) |
 | 2021 | Zhou Z. | Kiwifruit yield estimation using deep learning and binocular stereo vision on Android smartphones | American Society of Agricultural and Biological Engineers Annual International Meeting Asabe 2021 | [PDF](pdf/zhou2021kiwifruit.pdf) | [DOI](https://doi.org/10.13031/aim.202100289) |

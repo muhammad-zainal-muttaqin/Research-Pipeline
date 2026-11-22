@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `wang2012design` |
 | Judul asli | Design of crop yield estimation system for apple orchards using computer vision |
-| Penulis | Wang, Q.; others |
+| Penulis | Wang, Qi; Nuske, Stephen Thomas; Bergerman, Marcel; Singh, Sanjiv |
 | Tahun | 2012 |
 | Venue | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 |
 | Kode | C1 (Gabungan beberapa pengamatan) |

@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `zhang2022measurement` |
 | Judul asli | Measurement of tomato fruits quantity at different ripening stages based on color point cloud images |
-| Penulis | Zhang, X.; others |
+| Penulis | Zhang, Xianjie; Wang, Xiaochan; Sun, Guoxiang; Shi, Yinyan; Wei, Tianxiang; Chen, Hao |
 | Tahun | 2022 |
 | Venue | Journal of South China Agricultural University |
 | Kode | C1 (Gabungan beberapa pengamatan) |

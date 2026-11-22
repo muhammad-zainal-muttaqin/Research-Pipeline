@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `naseem2025advance` |
 | Judul asli | Advance Assessment and Counting of Ripe Cherry Tomato’s Via Yolo Model |
-| Penulis | Naseem, M.; others |
+| Penulis | Naseem, Minhaj; Ahmad, Bushra; Razzaq, Abdul Manan; QADRI, Salman; Ullah, Sami; Saeed, Shafqat; Jamil, Muhammad Ahsan |
 | Tahun | 2025 |
 | Venue | Journal of Computing and Biomedical Informatics |
 | Kode | C4 (Atribut kelas dan pencacahan) |

@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `lyu2023method` |
 | Judul asli | Method for estimation of bagged grape yield using a self-correcting NMS-ByteTrack |
-| Penulis | Lyu, J.; others |
+| Penulis | Lyu, Jia; Zhang, Cuiping; Liu, Qin; Li, Shuaijun |
 | Tahun | 2023 |
 | Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |

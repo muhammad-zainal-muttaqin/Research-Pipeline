@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `whalley2013applications` |
 | Judul asli | Applications of image processing in viticulture: A review |
-| Penulis | Whalley, J.; others |
+| Penulis | Whalley, Jacqueline L.; Shanmuganathan, Subana |
 | Tahun | 2013 |
 | Venue | Proceedings 20th International Congress on Modelling and Simulation Modsim 2013 |
 | Kode | R (Tinjauan terdahulu) |

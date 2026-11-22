@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `gongal2014identification` |
 | Judul asli | Identification of repetitive apples for improved crop-load estimation with dual-side imaging |
-| Penulis | Gongal, A.; others |
+| Penulis | Gongal, Aleana; Amatya, Suraj; Karkee, Manoj |
 | Tahun | 2014 |
 | Venue | American Society of Agricultural and Biological Engineers Annual International Meeting 2014 Asabe 2014 |
 | Kode | C1 (Gabungan beberapa pengamatan) |

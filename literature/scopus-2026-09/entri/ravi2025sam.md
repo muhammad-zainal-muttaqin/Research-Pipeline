@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `ravi2025sam` |
 | Judul asli | SAM 2: SEGMENT ANYTHING IN IMAGES AND VIDEOS |
-| Penulis | Ravi, N.; others |
+| Penulis | Ravi, Nikhila; Gabeur, Valentin; Hu, Yuan-Ting; Hu, Ronghang; Ryali, Chaitanya K.; Tengyu, Ma,; Khedr, Haitham; R\"adle, Roman; Rolland, Chloe; Gustafson, Laura; Mintun, Eric; Pan, Junting; Alwala, Kalyan Vasudev; Carion, Nicolas; Wu, Chao-Yuan; Girshick, Ross; Doll\'ar, Piotr; Feichtenhofer, Christoph |
 | Tahun | 2025 |
 | Venue | 13th International Conference on Learning Representations Iclr 2025 |
 | Kode | T (Metode dari luar pertanian) |

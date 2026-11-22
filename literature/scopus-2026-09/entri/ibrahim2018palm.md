@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `ibrahim2018palm` |
 | Judul asli | Palm oil fresh fruit bunch ripeness grading recognition using convolutional neural network |
-| Penulis | Ibrahim, Z.; others |
+| Penulis | Ibrahim, Zaidah; Sabri, Nurbaity; Isa, Dino |
 | Tahun | 2018 |
 | Venue | Journal of Telecommunication Electronic and Computer Engineering |
 | Kode | C3 (Pencitraan TBS kelapa sawit) |

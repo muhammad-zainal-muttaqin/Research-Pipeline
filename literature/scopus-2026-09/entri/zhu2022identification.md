@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `zhu2022identification` |
 | Judul asli | Identification and Counting Method of Potted Kumquat Fruits Based on Point Cloud Registration |
-| Penulis | Zhu, Q.; others |
+| Penulis | Zhu, Qibing; Zhang, Meng; Liu, Zhenfang; Huang, Min; Li, Xuecheng |
 | Tahun | 2022 |
 | Venue | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery |
 | Kode | C1 (Gabungan beberapa pengamatan) |

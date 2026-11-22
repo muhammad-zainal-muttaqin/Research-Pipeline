@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `hani2018apple` |
 | Judul asli | Apple Counting using Convolutional Neural Networks |
-| Penulis | Hani, Nicolai; Roy, Pravakar; Isler, Volkan |
+| Penulis | H\"ani, Nicolai; Roy, Pravakar; Isler, Volkan |
 | Tahun | 2018 |
 | Venue | IEEE International Conference on Intelligent Robots and Systems |
 | Kode | C1 (Gabungan beberapa pengamatan) |

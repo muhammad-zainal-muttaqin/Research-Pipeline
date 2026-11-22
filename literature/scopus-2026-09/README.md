@@ -31,7 +31,7 @@ dengan skrip di `tools/scopus/`.
 | `topik/bukti/` | Kode manual C1 (`mekanisme_C1.txt`), kode manual C3 (`kode_C3.txt`), hasil yang dilaporkan kajian untuk gambar F12 beserta kutipan sumbernya (`nilai_terlapor.csv`), matriks bukti |
 | `crossref.jsonl` | Metadata Crossref untuk daftar pustaka `references6.bib` |
 | `pdf/`, `teks/` | PDF akses terbuka kajian yang lolos dan teks hasil ekstraksinya |
-| `entri/` | 788 ringkasan per kajian `main6`, satu berkas per kunci BibTeX; isi ringkasan dibaca Ruang Baca, teks lengkapnya di `teks/` |
+| `entri/` | 786 ringkasan per kajian `main6`, satu berkas per kunci BibTeX; isi ringkasan dibaca Ruang Baca, teks lengkapnya di `teks/` |
 | `unduhan/` | Log unduhan per rekaman dan daftar PDF yang belum diperoleh |
 
 ## Menjalankan ulang
@@ -48,6 +48,7 @@ python3 tools/scopus/buat_bib.py --rekaman literature/scopus-2026-09/topik/recor
   literature/scopus-2026-09/metodologi/records_MA*.csv \
   --kunci literature/scopus-2026-09/topik/bukti/matriks_bukti.csv literature/scopus-2026-09/metodologi/terpilih.csv \
   --cache literature/scopus-2026-09/crossref.jsonl --cache-openalex literature/scopus-2026-09/openalex.jsonl \
+  --penulis-pdf literature/scopus-2026-09/penulis_pdf.tsv \
   --keluar manuscript/source/references6.bib
 ```
 

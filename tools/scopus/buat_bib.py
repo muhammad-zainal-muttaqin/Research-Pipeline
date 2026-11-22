@@ -4,13 +4,15 @@
 Scopus (tampilan STANDARD) hanya memberi penulis pertama, jadi daftar penulis
 lengkap, volume, nomor, dan halaman diambil dari Crossref berdasarkan DOI.
 Bila Crossref tidak memberi penulis, DOI, atau halaman, OpenAlex dipakai (lewat
-DOI, atau lewat judul yang sama persis dengan tahun yang sama). Respons kedua
+DOI, atau lewat judul yang sama persis dengan tahun yang sama). Daftar penulis yang
+dibaca dari PDF (--penulis-pdf) menggantikan daftar dari kedua layanan itu. Respons kedua
 layanan disimpan di berkas cache agar skrip dapat diulang tanpa memanggil API lagi.
 
 Contoh:
   python3 tools/scopus/buat_bib.py --rekaman literature/scopus-2026-09/topik/records_all.csv \
       --kunci literature/scopus-2026-09/topik/bukti/matriks_bukti.csv \
       --cache literature/scopus-2026-09/crossref.jsonl --cache-openalex literature/scopus-2026-09/openalex.jsonl \
+      --penulis-pdf literature/scopus-2026-09/penulis_pdf.tsv \
       --keluar manuscript/source/references6.bib
 """
 import argparse
@@ -159,7 +161,7 @@ def penulis_crossref(msg):
     return out
 
 
-def entri(rec, msg, oa=None):
+def entri(rec, msg, oa=None, penulis_pdf=None):
     key = rec["key"]
     doi = rec.get("doi", "")
     tipe_scopus = rec.get("source_type", "")
@@ -174,7 +176,7 @@ def entri(rec, msg, oa=None):
         for pola, ganti in SINGKATAN:
             judul = re.sub(pola, ganti, judul)
     f["title"] = judul_terlindung(judul)
-    aut = penulis_crossref(msg or {}) or penulis_openalex(oa)
+    aut = penulis_pdf or penulis_crossref(msg or {}) or penulis_openalex(oa)
     if not aut:
         fa = rec.get("first_author", "")
         m = re.match(r"(.+?)\s+([A-Z][A-Za-z.\- ]*)$", fa)
@@ -216,6 +218,8 @@ def main():
                     help="CSV berkolom key dan eid yang dimasukkan ke BibTeX")
     ap.add_argument("--cache", required=True)
     ap.add_argument("--cache-openalex", required=True)
+    ap.add_argument("--penulis-pdf", required=True,
+                    help="TSV kunci, penulis (format BibTeX), tempat dibaca di PDF")
     ap.add_argument("--keluar", required=True)
     args = ap.parse_args()
 
@@ -266,11 +270,17 @@ def main():
             oa[d["key"]] = keep
             fo.write(json.dumps({"key": d["key"], "work": keep}) + "\n")
             time.sleep(0.2)
+    pdf_aut = {}
+    for line in open(args.penulis_pdf, encoding="utf-8"):
+        if line.strip() and not line.startswith("#"):
+            k, aut, _ = line.rstrip("\n").split("\t")
+            pdf_aut[k] = aut.split(" and ")
+    assert set(pdf_aut) <= set(pilih), f"kunci penulis_pdf tanpa rekaman: {sorted(set(pdf_aut) - set(pilih))}"
     with open(args.keluar, "w", newline="\n") as f:
         f.write("% Dibuat oleh tools/scopus/buat_bib.py dari rekaman Scopus, Crossref, dan OpenAlex.\n\n")
         for key in sorted(pilih):
             d = pilih[key]
-            f.write(entri(d, cache.get(d.get("doi", "")), oa.get(key)) + "\n")
+            f.write(entri(d, cache.get(d.get("doi", "")), oa.get(key), pdf_aut.get(key)) + "\n")
     print(len(pilih), "entri ->", args.keluar)
 
 

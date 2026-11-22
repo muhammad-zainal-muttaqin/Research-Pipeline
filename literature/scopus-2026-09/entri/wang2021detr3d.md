@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `wang2021detr3d` |
 | Judul asli | DETR3D: 3D Object Detection from Multi-view Images via 3D-to-2D Queries |
-| Penulis | Wang, Y.; others |
+| Penulis | Wang, Yue; Guizilini, Vitor; Zhang, Tianyuan; Wang, Yilun; Zhao, Hang; Solomon, Justin |
 | Tahun | 2021 |
 | Venue | Proceedings of Machine Learning Research |
 | Kode | T (Metode dari luar pertanian) |

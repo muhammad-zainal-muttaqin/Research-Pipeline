@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `braso2020learning` |
 | Judul asli | Learning a Neural Solver for Multiple Object Tracking |
-| Penulis | Braso, Guillem; Leal-Taixe, Laura |
+| Penulis | Bras\'o, Guillem; Leal-Taix\'e, Laura |
 | Tahun | 2020 |
 | Venue | Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition |
 | Kode | T (Metode dari luar pertanian) |

@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `silwal2016hierarchical` |
 | Judul asli | A hierarchical approach to apple identification for robotic harvesting |
-| Penulis | Silwal, A.; others |
+| Penulis | Silwal, Abhisesh; Karkee, Manoj; Zhang, Qin |
 | Tahun | 2016 |
 | Venue | Transactions of the Asabe |
 | Kode | C2 (Pencacahan satu pandang) |

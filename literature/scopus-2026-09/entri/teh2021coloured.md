@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `teh2021coloured` |
 | Judul asli | Coloured Edge Maps for Oil Palm Ripeness Classification |
-| Penulis | Teh, W.Y.; others |
+| Penulis | Teh, Wei Yuen; Tan, Ian K. T. |
 | Tahun | 2021 |
 | Venue | 32nd British Machine Vision Conference Bmvc 2021 |
 | Kode | C3 (Pencitraan TBS kelapa sawit) |
