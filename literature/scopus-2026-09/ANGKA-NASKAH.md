@@ -22,11 +22,11 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 ## Seksi 3: kajian multi-pengamatan
 
 - Multi-pengamatan 237; makalah dataset 5; kajian metode 232
-- Kemunculan mekanisme: temporal tracking 141 dari 232 (61%); geometric or 3D association 99 dari 232 (43%); appearance matching 64 dari 232 (28%); statistical correction 19 dari 232 (8%); no association 1 dari 232 (0%); learned association 8 dari 232 (3%)
+- Kemunculan mekanisme: temporal tracking 140 dari 232 (60%); geometric or 3D association 99 dari 232 (43%); appearance matching 64 dari 232 (28%); statistical correction 19 dari 232 (8%); no association 2 dari 232 (1%); learned association 8 dari 232 (3%)
 - Kajian yang menggabungkan mekanisme: 95
-- Kategori eksklusif: M4 67, M2+M3 57, M3 54, M3+M4 21, M1 16, M4+M5 3, M2+M3+M4 3, M3+M5 2, M1+M3 2, M2+M4 2, M2+M4+M5 1, M3+M4+M5 1, M0+M3 1, M2+M5 1, M1+M4 1
+- Kategori eksklusif: M4 67, M2+M3 57, M3 53, M3+M4 21, M1 16, M4+M5 3, M2+M3+M4 3, M3+M5 2, M1+M3 2, M2+M4 2, M2+M4+M5 1, M3+M4+M5 1, M0+M3 1, M2+M5 1, M0 1, M1+M4 1
 - Akuisisi (V video, D diskret, S pindaian 3D, T kunjungan ulang, 1 satu pandang): V 159, D 27, S 41, T 5, 1 0
-- Periode 2012-2017 (n = 14): M1 3 (21%), M3 3 (21%), M4 11 (79%)
+- Periode 2012-2017 (n = 14): M0 1 (7%), M1 3 (21%), M3 2 (14%), M4 11 (79%)
 - Periode 2018-2020 (n = 25): M1 2 (8%), M2 1 (4%), M3 7 (28%), M4 20 (80%)
 - Periode 2021-2022 (n = 38): M0 1 (3%), M1 4 (11%), M2 12 (32%), M3 22 (58%), M4 14 (37%), M5 1 (3%)
 - Periode 2023-2024 (n = 66): M1 5 (8%), M2 23 (35%), M3 49 (74%), M4 19 (29%), M5 2 (3%)
@@ -34,22 +34,22 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Periode sejak 2023 (n = 155): M1 10 (6%), M2 51 (33%), M3 109 (70%), M4 54 (35%), M5 7 (5%)
 - Tanaman: apple 70, tomato 31, citrus 28, grape 24, strawberry 13, mango 12, sweet pepper 8, oil palm 6, cotton 6, blueberry 5, kiwifruit 5, camellia 4
 - Melaporkan hitungan per kelas: 34 dari 232
-- Akuisisi x kategori mekanisme: V: M2+M3 57, M3 53, M4 22, M3+M4 14, M1 4; D: M4 13, M1 12, M4+M5 1, M2+M4 1; S: M4 31, M3+M4 7, M4+M5 2, M2+M3+M4 1; T: M2+M4+M5 1, M4 1, M2+M3+M4 1, M2+M4 1, M3 1
+- Akuisisi x kategori mekanisme: V: M2+M3 57, M3 53, M4 22, M3+M4 14, M1 4; D: M4 13, M1 12, M4+M5 1, M2+M4 1; S: M4 31, M3+M4 7, M4+M5 2, M2+M3+M4 1; T: M2+M4+M5 1, M4 1, M2+M3+M4 1, M2+M4 1, M0 1
 - Pandangan diskret: dengan asosiasi geometris 15, dengan koreksi statistik 12
-- Platform (satu kategori per kajian): ground vehicle/robot 89, handheld/smartphone 51, tidak disebut 36, UAV 32, lebih dari satu 16, fixed camera 6, conveyor/lab 2
+- Platform (satu kategori per kajian): ground vehicle/robot 89, handheld/smartphone 52, tidak disebut 36, UAV 32, lebih dari satu 16, fixed camera 6, conveyor/lab 1
 - Modalitas (kemunculan): RGB 187, RGB-D 18, LiDAR 10, stereo 8, multispectral 5, hyperspectral 2, monocular depth 2, NIR 1
 - Pencocokan penampilan: satu-satunya mekanisme pada 0, digabung pada 64
-- Kajian no association: daud2022loose
+- Kajian no association: daud2022loose, kassim2012oil
 - Kajian learned association: arizasentis2023object, arizasentis2025comparative, fusaro2026horticultural, meyer2025fruitnerf, santos2026multi, xia2022culling, zhao2026adapting, zheng2023object
 - Makalah dataset: arizasentis2023dataset, arizasentis2024grapemots, genemola2020fuji, genemola2020lfuji, genemola2021pfuji
 - Dasar pengodean kajian multi-pengamatan: teks lengkap 237
-- Referensi hitung (kemunculan): anotasi 138, pohon 54, panen 40, tidak ada 20, buah terlihat 1,  hasil panen 1, packhouse 1
-- Tingkat metrik menurut pengodean kajian (kemunculan): hitung 190, deteksi 155, identitas 73, tidak ada 5
+- Referensi hitung (kemunculan): anotasi 141, pohon 55, panen 40, tidak ada 23, buah terlihat 1,  hasil panen 1, packhouse 1
+- Tingkat metrik menurut pengodean kajian (kemunculan): hitung 194, deteksi 160, identitas 73, tidak ada 6
 - Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 13, saat pelacakan 10, voting antarpandang 6, sesudah pelacakan 3, (kosong) 1, per deteksi 1
 
 ## Seksi 5: tingkat metrik kajian metode multi-pengamatan (kode teks lengkap)
 
-- Berkode 225 dari 232: hitung 190 dari 225 (84%); deteksi 155 dari 225 (69%); identitas 73 dari 225 (32%); tidak ada 5 dari 225 (2%)
+- Berkode 232 dari 232: hitung 194 dari 232 (84%); deteksi 160 dari 232 (69%); identitas 73 dari 232 (31%); tidak ada 6 dari 232 (3%)
 
 ## Seksi 6: pencacahan per kelas pada citra tunggal
 

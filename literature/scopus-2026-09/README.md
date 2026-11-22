@@ -47,7 +47,8 @@ python3 tools/scopus/buat_bib.py --rekaman literature/scopus-2026-09/topik/recor
   literature/scopus-2026-09/topik/tambahan_metode_lain.csv \
   literature/scopus-2026-09/metodologi/records_MA*.csv \
   --kunci literature/scopus-2026-09/topik/bukti/matriks_bukti.csv literature/scopus-2026-09/metodologi/terpilih.csv \
-  --cache literature/scopus-2026-09/crossref.jsonl --keluar manuscript/source/references6.bib
+  --cache literature/scopus-2026-09/crossref.jsonl --cache-openalex literature/scopus-2026-09/openalex.jsonl \
+  --keluar manuscript/source/references6.bib
 ```
 
 Jumlah hasil Scopus dapat bertambah bila kueri dijalankan ulang karena terbitan

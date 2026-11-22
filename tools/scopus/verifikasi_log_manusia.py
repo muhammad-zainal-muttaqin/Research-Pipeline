@@ -135,6 +135,11 @@ NAMA = {
     'modalitas': ('Jenis kamera/sensor', lambda v: {'?': 'tidak disebut'}.get(v, v)),
     'multipandang': ('Tandan difoto lebih dari sekali', lambda v: YN.get(v, v)),
     'berkas': ('Berkas PDF artikel', lambda v: v),
+    'wahana': ('Wahana kamera', lambda v: {'handheld/smartphone': 'kamera genggam atau ponsel',
+                                           'conveyor/lab': 'konveyor atau laboratorium',
+                                           'ground vehicle/robot': 'kendaraan darat atau robot',
+                                           'UAV': 'pesawat nirawak (UAV)', 'fixed camera': 'kamera tetap',
+                                           'not stated': 'tidak disebut'}.get(v, v)),
 }
 
 

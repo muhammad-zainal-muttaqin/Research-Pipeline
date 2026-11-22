@@ -3,13 +3,15 @@
 
 Scopus (tampilan STANDARD) hanya memberi penulis pertama, jadi daftar penulis
 lengkap, volume, nomor, dan halaman diambil dari Crossref berdasarkan DOI.
-Rekaman tanpa DOI memakai metadata Scopus apa adanya. Respons Crossref disimpan
-di berkas cache agar skrip dapat diulang tanpa memanggil API lagi.
+Bila Crossref tidak memberi penulis, DOI, atau halaman, OpenAlex dipakai (lewat
+DOI, atau lewat judul yang sama persis dengan tahun yang sama). Respons kedua
+layanan disimpan di berkas cache agar skrip dapat diulang tanpa memanggil API lagi.
 
 Contoh:
   python3 tools/scopus/buat_bib.py --rekaman literature/scopus-2026-09/topik/records_all.csv \
       --kunci literature/scopus-2026-09/topik/bukti/matriks_bukti.csv \
-      --cache literature/scopus-2026-09/topik/crossref.jsonl --keluar manuscript/source/references6.bib
+      --cache literature/scopus-2026-09/crossref.jsonl --cache-openalex literature/scopus-2026-09/openalex.jsonl \
+      --keluar manuscript/source/references6.bib
 """
 import argparse
 import html
@@ -44,6 +46,49 @@ def ambil_crossref(doi):
     return None
 
 
+def ambil_openalex(rec):
+    doi = rec.get("doi", "")
+    if doi:
+        url, params = f"https://api.openalex.org/works/doi:{doi}", {}
+    else:
+        url, params = "https://api.openalex.org/works", {"filter": "title.search:" + re.sub(r"[,:|]", " ", rec["title"])[:200], "per-page": 5}
+    params["mailto"] = MAILTO
+    for _ in range(3):
+        try:
+            r = requests.get(url, params=params, timeout=40)
+        except requests.RequestException:
+            time.sleep(2)
+            continue
+        if r.status_code == 404:
+            return {}
+        if r.status_code == 200:
+            hasil = r.json()
+            if doi:
+                return hasil
+            for w in hasil.get("results", []):
+                if judul_normal(w.get("title")) == judul_normal(rec["title"]) and str(w.get("publication_year")) == rec.get("year"):
+                    return w
+            return {}
+        time.sleep(2)
+    return None
+
+
+def judul_normal(teks):
+    return re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKD", teks or "").lower())
+
+
+def penulis_openalex(w):
+    out = []
+    for a in (w or {}).get("authorships") or []:
+        nama = (a.get("author") or {}).get("display_name") or a.get("raw_author_name") or ""
+        bagian = nama.split()
+        if len(bagian) >= 2:
+            out.append(f"{bersihkan(bagian[-1])}, {bersihkan(' '.join(bagian[:-1]))}")
+        elif bagian:
+            out.append(bersihkan(bagian[0]))
+    return out
+
+
 LATEX_KHUSUS = {"&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_"}
 
 
@@ -56,9 +101,18 @@ def bersihkan(teks):
     return "".join(LATEX_KHUSUS.get(c, c) for c in teks)
 
 
+NAMA_DIRI = ["Kalman", "Gaussian", "Hungarian", "Hough", "Fuji", "Kinect", "Azure", "Raspberry Pi", "Mamba",
+             "Egyptian", "Australian", "Brazilian", "Chinese", "Indian", "Peruvian", "Indonesia", "Florida",
+             "America", "Latin", "Tacna", "Medan", "Sumatera", "Batu", "Boolean", "Elaeis", "Gossypium",
+             "Lycopersicon", "Malus", "Pyrus", "Solanum", "Prunoideae", "Xanthoceras", "Jacq", "Blanco"]
+
+
 def judul_terlindung(teks):
-    """Lindungi singkatan huruf besar agar tidak diubah gaya bibliografi."""
-    return re.sub(r"\b([A-Za-z]*[A-Z][A-Za-z]*[A-Z0-9][A-Za-z0-9-]*)\b", r"{\1}", bersihkan(teks))
+    """Lindungi singkatan huruf besar, angka-huruf (3D), dan nama diri agar tidak diubah gaya bibliografi."""
+    teks = re.sub(r"\b([A-Za-z]*[A-Z][A-Za-z]*[A-Z0-9][A-Za-z0-9-]*|\d+[A-Z][A-Za-z0-9-]*)\b", r"{\1}", bersihkan(teks))
+    for nama in NAMA_DIRI:
+        teks = re.sub(rf"(?<![{{\w])({re.escape(nama)})\b", r"{\1}", teks)
+    return teks
 
 
 # Singkatan yang dipulihkan setelah judul berhuruf kapital semua diturunkan.
@@ -74,9 +128,13 @@ def huruf_wajar(teks):
     return teks
 
 
+DIAKRITIK = {"Hani": "Häni", "Braso": "Brasó", "Leal-Taixe": "Leal-Taixé"}
+
+
 def rapikan_nama(fam, giv):
-    """Perbaiki nama dari Crossref: kapital semua, titik tersisa, inisial di kolom marga."""
+    """Perbaiki nama dari Crossref: kapital semua, titik tersisa, inisial di kolom marga, diakritik hilang."""
     fam, giv = huruf_wajar(fam.strip()), huruf_wajar((giv or "").strip())
+    fam = DIAKRITIK.get(fam, fam)
     if re.fullmatch(r"[A-Z]{2}", fam):  # marga dua huruf (XU, LV), bukan inisial
         fam = fam.capitalize()
     giv = re.sub(r"(?<=[a-z]{2})\.$", "", giv)
@@ -101,7 +159,7 @@ def penulis_crossref(msg):
     return out
 
 
-def entri(rec, msg):
+def entri(rec, msg, oa=None):
     key = rec["key"]
     doi = rec.get("doi", "")
     tipe_scopus = rec.get("source_type", "")
@@ -116,7 +174,7 @@ def entri(rec, msg):
         for pola, ganti in SINGKATAN:
             judul = re.sub(pola, ganti, judul)
     f["title"] = judul_terlindung(judul)
-    aut = penulis_crossref(msg or {})
+    aut = penulis_crossref(msg or {}) or penulis_openalex(oa)
     if not aut:
         fa = rec.get("first_author", "")
         m = re.match(r"(.+?)\s+([A-Z][A-Za-z.\- ]*)$", fa)
@@ -132,12 +190,17 @@ def entri(rec, msg):
     vol = (msg or {}).get("volume") or rec.get("volume", "")
     num = (msg or {}).get("issue") or rec.get("issue", "")
     hal = (msg or {}).get("page") or rec.get("pages", "") or rec.get("article_number", "")
+    if not hal and oa:
+        b = oa.get("biblio") or {}
+        hal = "-".join(x for x in (b.get("first_page"), b.get("last_page")) if x)
     if vol:
         f["volume"] = bersihkan(vol)
     if num and jenis == "article":
         f["number"] = bersihkan(num)
     if hal:
         f["pages"] = bersihkan(hal).replace("-", "--")
+    if not doi and oa and oa.get("doi"):
+        doi = oa["doi"].replace("https://doi.org/", "")
     if doi:
         f["doi"] = doi
     f["scopuseid"] = rec["eid"]
@@ -152,6 +215,7 @@ def main():
     ap.add_argument("--kunci", nargs="+", required=True,
                     help="CSV berkolom key dan eid yang dimasukkan ke BibTeX")
     ap.add_argument("--cache", required=True)
+    ap.add_argument("--cache-openalex", required=True)
     ap.add_argument("--keluar", required=True)
     args = ap.parse_args()
 
@@ -182,11 +246,31 @@ def main():
                                             "volume", "issue", "page")}
             cache[doi] = keep
             fc.write(json.dumps({"doi": doi, "msg": keep}) + "\n")
+    def kurang(d):
+        msg = cache.get(d.get("doi", "")) or {}
+        return not msg.get("author") or not d.get("doi") or not (msg.get("page") or d.get("pages") or d.get("article_number"))
+    oa = {}
+    op = Path(args.cache_openalex)
+    if op.exists():
+        for line in op.read_text().splitlines():
+            c = json.loads(line)
+            oa[c["key"]] = c["work"]
+    butuh = [d for k, d in sorted(pilih.items()) if kurang(d) and k not in oa]
+    print("ambil OpenAlex:", len(butuh))
+    with open(op, "a") as fo:
+        for d in butuh:
+            w = ambil_openalex(d)
+            if w is None:
+                continue
+            keep = {k: w.get(k) for k in ("doi", "title", "publication_year", "authorships", "biblio")}
+            oa[d["key"]] = keep
+            fo.write(json.dumps({"key": d["key"], "work": keep}) + "\n")
+            time.sleep(0.2)
     with open(args.keluar, "w", newline="\n") as f:
-        f.write("% Dibuat oleh tools/scopus/buat_bib.py dari rekaman Scopus dan metadata Crossref.\n\n")
+        f.write("% Dibuat oleh tools/scopus/buat_bib.py dari rekaman Scopus, Crossref, dan OpenAlex.\n\n")
         for key in sorted(pilih):
             d = pilih[key]
-            f.write(entri(d, cache.get(d.get("doi", ""))) + "\n")
+            f.write(entri(d, cache.get(d.get("doi", "")), oa.get(key)) + "\n")
     print(len(pilih), "entri ->", args.keluar)
 
 

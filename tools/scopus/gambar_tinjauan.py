@@ -18,6 +18,7 @@ import glob
 import json
 import re
 import sys
+import unicodedata
 from collections import Counter, defaultdict
 from itertools import combinations
 from pathlib import Path
@@ -811,9 +812,40 @@ JENIS_B = {"nomor identitas terbesar": ("Largest identity number", C["abu"], "o"
            "aturan hitung penulis": ("Authors' counting rule", C["biru"], "^")}
 
 
+NASKAH = ROOT / "manuscript/source"
+SUFIKS_TAHUN = {"zheng2023efficient": "b", "zhou2024advancing": "b"}
+AKSEN = {'"': "\u0308", "'": "\u0301", "`": "\u0300", "^": "\u0302", "~": "\u0303"}
+
+
+def label_sitasi(kunci_gambar):
+    """kunci di gambar -> label penulis-tahun seperti di daftar pustaka naskah (natbib), termasuk sufiks a/b."""
+    bib = (NASKAH / "references6.bib").read_text(encoding="utf-8")
+    dikutip = set()
+    for f in NASKAH.glob("main6*.tex"):
+        for g in re.findall(r"\\cite[a-z]*\*?(?:\[[^\]]*\])*\{([^}]*)\}", f.read_text(encoding="utf-8")):
+            dikutip.update(k.strip() for k in g.split(","))
+    dasar = {}
+    for kunci, isi in re.findall(r"@\w+\{([^,]+),(.*?)\n\}", bib, re.S):
+        penulis = re.search(r"author = \{(.*)\},?\n", isi).group(1).split(" and ")
+        nama = penulis[0].split(",")[0]
+        nama = re.sub(r"\{?\\([\"'`^~])\{?([A-Za-z])\}?\}?", lambda m: m.group(2) + AKSEN[m.group(1)], nama)
+        nama = unicodedata.normalize("NFC", nama.replace("{", "").replace("}", ""))
+        tahun = re.search(r"year = \{(\d{4})\}", isi).group(1)
+        dasar[kunci] = (nama + (" et al." if len(penulis) > 2 else " and " + penulis[1].split(",")[0] if len(penulis) == 2 else ""), tahun)
+    label = {}
+    for kunci in kunci_gambar & set(dasar):
+        nama, tahun = dasar[kunci]
+        kembar = sorted(k for k in dikutip if dasar.get(k) == (nama, tahun))
+        if len(kembar) > 1:
+            assert kunci in SUFIKS_TAHUN, f"{kunci}: tambahkan sufiks tahun dari daftar pustaka naskah ke SUFIKS_TAHUN ({kembar})"
+            tahun += SUFIKS_TAHUN[kunci]
+        label[kunci] = f"{nama} ({tahun})"
+    return label
+
+
 def gambar_hasil(mat):
     baris = list(csv.DictReader(open(TOPIK / "bukti/nilai_terlapor.csv", encoding="utf-8")))
-    penulis = {r["key"]: (r["first_author"].split()[0], r["year"]) for r in mat}
+    penulis = label_sitasi({b["kunci"] for b in baris})
     kunci_hilang = {b["kunci"] for b in baris} - set(penulis)
     assert not kunci_hilang, f"kunci tidak ada di matriks bukti: {kunci_hilang}"
     assert {b["jenis_lengan"] for b in baris if b["panel"] == "a"} <= set(JENIS_A)
@@ -834,9 +866,8 @@ def gambar_hasil(mat):
             if kunci in posisi:
                 continue
             if b["kunci"] != sebelum:
-                nama, tahun = penulis[b["kunci"]]
                 data = b["data"][0].lower() + b["data"][1:]
-                judul.append((y, f"{nama} et al. ({tahun}); {data}"))
+                judul.append((y, f"{penulis[b['kunci']]}; {data}"))
                 y += 1.05
             posisi[kunci] = y
             sebelum = b["kunci"]
