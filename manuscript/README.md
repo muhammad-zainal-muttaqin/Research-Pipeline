@@ -10,7 +10,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 | Menyunting naskah kandidat aktif | [Badan `main7`](source/main7-body.tex) dan [driver LaTeX](source/main7.tex) |
 | Mengompilasi naskah | Dari `manuscript/source/`, jalankan `tectonic -Z search-path=../templates/els-cas-templates main7.tex`. Jalankan perintah yang sama untuk `main7-supplementary.tex`, lalu pindahkan kedua PDF ke `output/papers/` |
 | Membaca hasil | [Naskah utama](output/papers/main7.pdf), [bahan tambahan](output/papers/main7-supplementary.pdf), dan [daftar kajian](output/papers/main7-supplementary-studies.csv) |
-| Melihat gambar `main6` | [`figures/main6/`](figures/main6/) — F01–F12 (PDF, sebagian juga PNG), dibuat `tools/scopus/gambar_tinjauan.py`; simulator interaktif di `figures/main6/interaktif/` |
+| Melihat gambar | [`figures/main6/`](figures/main6/) untuk gambar korpus, dibuat `tools/scopus/gambar_tinjauan.py`. [Figur galat inventaris `main7`](figures/main7/galat-inventaris.pdf) berupa PDF vektor, dibuat `tools/scopus/gambar_galat_inventaris.py` |
 | Melihat figur naskah 182 sumber dan laporan eksperimen | [`figures/`](figures/) — F01–F08, C01–C02, seri H/N/R yang dipakai `reports/*.tex` |
 | Membaca aturan gaya `main6` dan bentuk entri korpus lama | [`../AGENTS.md`](../AGENTS.md) §12 dan §14 |
 | Memeriksa asal angka `main6` | [`../literature/scopus-2026-09/`](../literature/scopus-2026-09/README.md) |
