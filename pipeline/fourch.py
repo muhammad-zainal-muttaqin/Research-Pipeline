@@ -17,7 +17,7 @@ KONTRAK KANAL KEDALAMAN (wajib sama saat latih dan saat uji lapangan):
   - 0            = tidak valid / tidak ada data.
   - 1..255       = kedalaman terbalik (inverse depth) pada rentang metrik tetap
                    [Z_NEAR, Z_FAR] meter: dekat -> 255, jauh -> 1.
-  Konversi dari sensor: pakai prepare_depth.py, jangan menormalkan per-citra —
+  Konversi dari sensor: pakai prepare_depth.py, jangan menormalkan per-citra -
   normalisasi per-citra membuang informasi jarak absolut dan membuat nilai
   piksel tidak sebanding antar-frame.
 """
@@ -91,7 +91,7 @@ def patch_loader(depth_dir: str | Path | None, dropout: float = 0.25) -> None:
 
     Citra dibaca dari JPEG asli; kanal kedalaman ditempel di memori. Pada
     dataset LATIH (augment=True) kanal depth diganti nol dengan peluang
-    `dropout` — inilah yang membuat satu bobot bisa dipakai dengan atau tanpa
+    `dropout` - inilah yang membuat satu bobot bisa dipakai dengan atau tanpa
     depth di lapangan. Dataset VALIDASI selalu memakai depth apa adanya.
     """
     _STATE["depth_dir"] = Path(depth_dir) if depth_dir else None
@@ -135,7 +135,7 @@ def make_inflate_callback(pretrained: str | Path):
 
     Tanpa ini, conv pertama mulai dari inisialisasi acak (transfer bobot
     ultralytics melewati tensor yang bentuknya beda). Bobot RGB pratlatih
-    disalin dengan urutan DIBALIK ke BGR — jalur 4-kanal ultralytics TIDAK
+    disalin dengan urutan DIBALIK ke BGR - jalur 4-kanal ultralytics TIDAK
     membalik kanal (pembalikan BGR->RGB hanya berlaku untuk 3 kanal), jadi
     masukan model adalah [B,G,R,D]. Kanal depth diinisialisasi nol: model mulai
     persis dari perilaku RGB pratlatih dan belajar memakai depth secara
@@ -160,14 +160,14 @@ def make_inflate_callback(pretrained: str | Path):
                   if v.ndim == 4 and v.shape[1] == 3)
         ok = fill(trainer.model, w3)
         # EMA disalin SEBELUM callback ini menyala (trainer.py: ModelEMA lalu
-        # on_pretrain_routine_end), dan best.pt menyimpan EMA — wajib ditambal juga.
+        # on_pretrain_routine_end), dan best.pt menyimpan EMA - wajib ditambal juga.
         ema = getattr(getattr(trainer, "ema", None), "ema", None)
         if ema is not None:
             ok = fill(ema, w3) and ok
         if ok:
             print("fourch: conv pertama diisi dari bobot pratlatih (BGR), kanal depth = 0 (model + EMA)")
         else:
-            print("fourch: PERINGATAN — conv 4-kanal tidak ditemukan, inflasi dilewati")
+            print("fourch: PERINGATAN - conv 4-kanal tidak ditemukan, inflasi dilewati")
 
     return cb
 

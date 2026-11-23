@@ -1,5 +1,5 @@
 """Perbandingan setara: pada KOTAK YANG SAMA, siapa yang lebih baik menilai
-kematangan — head klasifikasi YOLO, atau pengklasifikasi potongan?
+kematangan - head klasifikasi YOLO, atau pengklasifikasi potongan?
 
 Rasio mAP bukan perbandingan yang adil (mAP mencampur deteksi, peringkat, dan
 ambang). Di sini keduanya dinilai pada tugas identik: diberi kotak kebenaran

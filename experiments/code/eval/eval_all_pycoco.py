@@ -1,7 +1,7 @@
 """Per-kelas AP50 & AP50-95 SEMUA model lewat SATU protokol (pycocotools).
 
 Menghapus caveat evaluator campur: YOLO26m, RT-DETR-L, YOLO26l, RF-DETR-L
-semua dievaluasi dengan pipeline identik — predict (threshold rendah) lalu
+semua dievaluasi dengan pipeline identik - predict (threshold rendah) lalu
 COCOeval pada GT yang sama (dibangun sekali dari label YOLO). Setiap model di
 resolusi latihannya sendiri. Hasil -> results/perkelas_pycoco.json.
 """

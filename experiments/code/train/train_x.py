@@ -2,7 +2,7 @@
 dengan augmentasi aman-warna.
 
 Baseline memakai yolo26m (21,9 juta) pada 640 dengan hsv_s=0.7. Tiga hal
-diubah sekaligus dan itu disengaja — sasarannya angka, bukan ablasi; ablasi
+diubah sekaligus dan itu disengaja - sasarannya angka, bukan ablasi; ablasi
 dua faktornya sudah dijalankan terpisah (E-019: 1280 + aman-warna pada
 yolo26m).
 

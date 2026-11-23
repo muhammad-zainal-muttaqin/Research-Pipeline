@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# periksa_run.sh — penjaga kelengkapan run, di-source oleh skrip antrean.
+# periksa_run.sh - penjaga kelengkapan run, di-source oleh skrip antrean.
 #
 # Latar: AUDIT-E022 mencatat tiga run yang mati di tengah tetapi dilaporkan
 # "SELESAI", sehingga antrean melanjut tanpa peringatan dan angkanya sempat
@@ -42,9 +42,9 @@ periksa_run() {
   fi
 
   if [ -n "$pesan" ]; then
-    echo "[GAGAL] $nama — $pesan  $(date -Is)" >&2
+    echo "[GAGAL] $nama - $pesan  $(date -Is)" >&2
     return 1
   fi
-  echo "[ok] $nama — rc=0, artefak lengkap  $(date -Is)"
+  echo "[ok] $nama - rc=0, artefak lengkap  $(date -Is)"
   return 0
 }

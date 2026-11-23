@@ -4,21 +4,21 @@
 rfdetr SUDAH punya jalur N-kanal bawaan (`ModelConfig.num_channels`), jadi tidak
 perlu fork paket. Yang dibutuhkan tiga tambalan kecil:
 
-PATCH A — pemuat data. `_LazyYoloDetectionDataset.__getitem__`
+PATCH A - pemuat data. `_LazyYoloDetectionDataset.__getitem__`
 (`rfdetr/datasets/yolo.py:158-160`) membaca lewat `Image.open(...).convert("RGB")`
 sehingga selalu 3 kanal. Dibungkus agar mengembalikan array 4 kanal
 [R,G,B,D] uint8; depth dibaca dari PNG kanonik hasil reproject_depth.py.
 
-PATCH B — normalisasi. `datasets/transforms.py:42` memakai mean/std ImageNet
+PATCH B - normalisasi. `datasets/transforms.py:42` memakai mean/std ImageNet
 3 elemen. Ditambah elemen ke-4 dari statistik kanal depth pada split TRAIN saja
-(bukan val/test — itu kebocoran).
+(bukan val/test - itu kebocoran).
 
-PATCH C — conv patch-embed. Heuristik bawaan `_adapt_input_conv`
+PATCH C - conv patch-embed. Heuristik bawaan `_adapt_input_conv`
 (`rfdetr/inference.py:70-92`) MENGUBIN pola 3-kanal lalu mengalikan SELURUH
 bobot dengan 3/4 = 0,75. Itu mengubah perilaku pratlatih dan membuat
 perbandingan dengan lengan RGB tidak bersih. Ditimpa: kanal 1..3 = bobot
 pratlatih apa adanya, kanal ke-4 = 0, sehingga model berangkat PERSIS dari
-perilaku RGB pratlatih dan belajar memakai depth secara bertahap — sama seperti
+perilaku RGB pratlatih dan belajar memakai depth secara bertahap - sama seperti
 `fourch.make_inflate_callback` untuk ultralytics.
 """
 from __future__ import annotations
@@ -123,7 +123,7 @@ def patch_c0_validasi_kanal(paksa_init_4: bool = False) -> None:
     """Validasi kanal di PatchEmbeddings memakai conv, bukan config.
 
     rfdetr membangun backbone dengan `config.num_channels=3` lalu MENUKAR conv
-    patch-embed ke 4 kanal setelah bobot pratlatih dimuat — tetapi
+    patch-embed ke 4 kanal setelah bobot pratlatih dimuat - tetapi
     `self.num_channels` tetap 3 dan memvalidasi masukan di
     `dinov2_with_windowed_attn.py:307-311`, sehingga forward gagal dengan
     "Expected 3 but got 4". Tambalan dipasang di level KELAS karena model
@@ -214,14 +214,14 @@ def patch_c_conv(model) -> None:
             target = m
             break
     if target is None:
-        print("patch C: PERINGATAN — conv 4-kanal tidak ditemukan")
+        print("patch C: PERINGATAN - conv 4-kanal tidak ditemukan")
         return
     with torch.no_grad():
         w = target.weight.detach().clone()
         pratlatih = w[:, :3] / 0.75
         target.weight[:, :3] = pratlatih
         target.weight[:, 3] = 0.0
-    print(f"patch C: conv patch-embed {tuple(target.weight.shape)} — kanal 1-3 dipulihkan "
+    print(f"patch C: conv patch-embed {tuple(target.weight.shape)} - kanal 1-3 dipulihkan "
           f"ke bobot pratlatih (dibagi 0,75), kanal 4 = 0")
 
 

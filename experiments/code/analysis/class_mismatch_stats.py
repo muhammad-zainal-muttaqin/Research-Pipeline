@@ -137,7 +137,7 @@ def main() -> int:
 
     W = 74
     print("=" * W)
-    print("KETIDAKSEPAKATAN KELAS ANTAR-SISI — SawitMVC")
+    print("KETIDAKSEPAKATAN KELAS ANTAR-SISI - SawitMVC")
     print("=" * W)
     print(f"pohon                                : {n_trees}")
     print(f"bunch unik                           : {n_bunches}")

@@ -12,7 +12,7 @@ sehingga mutual information I(depth; abu-abu RGB) maksimum. Salah registrasi
 banyak citra sebelum dibandingkan (SNR naik ~sqrt(N)).
 
 Kontrol: pergeseran buatan +-24 px pada kandidat terbaik HARUS menurunkan MI.
-Kalau tidak turun, metriknya yang gagal — bukan hipotesisnya yang seri.
+Kalau tidak turun, metriknya yang gagal - bukan hipotesisnya yang seri.
 """
 from __future__ import annotations
 

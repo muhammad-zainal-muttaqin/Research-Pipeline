@@ -1,4 +1,4 @@
-# E-023 — fusi awal vs menengah vs akhir, semuanya dari nol
+# E-023 - fusi awal vs menengah vs akhir, semuanya dari nol
 
 Matriks penuh 15 run (5 lengan x 3 seed, yolo26n skala n, 150 epoch, split
 SawitMVC-Depth seed42, tanpa bobot pratlatih). **Ke-15 run lengkap 150/150**,
@@ -12,7 +12,7 @@ ulangan yang bersih.
 `hasil.json` di sana hanya hidup di disk kerja yang bersifat sementara. Sembilan
 run yang sudah selesai mewakili sekitar sepuluh jam GPU; menahannya sampai
 seluruh matriks tuntas berarti mempertaruhkan semuanya pada satu disk tanpa
-cadangan. Yang disalin ke sini hanya berkas teks — total ~234 KB.
+cadangan. Yang disalin ke sini hanya berkas teks - total ~234 KB.
 
 ## Isi tiap folder run
 
@@ -20,7 +20,7 @@ cadangan. Yang disalin ke sini hanya berkas teks — total ~234 KB.
 |---|---|
 | `results.csv` | metrik per epoch dari trainer |
 | `args.yaml` | hiperparameter efektif, apa adanya dari ultralytics |
-| `hasil.json` | ringkasan akhir trainer — **lihat peringatan di bawah** |
+| `hasil.json` | ringkasan akhir trainer - **lihat peringatan di bawah** |
 | `best.pt.sha256` | hash bobot; bobotnya sendiri tidak diarsipkan (kebijakan repo) |
 
 ## Peringatan: `hasil.json` tidak boleh dipakai membandingkan antar lengan
@@ -46,7 +46,7 @@ Resep latihannya ada di `experiments/code/shell/e023_fusi.sh` (seed 42 dan
 
 Direktori penanda milik driver TIDAK sinkron dengan kenyataan dan tidak boleh
 dipakai sebagai sumber kebenaran. `gagal-e023_derau_seed1337` adalah sisa
-percobaan pertama yang kena OOM — penggantinya selesai 150/150 dengan bersih.
+percobaan pertama yang kena OOM - penggantinya selesai 150/150 dengan bersih.
 `mid_seed42` dan `late_seed42` tidak punya penanda karena diselesaikan lewat
 jalur perbaikan terpisah. Jumlah epoch unik di `results.csv` adalah ukuran yang
 dipakai, di sini maupun di skrip evaluasi.

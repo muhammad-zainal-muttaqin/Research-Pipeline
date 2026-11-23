@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E-022 G1: melacak selisih evaluator `hasil.json` vs pycocotools.
 
-AUDIT-E022 mencatat selisih sampai 0,028 yang **tidak simetris antar lengan** —
+AUDIT-E022 mencatat selisih sampai 0,028 yang **tidak simetris antar lengan** -
 `hasil.json` merugikan lengan RGB+D secara sistematis, sehingga rerata delta
 YOLO26n berubah tanda: -0,0060 (hasil.json) versus +0,0059 (pycocotools).
 Selama penyebabnya belum diketahui, tidak ada angka E-022 yang berstatus final.
@@ -59,7 +59,7 @@ def ap_pycoco(gt, dets: list[dict], img_ids: list[int], max_dets: int) -> dict:
     Alasannya konkret: `COCOeval.summarize()` menghitung `stats[0]` lewat
     `_summarize(1)` yang memakai `maxDets=100` **hardcoded**, lalu mencari
     indeks 100 di dalam `params.maxDets`. Begitu maxDets diubah ke [1,10,300],
-    nilai 100 tidak ada dan pycocotools mengembalikan sentinel -1.0 — bukan
+    nilai 100 tidak ada dan pycocotools mengembalikan sentinel -1.0 - bukan
     error, jadi mudah lolos sebagai "hasil". Mengambil dari matriks presisi
     menghindari jebakan itu sekaligus membuat kedua ambang dapat dibandingkan.
 

@@ -1,10 +1,10 @@
-# SR-002 — Master mentah 3024×4032 sebagai jalan keluar untuk B4
+# SR-002 - Master mentah 3024×4032 sebagai jalan keluar untuk B4
 
 **Ide:** kalau resolusi bagian dari bottleneck, latih pada piksel penuh
 **Eksperimen:** E-002 · **Putusan: TERBLOKIR → DIBUKA oleh E-015** · 2026-07-21
 
-> **PEMBARUAN (E-015, 2026-07-21).** Blokade di SR ini — nama berkas master
-> mentah tidak unik global sehingga pemetaan raw ↔ anotasi mustahil dari nama —
+> **PEMBARUAN (E-015, 2026-07-21).** Blokade di SR ini - nama berkas master
+> mentah tidak unik global sehingga pemetaan raw ↔ anotasi mustahil dari nama -
 > **sudah dibuka.** `experiments/code/build/match_raw.py` memetakan 3.992/3.992 citra lewat isi
 > (tanda tangan citra ternormalkan), nol ambigu, skor terendah 0,9985. Master
 > 3024×4032 kini dapat dipakai tanpa anotasi ulang; `experiments/code/build/build_master_ds.py`
@@ -14,8 +14,8 @@
 
 ## 1. Masalah
 
-**B4 adalah kelas terburuk: AP50 = 0,354.** Definisinya di dataset — *"small,
-deeply positioned, black to green"* — menjelaskan kenapa: tandan B4 kecil,
+**B4 adalah kelas terburuk: AP50 = 0,354.** Definisinya di dataset - *"small,
+deeply positioned, black to green"* - menjelaskan kenapa: tandan B4 kecil,
 tertanam dalam di ketiak pelepah, dan berwarna gelap seperti latarnya.
 
 SawitMVC adalah versi **terkompresi** ke 960×1280. Baseline DiB melatih pada
@@ -30,7 +30,7 @@ sumber 3024×4032 memberi detail yang benar-benar baru. Dua eksperimen berbeda.
 
 Master mentah `Sawit` adalah dataset yang sama sebelum dikompresi. Kalau rasio
 aspeknya identik, koordinat YOLO **ternormalisasi** dari SawitMVC berlaku persis
-di raw tanpa anotasi ulang — anotasi mahal itu bisa dipakai ulang gratis pada
+di raw tanpa anotasi ulang - anotasi mahal itu bisa dipakai ulang gratis pada
 resolusi 9,9× lebih besar.
 
 ## 3. Solusi
@@ -43,9 +43,9 @@ aspek, tabrakan nama, dan properti video.
 | | Sawit (raw) | SawitMVC |
 |---|---|---|
 | Resolusi | **3024 × 4032** | 960 × 1280 |
-| Rasio aspek | 0,75 | 0,75 — **identik** |
+| Rasio aspek | 0,75 | 0,75 - **identik** |
 | JPG | 3.992 (16 GB) | 3.992 (2,3 GB) |
-| Video | **45 MP4** 1920×1080 | — |
+| Video | **45 MP4** 1920×1080 | - |
 | Anotasi | tidak ada | lengkap |
 
 Premis utamanya **benar**: rasio aspek identik → label transferable, luas piksel
@@ -54,7 +54,7 @@ Premis utamanya **benar**: rasio aspek identik → label transferable, luas piks
 **Tetapi ada penghalang yang menggagalkan pelaksanaannya:**
 
 Nama berkas raw **tidak unik secara global**. Dari 3.992 berkas hanya **1.352
-nama unik** — **936 nama kembar** antar folder `Kelompok N`. Contoh:
+nama unik** - **936 nama kembar** antar folder `Kelompok N`. Contoh:
 `LONSUM_A21A_044_3.jpg` ada di `Kelompok 2` *dan* `Kelompok 5`, dan itu **dua
 pohon fisik berbeda**. Ditambah penomoran raw 3 digit (`_001_`) vs MVC 4 digit
 (`_0001_`), pemetaan raw ↔ anotasi **tidak dapat dilakukan dari nama berkas**.
@@ -62,11 +62,11 @@ pohon fisik berbeda**. Ditambah penomoran raw 3 digit (`_001_`) vs MVC 4 digit
 Video juga hanya bernama cap waktu (`VID_20260205_090556.mp4`), semuanya dari
 `Kelompok 6`, tanpa ID pohon.
 
-## 5. Putusan — TIDAK KONKLUSIF (terblokir)
+## 5. Putusan - TIDAK KONKLUSIF (terblokir)
 
 Idenya sehat dan premisnya terverifikasi, tetapi tidak dapat dijalankan sampai
 pemetaan raw ↔ anotasi tersedia. Ini **kegagalan pelaksanaan, bukan kegagalan
-hipotesis** — hipotesis resolusinya sendiri belum diuji sama sekali.
+hipotesis** - hipotesis resolusinya sendiri belum diuji sama sekali.
 
 ## 6. Dampak
 
@@ -79,7 +79,7 @@ Dua hal:
    pengumpul data.
 2. **Video menjadi aset tak terduga.** Risiko terbesar rencana DA3 multi-view
    adalah *baseline* ~90° antar sisi. Ratusan frame mengelilingi satu pohon
-   memberi *baseline* kecil — kondisi ideal untuk geometri multi-view. Urutan
+   memberi *baseline* kecil - kondisi ideal untuk geometri multi-view. Urutan
    uji diubah karena temuan ini: video lebih dulu (→ SR-003).
 
 ## 7. Reproduksi

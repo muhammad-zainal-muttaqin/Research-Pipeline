@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F-002 (P2) — Apakah respons frekuensi tinggi memisahkan tandan dari PELEPAH?
+"""F-002 (P2) - Apakah respons frekuensi tinggi memisahkan tandan dari PELEPAH?
 
 Gerbang untuk K1 (cabang frekuensi samping). Dijalankan SEBELUM satu jam GPU
 pun terpakai, disiplin yang sama seperti E-006, E-010, dan E-011.
@@ -9,7 +9,7 @@ pun terpakai, disiplin yang sama seperti E-006, E-010, dan E-011.
 E-011 (`contrast_boost_test.py`) mengukur **isi kotak vs cincin sekeliling** dan
 menemukan Laplacian menaikkan keterpisahan B4 sebesar +0,0458 di atas kendali,
 mengungguli Sobel (+0,0367). Itu hasil nyata, tetapi cincin sekeliling memuat
-APA SAJA — langit, batang, tanah, tandan lain.
+APA SAJA - langit, batang, tanah, tandan lain.
 
 Mode gagal yang dikhawatirkan justru spesifik: **cabang frekuensi tinggi menyala
 pada tepi pelepah**, bukan pada isi tandan. Pelepah sawit adalah struktur

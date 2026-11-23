@@ -9,8 +9,8 @@ pencarian OpenAlex dan matriks bukti korpus lama dihapus pada 18 November
 
 | Tujuan | Buka ini |
 |---|---|
-| Menjalankan ulang korpus dan artefak naskah `main6` | [`scopus/`](scopus/) — perintah lengkap di [`literature/scopus-2026-09/README.md`](../literature/scopus-2026-09/README.md) |
-| Membuat dek presentasi PPTX | [`presentation/`](presentation/) — sudah punya README sendiri |
+| Menjalankan ulang korpus dan artefak naskah `main6` | [`scopus/`](scopus/) - perintah lengkap di [`literature/scopus-2026-09/README.md`](../literature/scopus-2026-09/README.md) |
+| Membuat dek presentasi PPTX | [`presentation/`](presentation/) - sudah punya README sendiri |
 
 ## Isi folder
 

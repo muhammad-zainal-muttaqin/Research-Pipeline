@@ -1,4 +1,4 @@
-# SR-014 — RF-DETR-L (DINOv2, NMS-free): detektor 4-kelas terbaik, sasaran mAP50 terlewati
+# SR-014 - RF-DETR-L (DINOv2, NMS-free): detektor 4-kelas terbaik, sasaran mAP50 terlewati
 
 **Ide I-14 (lanjutan)** · **Eksperimen:** E-021 · **Putusan: DIKONFIRMASI** · 2026-07-25
 
@@ -18,15 +18,15 @@ dipertahankan di hadapan penelaah:
    sedangkan model lain lewat pycocotools. Dua implementasi COCO eval yang
    berbeda tidak boleh dibandingkan angka-per-angka.
 
-Selain itu, RT-DETR-L berhenti pada test mAP50 0,5794 — masih −0,021 dari sasaran
+Selain itu, RT-DETR-L berhenti pada test mAP50 0,5794 - masih −0,021 dari sasaran
 0,60.
 
 ## 2. Ide
 
 **RF-DETR-L** adalah transformer NMS-free generasi lebih baru: backbone **DINOv2**
 patch-16 yang pra-latih secara *self-supervised*, dengan kepala LW-DETR hasil
-*neural architecture search*. Pertanyaannya bukan kapasitas — RF-DETR-L (35,7 juta)
-hanya sedikit lebih besar dari RT-DETR-L — melainkan apakah pada **setelan
+*neural architecture search*. Pertanyaannya bukan kapasitas - RF-DETR-L (35,7 juta)
+hanya sedikit lebih besar dari RT-DETR-L - melainkan apakah pada **setelan
 identik** ia melampaui RT-DETR-L.
 
 Sekalian, dua celah SR-013 ditutup dalam eksperimen yang sama.
@@ -34,7 +34,7 @@ Sekalian, dua celah SR-013 ditutup dalam eksperimen yang sama.
 **Yang akan memalsukan:** run yang konvergen tertinggal dari RT-DETR-L pada kedua
 metrik. Test hanya dilaporkan setelah checkpoint dipilih dari val.
 
-## 3. Solusi — varian yang persis dipakai
+## 3. Solusi - varian yang persis dipakai
 
 **RF-DETR-L**, `rfdetr` **1.8.3**, kelas `RFDETRLarge`, **35,65 juta parameter**,
 DINOv2 patch-16 + 2-window, dari bobot COCO `rf-detr-large-2026`.
@@ -51,7 +51,7 @@ DINOv2 patch-16 + 2-window, dari bobot COCO `rf-detr-large-2026`.
 Rinciannya di [`experiments/code/REPRODUCE.md`](../code/REPRODUCE.md) §6.
 
 **Pembanding param-adil:** **YOLO26l** (26,3 juta) dilatih dengan konfigurasi
-identik RT-DETR — 1280, 60 epoch, aman-warna, seed 42, `cos_lr`, bobot COCO.
+identik RT-DETR - 1280, 60 epoch, aman-warna, seed 42, `cos_lr`, bobot COCO.
 
 **Satu protokol:** keempat model dievaluasi ulang lewat pipeline **pycocotools**
 yang sama (prediksi ambang rendah → COCOeval, GT sama).
@@ -71,16 +71,16 @@ Per-kelas AP50 test RF-DETR-L: B1 0,817 · B2 0,497 · B3 0,668 · **B4 0,433**.
 Unggul di keempat kelas pada kedua split.
 
 **Sanity check pipeline:** val pycocotools mandiri (0,5695) cocok dengan evaluator
-internal rf-detr (0,5699 EMA) — jadi pipeline evaluasinya tervalidasi, bukan
+internal rf-detr (0,5699 EMA) - jadi pipeline evaluasinya tervalidasi, bukan
 angka yang menguntungkan diri sendiri.
 
 **Signifikansi statistik.** Bootstrap 2.000× *resample* gambar test (588, seed 42):
 selisih berpasangan RF−RT = **+0,0255, CI 95% [0,0104 – 0,0408]**, P(RF>RT) = 0,999.
 CI selisih tidak memuat nol. (CI marginal kedua model beririsan, tetapi uji
-berpasangan — gambar yang sama pada tiap resample — yang tepat di sini.)
+berpasangan - gambar yang sama pada tiap resample - yang tepat di sini.)
 
 **Recall, bukan sekadar presisi.** micro-F1 test RF-DETR 0,6189 vs RT-DETR 0,5960;
-keunggulannya terutama pada recall (micro-R 0,6505 vs 0,6440) — konsisten dengan
+keunggulannya terutama pada recall (micro-R 0,6505 vs 0,6440) - konsisten dengan
 hipotesis NMS-free: lebih sedikit kotak benar yang tertekan.
 
 ## 5. Putusan
@@ -94,7 +94,7 @@ Dua celah SR-013 tertutup: YOLO26l param-adil **tetap di bawah kedua DETR**, jad
 keunggulan DETR **bukan** efek kapasitas atau resolusi; dan caveat evaluator
 campur hilang karena semuanya diukur satu protokol.
 
-**Yang TIDAK dibuktikan — jangan dilewat.** Sama seperti SR-013, run ini tidak
+**Yang TIDAK dibuktikan - jangan dilewat.** Sama seperti SR-013, run ini tidak
 mengisolasi NMS sebagai penyebab. RF-DETR berbeda dari RT-DETR pada backbone
 (DINOv2 vs HGNetv2-L), pra-latih, dan kepala hasil NAS sekaligus. Yang terbukti
 adalah **arah arsitektur**, bukan mekanisme tunggal.
@@ -104,7 +104,7 @@ versus RT-DETR 74,2 ms dan YOLO26m 24,8 ms. Untuk lapangan waktu-nyata ini
 penghalang nyata; optimasi FP16 belum diukur.
 
 **Kelas tersulit tetap B4** (AP50 0,433) dan pasangan yang paling sering tertukar
-tetap **B2↔B3** (184 B2→B3, 60 B3→B2 pada test) — kedua diagnosis lama
+tetap **B2↔B3** (184 B2→B3, 60 B3→B2 pada test) - kedua diagnosis lama
 ([SR-007](SR-007-diagnosis-b4.md), [SR-009](SR-009-ordinalitas-kelas.md)) bertahan.
 
 ## 6. Reproduksi

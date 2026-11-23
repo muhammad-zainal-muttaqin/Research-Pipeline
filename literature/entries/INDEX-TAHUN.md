@@ -1,4 +1,4 @@
-# INDEX per Tahun & Tema — 202 Entri
+# INDEX per Tahun & Tema - 202 Entri
 
 Katalog navigasi korpus tinjauan pustaka, dipindah dari `README.md` agar beranda
 repo tetap ringkas. Indeks utama terurut nomor ada di [`INDEX.md`](INDEX.md).

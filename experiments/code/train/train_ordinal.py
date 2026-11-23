@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I-22 — Loss ordinal untuk kelas kematangan (E-013).
+"""I-22 - Loss ordinal untuk kelas kematangan (E-013).
 
 Dasar bukti: SR-009 (E-012) menunjukkan kebingungan kematangan bersifat
 ORDINAL. Enam kebingungan terbesar seluruhnya berjarak satu langkah pada rantai

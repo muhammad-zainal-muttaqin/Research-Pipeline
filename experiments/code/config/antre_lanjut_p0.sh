@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rantai penutup P0 — dibuat supaya seluruh deliverable MENDARAT TANPA AGEN.
+# Rantai penutup P0 - dibuat supaya seluruh deliverable MENDARAT TANPA AGEN.
 #
 # Urutan:
 #   1. tunggu driver tambal (3 run RT-DETR-L) selesai
@@ -8,7 +8,7 @@
 #      belum ada run-nya (skrip itu melewati JSON yang sudah ada, jadi aman)
 #   4. tulis results/p0_multiseed/RINGKASAN.{md,json}
 #
-# rc ditangkap SEBELUM substitusi perintah apa pun — lihat catatan bug di
+# rc ditangkap SEBELUM substitusi perintah apa pun - lihat catatan bug di
 # antre_tambal_p0.sh.
 set -u
 cd experiments/code

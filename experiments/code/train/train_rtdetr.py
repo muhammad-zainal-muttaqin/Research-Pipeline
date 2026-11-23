@@ -1,14 +1,14 @@
-"""Ide I-14 — RT-DETR sebagai detektor NMS-free.
+"""Ide I-14 - RT-DETR sebagai detektor NMS-free.
 
 Alasan dari korpus (laporan deep research Juli 2026, prioritas 1;
 kini di tag Git arsip-pra-rapi-2026-11-18): NMS sering menjadi
 plafon STRUKTURAL pada objek rapat/bertumpuk. Tandan sawit di mahkota persis
-kondisi itu — banyak tandan berdekatan, saling menutup sebagian. YOLO memakai
+kondisi itu - banyak tandan berdekatan, saling menutup sebagian. YOLO memakai
 NMS greedy yang, saat dua tandan tumpang tindih, dapat menekan salah satu kotak
 benar. RT-DETR memakai pencocokan Hungarian satu-ke-satu (tanpa NMS), jadi
 kalau plafon deteksi kita sebagian berasal dari NMS, RT-DETR mengangkatnya.
 
-Ini BUKAN varian YOLO yang lebih besar — arsitektur decoder transformer yang
+Ini BUKAN varian YOLO yang lebih besar - arsitektur decoder transformer yang
 berbeda kelas. Karena itu ia menguji hipotesis yang berbeda dari yolo26x
 (kapasitas): apakah MEKANISME penindasan kotak yang membatasi, bukan kapasitas.
 

@@ -1,5 +1,5 @@
 """Generate per-kelas B1-B4 (val + test) untuk run yang belum punya JSON:
-c4_e50 (3-kanal) dan rgbd (4-kanal). Inferensi pada best.pt yang sudah ada —
+c4_e50 (3-kanal) dan rgbd (4-kanal). Inferensi pada best.pt yang sudah ada -
 BUKAN latih ulang. Dijalankan sebelum workspace di-terminate agar tak ada
 metrik yang hilang.
 """

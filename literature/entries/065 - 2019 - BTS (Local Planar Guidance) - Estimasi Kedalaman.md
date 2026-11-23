@@ -35,7 +35,7 @@ Gagasan inti BTS: satu sel fitur pada resolusi H/k tidak di-*upsampling* secara 
 
 ### Encoder dan Ekstraktor Konteks
 
-Masukan berupa citra RGB berukuran H×W. Jaringan dasar (*backbone*) — dalam eksperimen dipilih dari ResNet-101, ResNext-101, atau DenseNet-161 yang sudah dilatih untuk klasifikasi ImageNet — mengekstraksi fitur hingga resolusi H/8. Setelahnya dipasang modul *atrous spatial pyramid pooling* (ASPP) versi rapat (DenseASPP): konvolusi berdilasi, yaitu konvolusi yang tapisnya diberi celah sehingga mencakup wilayah luas tanpa menurunkan resolusi, dengan lima laju dilatasi r ∈ {3, 6, 12, 18, 24} untuk menangkap konteks multi-skala.
+Masukan berupa citra RGB berukuran H×W. Jaringan dasar (*backbone*) - dalam eksperimen dipilih dari ResNet-101, ResNext-101, atau DenseNet-161 yang sudah dilatih untuk klasifikasi ImageNet - mengekstraksi fitur hingga resolusi H/8. Setelahnya dipasang modul *atrous spatial pyramid pooling* (ASPP) versi rapat (DenseASPP): konvolusi berdilasi, yaitu konvolusi yang tapisnya diberi celah sehingga mencakup wilayah luas tanpa menurunkan resolusi, dengan lima laju dilatasi r ∈ {3, 6, 12, 18, 24} untuk menangkap konteks multi-skala.
 
 ### Dekoder dan Lapisan Local Planar Guidance
 
@@ -81,13 +81,13 @@ Pelatihan memakai rugi *scale-invariant* dari Eigen dkk.: D(g) = (1/T)Σgᵢ² �
 
 Evaluasi dilakukan pada dua tolok ukur standar. NYU Depth V2 memuat citra dalam-ruang 480×640 dari sensor Kinect; BTS memakai 24.231 pasangan citra-kedalaman untuk latih dan 654 citra untuk uji. KITTI memuat adegan berkendara luar-ruang; pembagian Eigen memakai 23.488 citra latih dan 697 citra uji. Metrik yang dipakai: AbsRel (rata-rata galat relatif |d̃−d|/d, makin kecil makin baik), RMSE (akar rataan kuadrat galat dalam meter), dan δ < 1,25 (persentase piksel yang rasio prediksi terhadap *ground truth* berada dalam faktor 1,25, makin besar makin baik).
 
-Pada KITTI rentang 0–80 m, varian ResNext-101 mencapai δ < 1,25 sebesar 0,956, AbsRel 0,059, dan RMSE 2,756 m. Angka ini mengungguli Fu dkk. (0,932; 0,072; 2,727 m) dan Yin dkk. (0,938; 0,072; 3,258 m): proporsi piksel akurat naik 1,8 poin persentase dan galat relatif turun sekitar 18% terhadap pembanding terbaik, meskipun RMSE-nya masih sedikit di atas RMSE Fu dkk. Pada rentang 0–50 m, RMSE BTS turun dari 2,271 m menjadi 1,925 m, perbaikan sekitar 15%. Pada NYU Depth V2, implementasi resmi dengan DenseNet-161 melaporkan δ < 1,25 sebesar 0,885, AbsRel 0,110, dan RMSE 0,392 m — artinya 88,5% piksel terprediksi dalam toleransi 25% pada rentang kedalaman dalam-ruang 0–10 m.
+Pada KITTI rentang 0–80 m, varian ResNext-101 mencapai δ < 1,25 sebesar 0,956, AbsRel 0,059, dan RMSE 2,756 m. Angka ini mengungguli Fu dkk. (0,932; 0,072; 2,727 m) dan Yin dkk. (0,938; 0,072; 3,258 m): proporsi piksel akurat naik 1,8 poin persentase dan galat relatif turun sekitar 18% terhadap pembanding terbaik, meskipun RMSE-nya masih sedikit di atas RMSE Fu dkk. Pada rentang 0–50 m, RMSE BTS turun dari 2,271 m menjadi 1,925 m, perbaikan sekitar 15%. Pada NYU Depth V2, implementasi resmi dengan DenseNet-161 melaporkan δ < 1,25 sebesar 0,885, AbsRel 0,110, dan RMSE 0,392 m - artinya 88,5% piksel terprediksi dalam toleransi 25% pada rentang kedalaman dalam-ruang 0–10 m.
 
 Studi ablasi pada NYU dengan dasar ResNet-101 menambahkan komponen satu per satu: ASPP, *upconv*, lalu LPG. Penambahan LPG memberi lompatan kinerja paling besar, sementara biayanya hanya sekitar 0,1 juta parameter tambahan. Eksperimen lintas *backbone* menunjukkan DenseNet-161 terbaik pada NYU, sedangkan ResNext-101 terbaik pada KITTI; varian ringan MobileNetV2 hanya kehilangan sekitar 3 poin persentase pada metrik δ dengan parameter kurang dari separuhnya.
 
 ## Kelebihan dan Keterbatasan
 
-Kelebihan utama BTS adalah hubungan eksplisit antara fitur internal dan keluaran resolusi penuh: empat koefisien bidang per petak menggantikan k² nilai yang harus dipelajari *upconv* biasa, sehingga batas objek dan permukaan miring terrekonstruksi lebih tajam dengan biaya parameter yang hampir tidak bertambah. Desainnya juga modular — LPG dapat dipasang di atas beragam *backbone* — dan didukung kode resmi yang terbuka.
+Kelebihan utama BTS adalah hubungan eksplisit antara fitur internal dan keluaran resolusi penuh: empat koefisien bidang per petak menggantikan k² nilai yang harus dipelajari *upconv* biasa, sehingga batas objek dan permukaan miring terrekonstruksi lebih tajam dengan biaya parameter yang hampir tidak bertambah. Desainnya juga modular - LPG dapat dipasang di atas beragam *backbone* - dan didukung kode resmi yang terbuka.
 
 Keterbatasan pertama bersifat data: metode ini tersupervisi penuh sehingga membutuhkan *ground truth* kedalaman dari sensor. Penulis sendiri melaporkan artefak pada langit dan bagian atas citra KITTI, yang mereka analisis sebagai akibat label LiDAR yang sangat jarang di wilayah tersebut. Kedua, secara konseptual, asumsi bidang datar lokal tidak berlaku pada permukaan lengkung tajam; BTS menanganinya hanya secara implisit melalui skala yang lebih halus, bukan dengan model permukaan yang lebih kaya. Ketiga, dari sisi rekayasa, varian terbaik memakai *backbone* besar (47 juta parameter untuk DenseNet-161), sehingga biaya inferensi tidak ringan.
 
@@ -101,7 +101,7 @@ Kunci BibTeX: `lee2019bts`.
 
 Ringkasan yang aman dikutip: Lee dkk. (2019) mengusulkan BTS, jaringan estimasi kedalaman monokular tersupervisi dengan lapisan *Local Planar Guidance* pada tiga tahap dekoder, yang memprediksi koefisien bidang datar lokal untuk memandu pemulihan resolusi penuh. Metode ini melaporkan hasil state-of-the-art pada NYU Depth V2 dan KITTI saat dirilis, dengan penambahan parameter hanya sekitar 0,1 juta untuk lapisan LPG.
 
-Catatan verifikasi sebelum sitasi formal: (1) angka NYU pada bab ini (δ1 0,885; AbsRel 0,110; RMSE 0,392 m) diambil dari tabel *model zoo* repositori resmi, bukan dari Tabel 1 naskah — cocokkan dengan versi arXiv terbaru (v6) sebelum dikutip; (2) nilai lengkap Tabel 3 (server evaluasi daring KITTI) dan Tabel 4 (ablasi) tidak sempat diekstrak angka per angka, sehingga hanya kesimpulan kualitatifnya yang dipakai; (3) makalah ini berstatus *preprint* arXiv; periksa versi terbit resmi saat sitasi dilakukan.
+Catatan verifikasi sebelum sitasi formal: (1) angka NYU pada bab ini (δ1 0,885; AbsRel 0,110; RMSE 0,392 m) diambil dari tabel *model zoo* repositori resmi, bukan dari Tabel 1 naskah - cocokkan dengan versi arXiv terbaru (v6) sebelum dikutip; (2) nilai lengkap Tabel 3 (server evaluasi daring KITTI) dan Tabel 4 (ablasi) tidak sempat diekstrak angka per angka, sehingga hanya kesimpulan kualitatifnya yang dipakai; (3) makalah ini berstatus *preprint* arXiv; periksa versi terbit resmi saat sitasi dilakukan.
 
 ---
 

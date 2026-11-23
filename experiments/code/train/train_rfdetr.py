@@ -1,4 +1,4 @@
-"""E-021 — RF-DETR sebagai pembanding transformer NMS-free.
+"""E-021 - RF-DETR sebagai pembanding transformer NMS-free.
 
 Hipotesis: RF-DETR-L (backbone DINOv2 + arsitektur hasil NAS) layak menjadi
 pembanding bila pada split val identik ia melampaui YOLO26m 640

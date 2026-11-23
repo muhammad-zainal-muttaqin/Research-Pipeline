@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I-4 — YOLO 4-kanal (early fusion RGB+D) vs baseline RGB, kondisi identik.
+"""I-4 - YOLO 4-kanal (early fusion RGB+D) vs baseline RGB, kondisi identik.
 
 PREDIKSI YANG DICATAT SEBELUM DIJALANKAN (lihat SR-005): fusi ini **diperkirakan
 tidak menolong**, karena E-006 menunjukkan tandan tidak menonjol dalam kedalaman

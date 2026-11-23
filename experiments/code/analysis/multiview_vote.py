@@ -58,7 +58,7 @@ def main():
     linked = sum(1 for v in idx.values() if v["bunch"] is not None)
     print(f"anotasi {a.split}: {len(idx)} kotak, {linked} tertaut ke bunch_id")
     if linked == 0:
-        print("PERINGATAN: bunch_id tidak terbaca dari JSON — periksa skema")
+        print("PERINGATAN: bunch_id tidak terbaca dari JSON - periksa skema")
         return
 
     dev = "cuda"

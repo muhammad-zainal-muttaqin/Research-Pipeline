@@ -1,4 +1,4 @@
-# SR-009 — Kematangan itu kontinu, bukan empat kotak
+# SR-009 - Kematangan itu kontinu, bukan empat kotak
 
 **Ide I-18 → I-22** · **Eksperimen:** E-012 · **Putusan: DIKONFIRMASI** · 2026-07-21
 
@@ -6,7 +6,7 @@
 
 ## 1. Masalah
 
-Dua kelas menyeret AP50 ke bawah, tetapi karena alasan yang berbeda —
+Dua kelas menyeret AP50 ke bawah, tetapi karena alasan yang berbeda -
 dan SR-007 sudah membuktikan perbedaannya:
 
 | Kelas | AP50 | Kontras latar (ΔE) | Tafsiran |
@@ -18,7 +18,7 @@ B2 terlihat jelas dari latarnya, namun tetap gagal. Berarti kegagalannya ada di
 tahap **membedakan kelas**, bukan menemukan objek.
 
 SR-001 sudah mencoba mengukur ambiguitas ini lewat flag `class_mismatch` dan
-gagal — nilainya nol karena ketidaksepakatan anotator sudah dikonsolidasikan
+gagal - nilainya nol karena ketidaksepakatan anotator sudah dikonsolidasikan
 sebelum dataset dirilis. Pertanyaannya tetap terbuka: **seberapa besar
 ambiguitas itu sebenarnya, dan bentuknya seperti apa?**
 
@@ -29,7 +29,7 @@ kebenaran-dasar**, hitung fitur penampilan, latih pengklasifikasi, lalu baca
 matriks kebingungannya.
 
 Kalau B2 dan B3 tetap tertukar meski kotaknya sudah diberikan secara sempurna,
-maka ambiguitas itu melekat pada objeknya — bukan pada detektornya, dan bukan
+maka ambiguitas itu melekat pada objeknya - bukan pada detektornya, dan bukan
 sesuatu yang bisa diperbaiki dengan arsitektur deteksi apa pun.
 
 Yang dicari bukan angka akurasinya, melainkan **bentuk kebingungannya**:
@@ -43,7 +43,7 @@ Yang dicari bukan angka akurasinya, melainkan **bentuk kebingungannya**:
 
 `experiments/code/analysis/class_separability.py`. Fitur sengaja **sederhana dan dapat
 ditafsirkan** (37 dimensi: statistik LAB/HSV, varians Laplacian, besar gradien,
-histogram hue) — tujuannya mengukur apakah sinyalnya ada dan bagaimana
+histogram hue) - tujuannya mengukur apakah sinyalnya ada dan bagaimana
 bentuknya, bukan mengalahkan CNN. RandomForest 400 pohon berbobot seimbang,
 6.000 potongan latih (1.500 per kelas), 1.377 potongan uji.
 
@@ -70,13 +70,13 @@ Kebingungan pasangan, sebagai persen dari kelas sebenarnya:
 | B2 → B1 | 17,1% | 1 |
 | **B3 → B1** | **1,9%** (7/375) | **2** |
 
-## 5. Putusan — DIKONFIRMASI
+## 5. Putusan - DIKONFIRMASI
 
 **Kebingungannya ordinal.** Enam kebingungan terbesar seluruhnya berjarak satu
 langkah pada rantai B1→B2→B3→B4. Lompatan dua langkah nyaris tidak terjadi
 (B3→B1 hanya 7 dari 375 kasus).
 
-Ini tanda khas satu **variabel kontinu** — tingkat kematangan buah — yang
+Ini tanda khas satu **variabel kontinu** - tingkat kematangan buah - yang
 dipotong menjadi empat kotak. Batas antar kelas adalah garis buatan pada
 rangkaian yang mulus, sehingga tandan yang kebetulan jatuh dekat garis itu
 memang tidak punya jawaban benar yang tegas.
@@ -85,7 +85,7 @@ Ini juga menjelaskan kenapa kelas ujung (B1 recall 70,2%, B4 62,9%) jauh lebih
 baik daripada kelas tengah (B2 42,4%, B3 41,6%): kelas ujung hanya punya satu
 tetangga, kelas tengah punya dua.
 
-### Batas klaim — jangan salah kutip
+### Batas klaim - jangan salah kutip
 
 Angka 52,87% berasal dari fitur buatan tangan yang sengaja sederhana. Itu
 **batas bawah** keterpisahan, bukan plafon sebenarnya; CNN hampir pasti lebih
@@ -95,7 +95,7 @@ akan menyesatkan.
 
 ## 6. Dampak
 
-**I-22 — loss ordinal / kepala regresi kematangan.**
+**I-22 - loss ordinal / kepala regresi kematangan.**
 
 Ada ketidakcocokan yang belum tersentuh antara cara model dilatih dan cara ia
 dinilai:
@@ -116,12 +116,12 @@ laporan *deep research* Juli 2026 (kini di tag Git `arsip-pra-rapi-2026-11-18`) 
 Bentuk konkret yang layak diuji:
 1. Loss dengan bobot jarak ordinal (hukuman ∝ |kelas prediksi − kelas benar|).
 2. Kepala regresi kematangan (keluaran kontinu 1–4), didiskretkan saat
-   inferensi — cocok dengan sifat kontinu yang baru terukur.
+   inferensi - cocok dengan sifat kontinu yang baru terukur.
 3. Label smoothing yang hanya menyebar ke kelas tetangga.
 
 **Catatan untuk B4:** SR-008 sudah menunjukkan B4 dapat dipisahkan lewat
 tekstur. SR-009 menunjukkan B2/B3 tidak akan tertolong oleh tekstur maupun
-kedalaman — masalahnya bukan keterlihatan. Dua kelas sulit ini menuntut dua
+kedalaman - masalahnya bukan keterlihatan. Dua kelas sulit ini menuntut dua
 perbaikan yang berbeda, dan menggabungkannya sebagai "kelas sulit" akan
 menyesatkan arah kerja.
 

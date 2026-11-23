@@ -1,7 +1,7 @@
 # Datasets
 
 Wadah dataset lokal yang dipakai untuk eksperimen. Isi folder ini **tidak
-masuk Git** karena ukurannya terlalu besar — hanya metadata dan README
+masuk Git** karena ukurannya terlalu besar - hanya metadata dan README
 dataset yang dilacak.
 
 ## Isi folder

@@ -11,7 +11,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 | Mengompilasi naskah | Dari `manuscript/source/`, jalankan `tectonic -Z search-path=../templates/els-cas-templates main7.tex`. Jalankan perintah yang sama untuk `main7-supplementary.tex`, lalu pindahkan kedua PDF ke `output/papers/` |
 | Membaca hasil | [Naskah utama](output/papers/main7.pdf), [bahan tambahan](output/papers/main7-supplementary.pdf), dan [daftar kajian](output/papers/main7-supplementary-studies.csv) |
 | Melihat gambar | [`figures/main6/`](figures/main6/) untuk gambar korpus, dibuat `tools/scopus/gambar_tinjauan.py`. [Figur galat inventaris `main7`](figures/main7/galat-inventaris.pdf) berupa PDF vektor, dibuat `tools/scopus/gambar_galat_inventaris.py` |
-| Melihat figur naskah 182 sumber dan laporan eksperimen | [`figures/`](figures/) — F01–F08, C01–C02, seri H/N/R yang dipakai `reports/*.tex` |
+| Melihat figur naskah 182 sumber dan laporan eksperimen | [`figures/`](figures/) - F01–F08, C01–C02, seri H/N/R yang dipakai `reports/*.tex` |
 | Membaca aturan gaya `main6` dan bentuk entri korpus lama | [`../AGENTS.md`](../AGENTS.md) §12 dan §14 |
 | Memeriksa asal angka `main6` | [`../literature/scopus-2026-09/`](../literature/scopus-2026-09/README.md) |
 | Melihat dek presentasi | [`output/presentation/`](output/presentation/) |

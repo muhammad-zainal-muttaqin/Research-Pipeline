@@ -2,13 +2,13 @@
 
 Keputusan desain yang berasal dari data, bukan dari resep bawaan:
 
-1. AUGMENTASI AMAN-WARNA. Baseline YOLO memakai hsv_s=0.7, hsv_v=0.4 —
+1. AUGMENTASI AMAN-WARNA. Baseline YOLO memakai hsv_s=0.7, hsv_v=0.4 -
    saturasi diacak sampai +-70%. Kematangan sawit ADALAH warna (B1 gelap
    kehijauan -> B4 jingga-merah), jadi resep itu mengacak justru bukti yang
    harus dipelajari. Di sini: geometri diacak bebas, warna nyaris tidak.
 2. TANPA BOBOT KELAS. mAP menilai tiap kelas lewat peringkat skornya, jadi
    kalibrasi lebih berharga daripada akurasi argmax yang dipaksa seimbang.
-3. KELUARAN DISIMPAN SEBAGAI PROBABILITAS PENUH, bukan argmax — tahap
+3. KELUARAN DISIMPAN SEBAGAI PROBABILITAS PENUH, bukan argmax - tahap
    penggabungan butuh skor untuk menghitung AP.
 """
 import argparse, json, time

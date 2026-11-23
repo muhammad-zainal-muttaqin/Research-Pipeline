@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I-3 — Bangkitkan pseudo-depth untuk seluruh 3.992 citra SawitMVC.
+"""I-3 - Bangkitkan pseudo-depth untuk seluruh 3.992 citra SawitMVC.
 
 Kedalaman dihasilkan **per pohon dengan DA3 multi-view**, bukan per citra
 sendiri-sendiri. Alasannya adalah inti kontribusi entri 198: kedalaman

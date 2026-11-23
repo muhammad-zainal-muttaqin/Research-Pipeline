@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-003 — Uji DA3 multi-view pada video orbit pohon sawit.
+"""E-003 - Uji DA3 multi-view pada video orbit pohon sawit.
 
 Hipotesis: DA3 (entri 198) dapat merekonstruksi geometri pohon yang konsisten
 dari video orbit. Kalau berhasil, kedalaman antar-pandangan dapat diandalkan
@@ -237,7 +237,7 @@ def main() -> int:
 
     W = 74
     print("=" * W)
-    print("HASIL E-003 — DA3 MULTI-VIEW PADA VIDEO ORBIT")
+    print("HASIL E-003 - DA3 MULTI-VIEW PADA VIDEO ORBIT")
     print("=" * W)
     print(f"video          : {video.name}")
     print(f"frame          : {len(frames)}")

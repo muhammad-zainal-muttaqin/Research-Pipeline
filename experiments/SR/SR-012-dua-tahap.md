@@ -1,4 +1,4 @@
-# SR-012 — Detektor dua tahap tidak mengalahkan satu tahap
+# SR-012 - Detektor dua tahap tidak mengalahkan satu tahap
 
 **Ide I-23** · **Eksperimen:** E-017 · **Putusan: DIPALSUKAN** · 2026-07-21
 
@@ -9,7 +9,7 @@
 SR-010 menunjukkan 38% mAP50 yang mungkin diraih hilang di penilaian
 kematangan, bukan di deteksi. Dugaan yang wajar: head klasifikasi YOLO
 mengambil keputusan kematangan dari peta fitur citra yang sudah diperkecil ke
-640 — tempat tandan hanya bermedian 46–63 px — sedangkan bukti kematangan
+640 - tempat tandan hanya bermedian 46–63 px - sedangkan bukti kematangan
 adalah warna dan tekstur permukaan buah, yang butuh piksel.
 
 ## 2. Ide
@@ -17,13 +17,13 @@ adalah warna dan tekstur permukaan buah, yang butuh piksel.
 Pisahkan kedua keputusan secara arsitektural:
 
 - **Tahap 1** mendeteksi tandan tanpa dibebani kematangan (`single_cls`),
-  dilatih pada 960 supaya lokalisasi — penentu mAP50-95 — ikut membaik.
+  dilatih pada 960 supaya lokalisasi - penentu mAP50-95 - ikut membaik.
 - **Tahap 2** menilai kematangan dari potongan pada **resolusi master
   3024×4032** (dibuka oleh E-015), dengan kapasitas penuh sebuah ConvNeXt-Tiny
   yang tidak melakukan hal lain.
 
 Skor gabungan = skor objek × peluang kelas, tiap kotak menyumbang ke keempat
-kelas — cara skor detektor dua-tahap klasik dihitung, bukan penyetelan angka.
+kelas - cara skor detektor dua-tahap klasik dihitung, bukan penyetelan angka.
 
 **Yang akan memalsukan:** mAP 4-kelas dua tahap tidak melampaui satu tahap.
 
@@ -34,17 +34,17 @@ baseline RGB yang sudah konvergen) · `experiments/code/build/build_crops_raw.py
 dan `experiments/code/train/train_maturity_v2.py` · `experiments/code/analysis/two_stage.py` (evaluasi pycocotools).
 
 Augmentasi tahap 2 sengaja **aman-warna**. Baseline YOLO memakai `hsv_s=0.7`,
-yang mengacak saturasi ±70% — pada tugas yang buktinya adalah warna, resep
+yang mengacak saturasi ±70% - pada tugas yang buktinya adalah warna, resep
 bawaan itu merusak sinyalnya sendiri.
 
-**Integritas** — split per pohon 716/96/141, irisan train–val, train–test, dan
+**Integritas** - split per pohon 716/96/141, irisan train–val, train–test, dan
 val–test semuanya nol. Konfigurasi dipilih pada val; test hanya dilaporkan.
 Evaluator diverifikasi terhadap ultralytics pada baseline (0,5153/0,2384 vs
 0,5218/0,2407).
 
 ## 4. Hasil
 
-**Tahap 1 berhasil** — dan ini bagian yang positif:
+**Tahap 1 berhasil** - dan ini bagian yang positif:
 
 | Deteksi kelas-agnostik | mAP50 | mAP50-95 |
 |---|---|---|
@@ -70,10 +70,10 @@ plafon yang sama:
 | **Baseline satu tahap (640)** | **0,5218** | **0,2407** |
 | Dua tahap (960 + potongan master) | 0,4787 | 0,2076 |
 
-AP50 per kelas: B1 0,698 · B2 0,367 · B3 0,524 · B4 0,326 — **di bawah baseline
+AP50 per kelas: B1 0,698 · B2 0,367 · B3 0,524 · B4 0,326 - **di bawah baseline
 pada keempat kelas** (0,735 · 0,408 · 0,556 · 0,388).
 
-## 5. Putusan — DIPALSUKAN
+## 5. Putusan - DIPALSUKAN
 
 Dua tahap **lebih buruk**, meskipun tahap 1-nya lebih baik. Penjelasannya utuh
 dan konsisten dengan SR-011: head klasifikasi YOLO **sudah berada di plafon**
@@ -81,12 +81,12 @@ dan konsisten dengan SR-011: head klasifikasi YOLO **sudah berada di plafon**
 memberi lebih banyak piksel atau kapasitas khusus, karena bukan piksel yang
 kurang.
 
-Yang terjadi justru sebaliknya — dua tahap **kehilangan** sesuatu yang dimiliki
+Yang terjadi justru sebaliknya - dua tahap **kehilangan** sesuatu yang dimiliki
 satu tahap:
 
 1. **Konteks.** Head YOLO melihat seluruh citra; potongan tidak. Pada tugas
    yang jawabannya relatif (buah ini lebih matang dibanding apa?), konteks itu
-   bernilai — dan itulah yang membuat potongan resolusi 3× tetap tidak menang.
+   bernilai - dan itulah yang membuat potongan resolusi 3× tetap tidak menang.
 2. **Kalibrasi bersama.** Skor objek dan skor kelas pada satu tahap dilatih
    bersama, sehingga peringkatnya saling menyesuaikan. Mengalikan dua skor dari
    dua model yang dilatih terpisah merusak peringkat itu, dan mAP menghukum
@@ -97,8 +97,8 @@ satu tahap:
 I-23 adalah gagasan yang paling masuk akal setelah SR-010, dan ia gagal karena
 alasan yang sekarang terukur, bukan karena dugaan. Bersama SR-011, konsekuensinya:
 
-> Perbaikan **penilaian kematangan** dari citra RGB — lewat resolusi, kapasitas,
-> arsitektur, modalitas, maupun jumlah sudut pandang — sudah habis. Yang tersisa
+> Perbaikan **penilaian kematangan** dari citra RGB - lewat resolusi, kapasitas,
+> arsitektur, modalitas, maupun jumlah sudut pandang - sudah habis. Yang tersisa
 > hanya perubahan pada perumusan tugas atau pada sumber buktinya.
 
 **Tahap 1 tetap dipakai.** Angka 0,7730/0,3320 adalah sistem deteksi tandan

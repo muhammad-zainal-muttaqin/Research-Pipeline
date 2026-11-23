@@ -18,7 +18,7 @@
 
 ## Gambaran Umum
 
-YOLOv6 adalah detektor objek satu tahap — model yang memprediksi lokasi dan kelas seluruh objek dalam satu kali evaluasi jaringan — yang dikembangkan tim Meituan dan dirilis sebagai laporan teknis pada September 2022. Alih-alih mengusulkan paradigma baru, makalah ini merancang ulang kerangka YOLO agar optimal pada perangkat keras produksi: kecepatan diukur pada GPU kelas menengah NVIDIA Tesla T4, arsitektur dipilih berbeda per ukuran model, dan kuantisasi (konversi bobot dan aktivasi menjadi integer 8 bit) menjadi bagian rancangan sejak awal.
+YOLOv6 adalah detektor objek satu tahap - model yang memprediksi lokasi dan kelas seluruh objek dalam satu kali evaluasi jaringan - yang dikembangkan tim Meituan dan dirilis sebagai laporan teknis pada September 2022. Alih-alih mengusulkan paradigma baru, makalah ini merancang ulang kerangka YOLO agar optimal pada perangkat keras produksi: kecepatan diukur pada GPU kelas menengah NVIDIA Tesla T4, arsitektur dipilih berbeda per ukuran model, dan kuantisasi (konversi bobot dan aktivasi menjadi integer 8 bit) menjadi bagian rancangan sejak awal.
 
 Hasilnya lima model (N, T, S, M, L) dengan kombinasi akurasi-kecepatan terdepan pada COCO saat dirilis. YOLOv6-N mencapai 35,9% AP dengan *throughput* (citra per detik) 1234 FPS; YOLOv6-S mencapai 43,5% AP pada 495 FPS, melampaui YOLOv5-S, YOLOX-S, dan PP-YOLOE-S sekelasnya; versi terkuantisasinya mencapai 43,3% AP pada 869 FPS.
 
@@ -26,15 +26,15 @@ Hasilnya lima model (N, T, S, M, L) dengan kombinasi akurasi-kecepatan terdepan 
 
 Sejak YOLOv4 (bab 004) merapikan kerangka detektor menjadi *backbone*, *neck*, dan *head*, lini YOLO berkembang melalui YOLOv5, YOLOX (bab 005), PP-YOLOE, dan YOLOv7. Namun industri menuntut hal lain dari tolok ukur: latensi rendah pada perangkat spesifik, kuantisasi mudah, dan beberapa ukuran model. Penulis mengidentifikasi lima celah:
 
-1. Reparameterisasi struktural — melatih jaringan dalam bentuk bercabang lalu meleburnya menjadi konvolusi tunggal saat inferensi, dipopulerkan RepVGG — belum dimanfaatkan baik pada deteksi; arsitektur jalur tunggalnya juga tumbuh eksplosif biayanya bila diperbesar.
+1. Reparameterisasi struktural - melatih jaringan dalam bentuk bercabang lalu meleburnya menjadi konvolusi tunggal saat inferensi, dipopulerkan RepVGG - belum dimanfaatkan baik pada deteksi; arsitektur jalur tunggalnya juga tumbuh eksplosif biayanya bila diperbesar.
 2. Kuantisasi model berbasis reparameterisasi mudah merusak akurasi karena konfigurasinya berbeda antara pelatihan (bercabang) dan inferensi (lebur).
 3. Latensi detektor sebelumnya umumnya diukur pada GPU mahal seperti V100, bukan GPU produksi seperti Tesla T4.
 4. Strategi penetapan label dan fungsi loss mutakhir perlu diverifikasi ulang untuk tiap arsitektur.
-5. Perbaikan yang menambah biaya pelatihan tetapi tidak menambah biaya inferensi — misalnya distilasi pengetahuan — dapat diterima industri dan layak dieksploitasi.
+5. Perbaikan yang menambah biaya pelatihan tetapi tidak menambah biaya inferensi - misalnya distilasi pengetahuan - dapat diterima industri dan layak dieksploitasi.
 
 ## Ide Utama
 
-Gagasan inti YOLOv6 adalah merancang ulang kerangka YOLO dengan satu kriteria: setiap komponen dipilih berdasarkan bukti ablasi, dan arsitektur boleh berbeda antar-ukuran. Model kecil memakai *backbone* jalur tunggal berbasis reparameterisasi karena paling cepat pada perangkat nyata; model besar memakai blok multi-cabang yang lebih hemat parameter. Semua teknik yang menaikkan akurasi tanpa menambah biaya inferensi — penetapan label TAL, fungsi loss yang tepat, distilasi diri, pelatihan lebih lama — dipakai, dan kuantisasi diperbaiki dari sisi pelatihan agar model INT8 tetap akurat.
+Gagasan inti YOLOv6 adalah merancang ulang kerangka YOLO dengan satu kriteria: setiap komponen dipilih berdasarkan bukti ablasi, dan arsitektur boleh berbeda antar-ukuran. Model kecil memakai *backbone* jalur tunggal berbasis reparameterisasi karena paling cepat pada perangkat nyata; model besar memakai blok multi-cabang yang lebih hemat parameter. Semua teknik yang menaikkan akurasi tanpa menambah biaya inferensi - penetapan label TAL, fungsi loss yang tepat, distilasi diri, pelatihan lebih lama - dipakai, dan kuantisasi diperbaiki dari sisi pelatihan agar model INT8 tetap akurat.
 
 ## Cara Kerja Langkah demi Langkah
 
@@ -135,13 +135,13 @@ YOLOv6-N melampaui YOLOv5-N (28,0% AP) sebesar 7,9 poin dan YOLOv7-Tiny masukan 
 
 Ablasi membuktikan sumbangan tiap komponen. Dari baseline YOLOv5-N (28,0% AP), penambahan head terpisah memberi 29,4%; pelepasan *anchor* memberi 30,7% sekaligus mempercepat 51% karena dimensi keluaran tiga kali lebih kecil; EfficientRep dan Rep-PAN memberi 34,3% dengan 21% lebih cepat; dan head *hybrid-channel* menutup pada 34,5% AP dengan 1242 FPS. Untuk penetapan label, TAL mencapai 35,0% AP pada YOLOv6-N, di atas SimOTA (34,5%) dan ATSS (32,5%). Distilasi diri menaikkan YOLOv6-L dari 51,0% menjadi 52,3% AP, dan perpanjangan ke 400 epoch menambah 0,4–0,6 poin pada model kecil.
 
-Hasil kuantisasi menunjukkan mengapa penanganan khusus diperlukan: PTQ polos pada YOLOv6-S menjatuhkan AP dari 42,4% menjadi 35,0%, sedangkan dengan RepOptimizer menjadi 40,9%. Jalur QAT penuh mencapai 43,3% AP pada 869 FPS — hanya 0,1 poin di bawah model FP16 (43,4%) tetapi 60% lebih cepat (541 FPS).
+Hasil kuantisasi menunjukkan mengapa penanganan khusus diperlukan: PTQ polos pada YOLOv6-S menjatuhkan AP dari 42,4% menjadi 35,0%, sedangkan dengan RepOptimizer menjadi 40,9%. Jalur QAT penuh mencapai 43,3% AP pada 869 FPS - hanya 0,1 poin di bawah model FP16 (43,4%) tetapi 60% lebih cepat (541 FPS).
 
 ## Kelebihan dan Keterbatasan
 
 Kelebihan YOLOv6 adalah orientasi penerapannya yang konsisten: pengukuran pada GPU kelas produksi, rancangan berbeda per skala, jalur kuantisasi yang menjaga akurasi, dan pemilihan komponen melalui ablasi terdokumentasi.
 
-Keterbatasannya: secara konseptual, kontribusinya adalah integrasi rekayasa atas teknik yang sudah ada, bukan paradigma baru. Dari sisi rekayasa, angka kecepatan terikat pada TensorRT dan Tesla T4; model terkuantisasi diuji dengan TensorRT 8 sedangkan model lain dengan TensorRT 7 — diakui penulis sendiri — sehingga perbandingan lintas makalah perlu kehati-hatian. Distilasi regresi bergantung DFL yang hanya dipakai M dan L, sehingga model kecil tidak memperoleh manfaat penuhnya; model besar justru kembali ke konvolusi biasa dengan SiLU, sehingga manfaat reparameterisasi tidak seragam antar-skala.
+Keterbatasannya: secara konseptual, kontribusinya adalah integrasi rekayasa atas teknik yang sudah ada, bukan paradigma baru. Dari sisi rekayasa, angka kecepatan terikat pada TensorRT dan Tesla T4; model terkuantisasi diuji dengan TensorRT 8 sedangkan model lain dengan TensorRT 7 - diakui penulis sendiri - sehingga perbandingan lintas makalah perlu kehati-hatian. Distilasi regresi bergantung DFL yang hanya dipakai M dan L, sehingga model kecil tidak memperoleh manfaat penuhnya; model besar justru kembali ke konvolusi biasa dengan SiLU, sehingga manfaat reparameterisasi tidak seragam antar-skala.
 
 ## Kaitan dengan Bab Lain
 

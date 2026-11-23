@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-012 — Plafon empiris diskriminasi kematangan dari penampilan (ide I-18).
+"""E-012 - Plafon empiris diskriminasi kematangan dari penampilan (ide I-18).
 
 SR-001 gagal mengukur ambiguitas B2/B3 lewat `class_mismatch` (nilainya nol
 karena sudah dikonsolidasikan sebelum rilis). SR-007 menunjukkan B2 punya
@@ -123,7 +123,7 @@ def main() -> int:
 
     W = 72
     print("\n" + "=" * W)
-    print("E-012 — DISKRIMINASI KEMATANGAN DARI POTONGAN KEBENARAN-DASAR")
+    print("E-012 - DISKRIMINASI KEMATANGAN DARI POTONGAN KEBENARAN-DASAR")
     print("=" * W)
     print(f"  akurasi keseluruhan : {acc*100:.2f}%  (tebak acak 25%)")
     print(f"\n  matriks kebingungan (baris = sebenarnya, kolom = prediksi)")

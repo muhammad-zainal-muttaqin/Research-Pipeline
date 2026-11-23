@@ -1,4 +1,4 @@
-# SR-007 — Kenapa B4 gagal? Diagnosis berbasis pengukuran
+# SR-007 - Kenapa B4 gagal? Diagnosis berbasis pengukuran
 
 **Ide I-11 (analisis terstratifikasi)** · **Eksperimen:** E-009, E-010
 **Putusan: DIKONFIRMASI (kontras) / DIPALSUKAN (kepadatan, ukuran)** · 2026-07-21
@@ -42,7 +42,7 @@ Laplacian sebagai ukuran tekstur).
 
 ## 4. Hasil
 
-### E-009 — ukuran
+### E-009 - ukuran
 
 | Kelas | Lebar×tinggi median (px @640) | Luas median | % kecil | % sedang |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ Laplacian sebagai ukuran tekstur).
 | B3 | 52 × 56 | 2.886 | 8,8% | 85,1% |
 | **B4** | **46 × 46** | **2.147** | **16,4%** | 81,2% |
 
-### E-010 — kontras, tekstur, kepadatan
+### E-010 - kontras, tekstur, kepadatan
 
 | Kelas | ΔE | Tekstur | Tetangga | IoU maks | %IoU>0,1 | AP50 DiB |
 |---|---|---|---|---|---|---|
@@ -59,20 +59,20 @@ Laplacian sebagai ukuran tekstur).
 | B2 | 18,48 | 5.726 | 2,92 | 0,041 | 11,5% | 0,433 |
 | B3 | 13,93 | 6.892 | 2,81 | 0,033 | 7,7% | 0,599 |
 | **B4** | **11,55** | **7.780** | **2,58** | **0,029** | **6,4%** | **0,354** |
-| *acak (kendali)* | *12,92* | *5.441* | — | — | — | — |
+| *acak (kendali)* | *12,92* | *5.441* | - | - | - | - |
 
 ## 5. Putusan
 
-**Tersangka "ukuran" — melemah.** B4 memang terkecil, tetapi **81,2% kotaknya
+**Tersangka "ukuran" - melemah.** B4 memang terkecil, tetapi **81,2% kotaknya
 masih tergolong sedang** menurut COCO, dengan median 46×46 px. Ukuran itu tidak
 problematis bagi detektor modern. Hanya 16,4% yang benar-benar kecil.
 
-**Tersangka "kepadatan" — DIPALSUKAN.** B4 justru punya tetangga **paling
+**Tersangka "kepadatan" - DIPALSUKAN.** B4 justru punya tetangga **paling
 sedikit** (2,58 vs 3,23 pada B1) dan tumpang tindih **paling rendah**
-(IoU 0,029; hanya 6,4% di atas 0,1). Hipotesis "B4 gagal karena bertumpuk" —
-yang selama ini menjadi motivasi utama jalur kedalaman — **salah**.
+(IoU 0,029; hanya 6,4% di atas 0,1). Hipotesis "B4 gagal karena bertumpuk" -
+yang selama ini menjadi motivasi utama jalur kedalaman - **salah**.
 
-**Tersangka "kontras" — DIKONFIRMASI, dan lebih parah dari dugaan.** ΔE B4
+**Tersangka "kontras" - DIKONFIRMASI, dan lebih parah dari dugaan.** ΔE B4
 adalah **11,55, di bawah kendali kotak acak (12,92)**. Tandan B4 secara harfiah
 lebih sulit dibedakan dari latarnya daripada tambalan acak pada citra yang sama.
 Ia **tersamar**, bukan sekadar kurang kontras.
@@ -84,11 +84,11 @@ untuk pemisahan yang dirumuskan di awal proyek:
 
 | Mode kegagalan | Kelas | Bukti |
 |---|---|---|
-| Fotometrik — tersamar dari latar | **B4** | ΔE 11,55 < kendali 12,92 |
-| Fotometrik — tertukar antar-kelas | **B2** | ΔE 18,48 tinggi, AP50 tetap 0,433 |
-| Geometrik — bertumpuk | *tidak ada* | IoU maks ≤0,042 di semua kelas |
+| Fotometrik - tersamar dari latar | **B4** | ΔE 11,55 < kendali 12,92 |
+| Fotometrik - tertukar antar-kelas | **B2** | ΔE 18,48 tinggi, AP50 tetap 0,433 |
+| Geometrik - bertumpuk | *tidak ada* | IoU maks ≤0,042 di semua kelas |
 
-## 6. Dampak — gambaran yang menyatu
+## 6. Dampak - gambaran yang menyatu
 
 Digabung dengan SR-005, tiga pengukuran independen memberi satu kesimpulan yang
 konsisten tentang B4:

@@ -10,7 +10,7 @@ jauh lebih kuat daripada bukti yang sebenarnya ada.
 Kriteria yang dipakai untuk menyebut sebuah lengan berbeda dari baseline:
 seluruh tiga seed sepakat tandanya DAN tidak ada seed yang CI95-nya memuat nol.
 Kalau hanya tandanya yang sepakat, itu dilaporkan sebagai indikasi, bukan
-temuan — persis pelajaran E-022, yang tumbang karena satu seed dibaca sebagai
+temuan - persis pelajaran E-022, yang tumbang karena satu seed dibaca sebagai
 kesimpulan.
 """
 from __future__ import annotations
@@ -65,9 +65,9 @@ def main() -> int:
         if sepakat and nol_luar:
             status = "BERBEDA dari baseline (3/3 seed sepakat, nol di luar CI)"
         elif sepakat:
-            status = "indikasi saja — tanda sepakat tetapi ada CI yang memuat nol"
+            status = "indikasi saja - tanda sepakat tetapi ada CI yang memuat nol"
         else:
-            status = "TIDAK berbeda — tanda pun tidak sepakat antar seed"
+            status = "TIDAK berbeda - tanda pun tidak sepakat antar seed"
         print(f"  {lengan:7} rerata {rer:+.4f}  rentang [{min(d):+.4f}, {max(d):+.4f}]  {status}")
     return 0
 

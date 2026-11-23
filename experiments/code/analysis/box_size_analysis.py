@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-009 — Seberapa kecil tandan setelah citra diperkecil? (ide I-11/I-12)
+"""E-009 - Seberapa kecil tandan setelah citra diperkecil? (ide I-11/I-12)
 
 Alasan: B4 adalah kelas terburuk (AP50 0,354). Hipotesis I-12 mengatakan
 penyebabnya sebagian adalah resolusi -- pada `imgsz=640`, citra 960x1280
@@ -55,7 +55,7 @@ def main() -> int:
 
     W = 76
     print("=" * W)
-    print(f"E-009 — UKURAN KOTAK PADA imgsz={IMGSZ} (sumber {W0}x{H0}, skala {scale:.2f})")
+    print(f"E-009 - UKURAN KOTAK PADA imgsz={IMGSZ} (sumber {W0}x{H0}, skala {scale:.2f})")
     print("=" * W)
     print(f"  {'kelas':6s} {'n':>7s} {'lebar':>8s} {'tinggi':>8s} {'luas px':>10s} "
           f"{'%kecil':>8s} {'%sedang':>8s} {'%besar':>7s}")

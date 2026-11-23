@@ -5,7 +5,7 @@ Aturan yang diwarisi dari split lama SawitMVC (E-017: 716/96/141 per pohon,
 irisan train/val/test NOL) plus dua penyesuaian karena dataset ini ~1/8 lebih
 kecil:
 
-  1. Unit split = POHON (semua 4 sisi ikut ke split yang sama). Wajib —
+  1. Unit split = POHON (semua 4 sisi ikut ke split yang sama). Wajib -
      4 sisi pohon sama sangat berkorelasi.
   2. Stratifikasi ganda: (a) sesi tangkap = device x unit kamera (dibaca dari
      intrinsik pada depth/*.json, 4 strata), (b) kelas dominan pohon dari
@@ -107,7 +107,7 @@ def main() -> int:
     root = Path(a.root)
 
     if not (root / "labels").is_dir():
-        print(f"BELUM ADA: {root/'labels'} — unduhan dataset belum selesai.")
+        print(f"BELUM ADA: {root/'labels'} - unduhan dataset belum selesai.")
         return 1
 
     sesi = baca_sesi(root)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# G2 — matriks multi-seed E-022 dengan kode _fix.
+# G2 - matriks multi-seed E-022 dengan kode _fix.
 #
 # Melengkapi apa yang AUDIT-E022 sebut "sedang diproduksi" tetapi tidak pernah
 # selesai maupun diarsipkan: 12 run YOLO26n (4 modal x 3 seed) + 9 RT-DETR-L
@@ -29,7 +29,7 @@ SEEDS=${SEEDS:-"42 1337 2024"}
 R=/workspace/research-pipeline/runs/detect/runs_e022
 
 # Job berjalan di subshell latar, jadi variabel tidak bisa dipakai untuk
-# mengumpulkan status — hasilnya ditulis ke direktori penanda dan dibaca lagi
+# mengumpulkan status - hasilnya ditulis ke direktori penanda dan dibaca lagi
 # oleh induk setelah `wait`.
 TANDA=${TANDA:-.g2-tanda}
 rm -rf "$TANDA"; mkdir -p "$TANDA"
@@ -103,7 +103,7 @@ echo "dilewati (sudah lengkap): $n_lewati"
 if [ ${#daftar_gagal[@]} -ne 0 ]; then
   echo "GAGAL ${#daftar_gagal[@]}:"
   printf '  %s\n' "${daftar_gagal[@]}"
-  echo "jalankan ulang skrip ini — run yang sudah lengkap akan dilewati"
+  echo "jalankan ulang skrip ini - run yang sudah lengkap akan dilewati"
   exit 1
 fi
 echo "semua run lengkap"

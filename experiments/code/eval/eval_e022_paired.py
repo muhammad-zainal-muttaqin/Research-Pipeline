@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-022: uji berpasangan RGB-D vs RGB — CI bootstrap atas SELISIHNYA.
+"""E-022: uji berpasangan RGB-D vs RGB - CI bootstrap atas SELISIHNYA.
 
 CI terpisah per lengan tidak menjawab H-022. Yang diuji adalah selisih, dan
 karena kedua lengan dinilai pada citra yang SAMA, bootstrap harus berpasangan:
@@ -33,12 +33,12 @@ from eval_e022_pycoco import NAMES, bangun_gt, pohon_dari, prediksi
 # Checkpoint lengan `mid`/`late` berisi modul kustom AmbilRGB/AmbilDepth. Dua
 # pendaftaran DIPERLUKAN dan keduanya berbeda urusan:
 #
-#   1. ke `ultralytics.nn.tasks` — dipakai `parse_model` saat mengurai YAML;
-#   2. ke `__main__` — dipakai unpickler torch. Pelatihan berjalan sebagai
+#   1. ke `ultralytics.nn.tasks` - dipakai `parse_model` saat mengurai YAML;
+#   2. ke `__main__` - dipakai unpickler torch. Pelatihan berjalan sebagai
 #      skrip, jadi kelasnya terekam dengan qualname `__main__.AmbilRGB`.
 #
 # Tanpa nomor 2 pemuatan gagal dengan AttributeError yang menunjuk `__main__`,
-# bukan ke modul kustomnya — jejak yang menyesatkan. Lengan non-fusi tidak
+# bukan ke modul kustomnya - jejak yang menyesatkan. Lengan non-fusi tidak
 # terpengaruh; impor ini tidak mengubah apa pun bagi mereka.
 _TRAIN = Path(__file__).resolve().parents[1] / "train"
 if str(_TRAIN) not in sys.path:
@@ -75,11 +75,11 @@ def map50_semua(gt, dt, img_ids: list[int]) -> dict[str, float]:
     `accumulate()` mengisi `eval["precision"]` berbentuk [T,R,K,A,M] dengan K =
     kategori, jadi seluruh kelas sudah tersedia dalam satu evaluasi. Memanggil
     COCOeval terpisah per kelas (cara lama) 5x lebih mahal tanpa tambahan
-    informasi apa pun — dan di dalam loop bootstrap perbedaannya menentukan
+    informasi apa pun - dan di dalam loop bootstrap perbedaannya menentukan
     apakah uji per-kelas bisa dijalankan sama sekali.
 
     Sekalian dihitung mAP50-95 (rata-rata 10 ambang IoU 0,50:0,05:0,95, gaya
-    COCO) dari MATRIKS PRESISI YANG SAMA — accumulate() sudah mengisi semua T,
+    COCO) dari MATRIKS PRESISI YANG SAMA - accumulate() sudah mengisi semua T,
     jadi ini tidak menambah COCOeval sama sekali, hanya menambah agregasi.
     Kunci mAP50 & per-kelas AP50 lama TIDAK disentuh (masih t50 = indeks 0
     saja); mAP50-95 ditambahkan sebagai kunci BARU ("mAP50-95" + "{n}_5095"

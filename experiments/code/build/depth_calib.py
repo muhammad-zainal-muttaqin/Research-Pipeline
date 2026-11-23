@@ -4,7 +4,7 @@
 Dipakai oleh reproject_depth.py dan verify_depth_align.py (E-022).
 
 TEMUAN YANG MELANDASI MODUL INI (E-022, 2026-07-29): label sidecar
-`"alignedTo": "color"` MENYESATKAN — buffer 848x480 masih berada di grid kamera
+`"alignedTo": "color"` MENYESATKAN - buffer 848x480 masih berada di grid kamera
 depth pabrikan, belum di-D2C ke bidang color. Bukti: (1) intrinsik depth
 piksel-persegi (fx=fy=416,55) bukan versi terskala intrinsik color
 (610,87*848/1280=404,7 pada x tetapi 610,87*480/800=366,5 pada y); (2) tidak ada
@@ -13,7 +13,7 @@ lebih lebar daripada depth (59,9 deg); (3) estimasi skala empiris lewat mutual
 information memberi s_y ~ 1,455, sedangkan resize langsung mengharuskan 1,667.
 
 Konsekuensi: resize naif meleset median ~29 px (maks ~61 px) pada bidang
-1280x800 — seukuran tandan B4 itu sendiri. Modul ini melakukan reproyeksi
+1280x800 - seukuran tandan B4 itu sendiri. Modul ini melakukan reproyeksi
 per-piksel penuh: depth -> titik 3D (intrinsik depth) -> ekstrinsik ->
 proyeksi intrinsik color + distorsi Brown-Conrady K6.
 """
@@ -31,7 +31,7 @@ DEPTH_W, DEPTH_H = 848, 480
 RGB_W, RGB_H = 1280, 800
 
 # Nilai di atas ini diperlakukan tidak valid: 1,171% piksel >15 m dan 0,061%
-# tepat 65535 (saturasi uint16) — hampir pasti langit / derau ToF, bukan pohon.
+# tepat 65535 (saturasi uint16) - hampir pasti langit / derau ToF, bukan pohon.
 MAX_VALID_MM = 15000.0
 
 
@@ -53,7 +53,7 @@ class Kalibrasi:
 
     @property
     def kunci(self) -> str:
-        """ID unit kamera — dataset ini memuat DUA unit dengan intrinsik berbeda."""
+        """ID unit kamera - dataset ini memuat DUA unit dengan intrinsik berbeda."""
         return f"{self.fx_d:.3f}_{self.cx_d:.3f}"
 
 
@@ -95,7 +95,7 @@ def _parse_dump(dump: str) -> Kalibrasi:
 
 
 def baca_kalibrasi(sidecar: Path) -> Kalibrasi:
-    """Kalibrasi PER BERKAS — jangan hardcode, dataset memuat dua unit kamera."""
+    """Kalibrasi PER BERKAS - jangan hardcode, dataset memuat dua unit kamera."""
     return _parse_dump(json.loads(sidecar.read_text())["calibrationDump"])
 
 
@@ -127,7 +127,7 @@ def reproyeksi(z_mm: np.ndarray, kal: Kalibrasi, *, distorsi: bool = True,
 
     Forward-warp dengan Z-BUFFER: bila beberapa piksel depth jatuh ke piksel
     tujuan yang sama, yang DIAMBIL adalah yang paling dekat. Tanpa ini, piksel
-    latar (jauh) menimpa piksel objek (dekat) di tepi oklusi — justru tepi
+    latar (jauh) menimpa piksel objek (dekat) di tepi oklusi - justru tepi
     oklusi itulah sinyal yang dicari untuk B4 yang tertanam di pelepah.
 
     Piksel tujuan tanpa sumber bernilai 0 = "tidak ada data".
@@ -209,7 +209,7 @@ def encode_inverse(z_mm: np.ndarray, z_near_m: float, z_far_m: float) -> np.ndar
     """Peta depth (mm, 0=invalid) -> kanal kanonik uint8 (kontrak fourch.py).
 
     0 = tidak ada data; 1..255 = inverse depth pada rentang metrik TETAP
-    [z_near, z_far]: dekat -> 255, jauh -> 1. Tanpa normalisasi per-citra —
+    [z_near, z_far]: dekat -> 255, jauh -> 1. Tanpa normalisasi per-citra -
     normalisasi per-citra membuang jarak absolut dan membuat nilai piksel tidak
     sebanding antar-frame.
     """

@@ -2,7 +2,7 @@
 """E-022: SawitMVC-Depth .raw (grid kamera depth) -> PNG kanal-4 kanonik di grid RGB.
 
 MENGGANTIKAN pipeline/prepare_depth.py untuk dataset ini. Skrip lama berasumsi
-depth sudah tersejajar ke RGB oleh SDK dan hanya melakukan resize — asumsi itu
+depth sudah tersejajar ke RGB oleh SDK dan hanya melakukan resize - asumsi itu
 DIPALSUKAN untuk dataset ini (lihat depth_calib.py dan verify_depth_mi.py:
 MI H3 reproyeksi 0,2638 bit vs H1 resize 0,2381 bit, dengan kontrol pergeseran
 +-24 px turun ke ~0,22).
@@ -11,7 +11,7 @@ Keluaran: PNG uint8 satu kanal, 1280x800, senama dengan citranya, mengikuti
 kontrak pipeline/fourch.py: 0 = tidak ada data, 1..255 = inverse depth pada
 rentang metrik TETAP [Z_NEAR, Z_FAR].
 
-Rentang metrik ditentukan dari histogram split TRAIN saja (bukan val/test) —
+Rentang metrik ditentukan dari histogram split TRAIN saja (bukan val/test) -
 statistik yang dihitung atas test adalah kebocoran. Angka final dicatat ke
 depth_meta.json dan dibekukan bersama bobot.
 """

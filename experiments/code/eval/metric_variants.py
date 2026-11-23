@@ -3,7 +3,7 @@
 Alasan: tiga pengukuran bebas (head YOLO, CNN potongan master, voting
 multi-sisi) sama-sama berhenti di ~68% akurasi kematangan, dan 100% kesalahan
 head YOLO hanya meleset satu tingkat. Kalau begitu, sebagian dari yang dihukum
-oleh mAP 4-kelas adalah ambiguitas yang melekat pada labelnya — bukan
+oleh mAP 4-kelas adalah ambiguitas yang melekat pada labelnya - bukan
 kekurangan model. Yang perlu diketahui: BERAPA bagiannya.
 
 Varian yang dihitung:
@@ -11,7 +11,7 @@ Varian yang dihitung:
   agnostik   semua kotak satu kelas "tandan" (deteksi murni)
   B2B3       B2 dan B3 digabung (SR-009: kebingungannya ordinal & terbesar
              justru di pasangan ini)
-  pm1        toleransi satu tingkat — mencerminkan metrik deployment DiB
+  pm1        toleransi satu tingkat - mencerminkan metrik deployment DiB
              `Class +-1 Acc`, yang MEMANG sudah memaafkan geser satu kelas
 """
 import contextlib, io, json

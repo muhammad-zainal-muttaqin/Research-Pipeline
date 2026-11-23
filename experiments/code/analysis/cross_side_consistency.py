@@ -6,18 +6,18 @@ ditafsirkan keliru lagi:
 
   `class_mismatch` (E-001/SR-001) mengukur ketidaksepakatan ANOTATOR antar-sisi
   dan hasilnya NOL dari 7.328 bunch multi-sisi. Itu menjadikannya pemeriksa
-  integritas data yang bersih, BUKAN pengukur ambiguitas kematangan — dan angka
+  integritas data yang bersih, BUKAN pengukur ambiguitas kematangan - dan angka
   nol itu tidak mendukung maupun membantah klaim ambiguitas B2/B3.
 
   CLAUDE.md mencatat penggantinya: pakai identitas bunch lintas-sisi sebagai
   ORACLE, lalu ukur inkonsistensi PREDIKSI DETEKTOR pada bunch fisik yang sama.
-  Ini mengukur ambiguitas tanpa bergantung pada label manusia sama sekali —
+  Ini mengukur ambiguitas tanpa bergantung pada label manusia sama sekali -
   kalau detektor memberi kelas berbeda pada objek fisik yang sama dilihat dari
   sisi berbeda, itu ambiguitas penampilan yang terukur langsung.
 
 Oracle-nya tidak perlu dihitung: `json/<tree>.json` sudah menyediakan
 `bunches[].appearances`, yaitu hasil transitive closure graf `_confirmedLinks`
-— satu entri = satu tandan fisik, dengan kotak piksel per sisi.
+- satu entri = satu tandan fisik, dengan kotak piksel per sisi.
 
 Ukuran yang dilaporkan (semuanya pada tandan yang tampak dari >= 2 sisi):
 
@@ -35,7 +35,7 @@ Pemakaian:
 
 Jalankan untuk lengan RGB dan RGB-D dengan checkpoint sepadan: selisih laju
 inkonsisten antara keduanya menguji apakah kedalaman MENSTABILKAN identitas
-lintas-sisi — pertanyaan yang tidak bisa dijawab oleh mAP agregat.
+lintas-sisi - pertanyaan yang tidak bisa dijawab oleh mAP agregat.
 """
 from __future__ import annotations
 

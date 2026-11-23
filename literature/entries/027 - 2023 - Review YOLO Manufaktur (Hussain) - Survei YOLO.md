@@ -22,7 +22,7 @@
 
 Makalah ini adalah tinjauan atas evolusi keluarga detektor objek YOLO dari YOLO-v1 (2015) sampai YOLO-v8 (Januari 2023), ditulis dari sudut pandang manufaktur digital. Penulis menyatakannya sebagai tinjauan pertama yang membedah kemajuan arsitektur pada setiap iterasi YOLO sekaligus menilainya terhadap kebutuhan inspeksi kualitas otomatis di industri: deteksi cepat, akurasi tinggi, dan penerapan pada *edge device*, yaitu peranti komputasi di lokasi produksi dengan sumber daya terbatas.
 
-Selain membedah arsitektur, tinjauan ini menghimpun literatur penerapan YOLO untuk deteksi cacat permukaan pada empat domain: kain, sel surya, baja, dan rak gudang. Simpulan utamanya: prinsip yang dipegang seluruh varian YOLO — waktu nyata, bobot komputasi ringan, dan akurasi tinggi — sejalan dengan persyaratan inspeksi cacat industri, dan arsitektur YOLO yang terbuka memungkinkan modifikasi modul internal, misalnya penambahan mekanisme atensi, tanpa menghilangkan kesesuaian waktu nyata.
+Selain membedah arsitektur, tinjauan ini menghimpun literatur penerapan YOLO untuk deteksi cacat permukaan pada empat domain: kain, sel surya, baja, dan rak gudang. Simpulan utamanya: prinsip yang dipegang seluruh varian YOLO - waktu nyata, bobot komputasi ringan, dan akurasi tinggi - sejalan dengan persyaratan inspeksi cacat industri, dan arsitektur YOLO yang terbuka memungkinkan modifikasi modul internal, misalnya penambahan mekanisme atensi, tanpa menghilangkan kesesuaian waktu nyata.
 
 ## Latar Belakang: Masalah yang Ingin Dipecahkan
 
@@ -55,7 +55,7 @@ Detektor satu tahap modern tersusun atas tiga komponen. *Backbone* adalah jaring
                  CSPDarknet-53)      SPP)                confidence
 ```
 
-Diagram di atas menunjukkan bahwa seluruh komputasi berlangsung dalam satu lintasan maju tanpa tahap pengusulan wilayah terpisah; inilah sumber kecepatan keluarga YOLO. Pada YOLO-v1, citra dibagi menjadi grid S×S (baku 7×7), dan sel yang memuat pusat objek bertanggung jawab atas deteksi objek itu. Setiap sel memprediksi B buah *bounding box* — kotak pembatas berparameter pusat (x, y), lebar w, dan tinggi h — beserta skor *confidence*, yaitu peluang adanya objek dikalikan IoU (*intersection over union*): rasio luas irisan terhadap luas gabungan antara kotak prediksi dan kotak acuan (*ground truth*). Setiap sel juga memprediksi probabilitas C kelas, sehingga tensor keluaran berukuran S×S×(5B+C); dengan grid 7×7, B=2, dan C=80 kelas pada dataset COCO, ukurannya adalah 7×7×90. Kotak yang tumpang tindih untuk objek yang sama dirampingkan dengan *non-maximum suppression* (NMS): semua kotak yang IoU-nya terhadap kotak terbaik di bawah ambang tertentu dihapus.
+Diagram di atas menunjukkan bahwa seluruh komputasi berlangsung dalam satu lintasan maju tanpa tahap pengusulan wilayah terpisah; inilah sumber kecepatan keluarga YOLO. Pada YOLO-v1, citra dibagi menjadi grid S×S (baku 7×7), dan sel yang memuat pusat objek bertanggung jawab atas deteksi objek itu. Setiap sel memprediksi B buah *bounding box* - kotak pembatas berparameter pusat (x, y), lebar w, dan tinggi h - beserta skor *confidence*, yaitu peluang adanya objek dikalikan IoU (*intersection over union*): rasio luas irisan terhadap luas gabungan antara kotak prediksi dan kotak acuan (*ground truth*). Setiap sel juga memprediksi probabilitas C kelas, sehingga tensor keluaran berukuran S×S×(5B+C); dengan grid 7×7, B=2, dan C=80 kelas pada dataset COCO, ukurannya adalah 7×7×90. Kotak yang tumpang tindih untuk objek yang sama dirampingkan dengan *non-maximum suppression* (NMS): semua kotak yang IoU-nya terhadap kotak terbaik di bawah ambang tertentu dihapus.
 
 ### Evolusi arsitektur per varian
 
@@ -77,11 +77,11 @@ YOLO-v8 (Januari 2023) dirilis Ultralytics tanpa makalah ilmiah saat tinjauan in
 
 ### Penerapan pada deteksi cacat permukaan industri
 
-Bagian penerapan meninjau empat domain. Pada inspeksi kain, satu studi menambahkan atensi spasial pada YOLO-v5 lalu mendistilasi model guru ke model murid untuk peranti Jetson TX2; studi lain menyisipkan modul Swin Transformer dan atensi-diri jendela geser untuk menonjolkan cacat kecil. Pada sel surya, YOLO-v5 dimodifikasi dengan konvolusi deformable, mekanisme atensi, dan pemilihan anchor dengan K-means++; studi lain (AP-YOLO-v5) menambah himpunan anchor berskala kecil. Pada baja, YOLO-v5 diterapkan pada citra sinar-X las pipa, dan YOLO-v4 diperingan dengan *depth-wise separable convolution* — konvolusi yang memisahkan perhitungan spasial dan kanal — untuk strip aluminium. Pada rak gudang, YOLO-v7 dipasang pada forklift yang beroperasi sehingga deteksi harus selesai selama forklift mendekati rak.
+Bagian penerapan meninjau empat domain. Pada inspeksi kain, satu studi menambahkan atensi spasial pada YOLO-v5 lalu mendistilasi model guru ke model murid untuk peranti Jetson TX2; studi lain menyisipkan modul Swin Transformer dan atensi-diri jendela geser untuk menonjolkan cacat kecil. Pada sel surya, YOLO-v5 dimodifikasi dengan konvolusi deformable, mekanisme atensi, dan pemilihan anchor dengan K-means++; studi lain (AP-YOLO-v5) menambah himpunan anchor berskala kecil. Pada baja, YOLO-v5 diterapkan pada citra sinar-X las pipa, dan YOLO-v4 diperingan dengan *depth-wise separable convolution* - konvolusi yang memisahkan perhitungan spasial dan kanal - untuk strip aluminium. Pada rak gudang, YOLO-v7 dipasang pada forklift yang beroperasi sehingga deteksi harus selesai selama forklift mendekati rak.
 
 ### Kerangka penilaian survei
 
-Seluruh pembahasan dinilai dengan tiga metrik: mAP, FPS, dan ukuran model. Penulis mengaitkan kebangkitan YOLO dengan dua faktor: komposisi satu tahap yang ringan, dan aksesibilitas yang melonjak sejak migrasi ke PyTorch pada YOLO-v5 — repositorinya mencatat 34,7 ribu bintang GitHub per Juni 2023, pelatihannya lebih singkat, dan konversi bobotnya ke format ONNX untuk perangkat tepi menjadi mudah.
+Seluruh pembahasan dinilai dengan tiga metrik: mAP, FPS, dan ukuran model. Penulis mengaitkan kebangkitan YOLO dengan dua faktor: komposisi satu tahap yang ringan, dan aksesibilitas yang melonjak sejak migrasi ke PyTorch pada YOLO-v5 - repositorinya mencatat 34,7 ribu bintang GitHub per Juni 2023, pelatihannya lebih singkat, dan konversi bobotnya ke format ONNX untuk perangkat tepi menjadi mudah.
 
 ## Eksperimen dan Hasil
 

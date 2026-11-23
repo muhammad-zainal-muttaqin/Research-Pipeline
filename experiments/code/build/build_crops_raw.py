@@ -2,7 +2,7 @@
 match_raw.py.
 
 Alasan: E-014 menempatkan hambatan pada penilaian kematangan. Kematangan
-dinilai dari permukaan buah — warna dan tekstur. Pada SawitMVC (960x1280)
+dinilai dari permukaan buah - warna dan tekstur. Pada SawitMVC (960x1280)
 tandan bermedian ~70-95 px, sehingga potongan 224 px sebenarnya hasil
 PEMBESARAN: tidak ada detail baru, hanya interpolasi. Pada master mentah
 tandan yang sama ~220-300 px, jadi potongan 224 px berisi detail nyata.

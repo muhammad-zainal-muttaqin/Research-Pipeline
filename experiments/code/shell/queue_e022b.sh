@@ -27,13 +27,13 @@ for modal in rgb rgbd; do
       --output runs_e022/rfdetrnano_$modal > logs-e022-rfdetrnano-$modal.txt 2>&1
   rc=$?
   # rfdetr boleh berhenti dini (early stopping), jadi yang dijaga hanya rc dan
-  # keberadaan artefaknya — bukan jumlah epoch penuh.
+  # keberadaan artefaknya - bukan jumlah epoch penuh.
   periksa_run "$rc" "runs_e022/rfdetrnano_$modal/metrics.csv" 0 \
       "rfdetr-nano $modal" || gagal=1
 done
 
 if [ "$gagal" -ne 0 ]; then
-  echo "[antrean-b] SELESAI DENGAN KEGAGALAN — jangan pakai angkanya $(date -Is)" >&2
+  echo "[antrean-b] SELESAI DENGAN KEGAGALAN - jangan pakai angkanya $(date -Is)" >&2
   exit 1
 fi
 echo "[antrean-b] SELESAI $(date -Is)"

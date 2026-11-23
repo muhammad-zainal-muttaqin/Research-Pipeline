@@ -1,7 +1,7 @@
-"""#3 Tabel efisiensi E-021 — parameter, GFLOPs, latensi/FPS (L4), ukuran bobot.
+"""#3 Tabel efisiensi E-021 - parameter, GFLOPs, latensi/FPS (L4), ukuran bobot.
 
 Untuk keputusan deployment: "worth it-kah RF-DETR yang lebih berat?". Latensi
-diukur langsung di GPU (NVIDIA L4) — 10 warmup + 50 ukur pada 1 citra test,
+diukur langsung di GPU (NVIDIA L4) - 10 warmup + 50 ukur pada 1 citra test,
 pada resolusi latihan masing-masing. Hasil -> results/efficiency.json.
 """
 import json

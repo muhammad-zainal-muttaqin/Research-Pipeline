@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I-11 — Evaluasi terstratifikasi untuk semua varian model.
+"""I-11 - Evaluasi terstratifikasi untuk semua varian model.
 
 Satu angka mAP menyembunyikan justru hal yang ingin kita ketahui. Naskah
 (Tabel hierarki metrik, §234-262) menuntut deteksi dilaporkan per strata ukuran
@@ -216,7 +216,7 @@ def main() -> int:
     tag = args.tag or Path(args.weights).parts[-3]
     W_ = 72
     print("\n" + "=" * W_)
-    print(f"EVALUASI TERSTRATIFIKASI — {tag} (mode {args.mode})")
+    print(f"EVALUASI TERSTRATIFIKASI - {tag} (mode {args.mode})")
     print("=" * W_)
 
     res = {"tag": tag, "mode": args.mode}

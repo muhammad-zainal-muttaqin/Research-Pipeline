@@ -4,7 +4,7 @@
 Hipotesis yang diuji (H-022c): "buffer depth SawitMVC-Depth sudah tersejajar ke
 bidang color" sebagaimana klaim sidecar `alignedTo: "color"`.
 
-Uji dilakukan dengan ANOTASI, bukan korelasi tepi — korelasi tepi (NCC gradien)
+Uji dilakukan dengan ANOTASI, bukan korelasi tepi - korelasi tepi (NCC gradien)
 sudah terbukti tidak konklusif pada kanopi sawit (semua kandidat NCC ~ -0,07).
 Gagasannya: tandan adalah objek padat yang menonjol ke arah kamera, jadi pada
 pemetaan yang BENAR, depth di dalam kotak anotasi harus lebih dekat dan lebih
@@ -36,7 +36,7 @@ DATA = Path("/workspace/SawitMVC-Depth/data")
 
 
 def peta_h1(z_mm: np.ndarray, kal: Kalibrasi) -> np.ndarray:
-    """Resize langsung — NEAREST supaya piksel invalid 0 tidak tercampur."""
+    """Resize langsung - NEAREST supaya piksel invalid 0 tidak tercampur."""
     return cv2.resize(z_mm, (RGB_W, RGB_H), interpolation=cv2.INTER_NEAREST)
 
 

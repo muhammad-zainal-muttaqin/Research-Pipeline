@@ -3,7 +3,7 @@
 
 Kenapa ini ada, dalam satu kalimat: E-022 memalsukan fusi AWAL (konkatenasi di
 kanal masukan), dan SR-015 menyimpulkan kegagalannya ada pada **cara memasukkan**
-depth, bukan pada kandungan depth-nya — pada RT-DETR-L depth mengalahkan kontrol
+depth, bukan pada kandungan depth-nya - pada RT-DETR-L depth mengalahkan kontrol
 deraunya sendiri justru di B4 (+0,1001 [+0,0062; +0,1618]), tetapi kanal ke-4
 merusak stem 3-kanal berbobot pratlatih lebih besar daripada yang dipulihkannya.
 
@@ -13,7 +13,7 @@ Ophoff dkk., `evidence-body.tex` §174; FuseNet 4-kanal 31,95 IoU DI BAWAH RGB
 
   --fusi mid   cabang depth ringan berjalan sampai P2/4, lalu difusikan ke
                cabang RGB sebelum P3. Stem RGB tetap 3-kanal, jadi bobot
-               pratlatih masuk UTUH — inilah bedanya dengan fusi awal.
+               pratlatih masuk UTUH - inilah bedanya dengan fusi awal.
 
   --fusi late  kedua cabang menjalankan seluruh backbone secara terpisah, dan
                fusi terjadi pada ketiga peta fitur P3/P4/P5 sebelum head.
@@ -21,22 +21,22 @@ Ophoff dkk., `evidence-body.tex` §174; FuseNet 4-kanal 31,95 IoU DI BAWAH RGB
 
 Arsitektur dibangun dengan MENURUNKAN YAML dasar ultralytics, bukan menyalinnya:
 indeks `from` digeser secara terprogram. Menyalin-tempel YAML lalu menomori
-ulang dengan tangan adalah sumber kesalahan senyap — model tetap terlatih,
+ulang dengan tangan adalah sumber kesalahan senyap - model tetap terlatih,
 hanya menyambung ke lapisan yang salah, dan tidak ada yang error.
 
 Pagar keadilan sama persis dengan `train_depth4ch.py` (HSV mati di semua lengan,
 modality dropout 0) supaya perbandingan mid/late/awal/RGB tetap satu protokol.
-Kontrol derau dan tukar WAJIB diulang di sini — SR-015 §6: tanpa keduanya,
+Kontrol derau dan tukar WAJIB diulang di sini - SR-015 §6: tanpa keduanya,
 kenaikan apa pun tidak dapat dibedakan dari efek kapasitas.
 
-## KAVEAT YANG BELUM TERSELESAIKAN — baca sebelum menjalankan E-023
+## KAVEAT YANG BELUM TERSELESAIKAN - baca sebelum menjalankan E-023
 
 Arsitektur ini lahir dari YAML kustom, sehingga **tidak ada bobot COCO
 pratlatih** yang cocok untuknya. Seluruh lengan E-022 berangkat dari bobot
 pratlatih (dan `fourch.make_inflate_callback` dipasang khusus supaya lengan
 RGB-D tidak kalah karena inisialisasi). Melatih fusi menengah/akhir dari nol
 lalu membandingkannya dengan lengan E-022 yang pratlatih **bukan perbandingan
-yang sah** — selisihnya akan didominasi oleh ada-tidaknya pralatihan, bukan
+yang sah** - selisihnya akan didominasi oleh ada-tidaknya pralatihan, bukan
 oleh titik fusi.
 
 Dua jalan keluar, dan pilihannya harus ditetapkan SEBELUM run pertama:
@@ -58,22 +58,22 @@ mid dan late).
 ## Dukungan RT-DETR (`--arch rtdetr-l`)
 
 `bangun_yaml()` sudah diverifikasi juga menurunkan `rtdetr-l.yaml` (satu-satunya
-skala yang tersedia di YAML dasar RT-DETR adalah `l` — panggil dengan
+skala yang tersedia di YAML dasar RT-DETR adalah `l` - panggil dengan
 `--skala l`). Dua hal yang BERBEDA dari yolo26 dan sudah ditangani secara
 eksplisit, bukan lewat konstanta yang dipakai bersama:
 
 1. **Titik fusi berbeda posisi.** Untuk yolo26, akhir stage P2/4 ada di lapisan
    backbone indeks 2. Untuk rtdetr-l, backbone dimulai `HGStem` (0, sudah
    P2/4) lalu `HGBlock` stage1 (1, masih P2/4) baru `DWConv` yang turun ke
-   P3/8 (2) — akhir stage P2/4 yang sesungguhnya untuk rtdetr-l adalah indeks
+   P3/8 (2) - akhir stage P2/4 yang sesungguhnya untuk rtdetr-l adalah indeks
    1, BUKAN 2. P3/P4/P5 juga di indeks berbeda: (3, 7, 9), bukan (4, 6, 10).
    Nilai ini sekarang parameter `ARSITEKTUR[...]`, bukan konstanta hardcode.
 
 2. **`HGStem`/`HGBlock` menaruh lebar keluaran (`c2`) di `args[1]`, bukan
    `args[0]`.** `parse_model` membacanya `c1, cm, c2 = ch[f], args[0], args[1]`
-   — berbeda dari `Conv`/`C3k2`/`DWConv` yang memakai `args[0]` langsung
+   - berbeda dari `Conv`/`C3k2`/`DWConv` yang memakai `args[0]` langsung
    sebagai `c2`. Memakai `args[0]` mentah di titik fusi rtdetr-l akan
-   mengambil kanal TENGAH (`cm`), bukan `c2` — model tetap terbangun dan
+   mengambil kanal TENGAH (`cm`), bukan `c2` - model tetap terbangun dan
    forward pass tetap sukses TANPA error (dikonfirmasi lewat eksekusi CPU),
    hanya lebar proyeksi fusinya salah. Inilah persis kegagalan senyap yang
    jadi alasan desain PETA INDEKS di berkas ini, hanya bersembunyi satu lapis
@@ -81,25 +81,25 @@ eksplisit, bukan lewat konstanta yang dipakai bersama:
    `lebar_keluar()`/`sunting_lebar()` di bawah, yang membaca TIPE modul di
    titik potong sebelum menafsirkan `args`.
 
-3. **`YOLO(yaml)` TIDAK otomatis mengalihkan ke RT-DETR untuk YAML custom** —
+3. **`YOLO(yaml)` TIDAK otomatis mengalihkan ke RT-DETR untuk YAML custom** -
    koreksi terhadap dugaan awal bahwa `ultralytics/models/yolo/model.py:80-83`
    ("`if "RTDETR" in self.model.model[-1]._get_name()`") membuat baris
    `model = YOLO(...)` bekerja apa adanya untuk RT-DETR. Cek itu berjalan
    SETELAH model dibangun, tapi pembangunannya sendiri butuh `self.task`
    sudah terisi lebih dulu, dan `guess_model_task` menebak task dari nama
-   modul head lewat substring `"detect"` — `"rtdetrdecoder"` tidak
+   modul head lewat substring `"detect"` - `"rtdetrdecoder"` tidak
    mengandungnya, jadi task jatuh ke `None` dan `_smart_load` melempar
    `NotImplementedError` SEBELUM cek RTDETR itu sempat jalan. Dikonfirmasi
    gagal identik untuk `rtdetr-l.yaml` BAWAAN ultralytics tanpa modifikasi
-   apa pun — bukan cacat khusus YAML turunan berkas ini. Solusinya memakai
+   apa pun - bukan cacat khusus YAML turunan berkas ini. Solusinya memakai
    kelas `ultralytics.RTDETR` langsung (ia mem-pass `task="detect"` eksplisit
-   ke `Model.__init__`, melewati tebakan itu sama sekali) — lihat
+   ke `Model.__init__`, melewati tebakan itu sama sekali) - lihat
    `ARSITEKTUR["rtdetr-l"]["kelas_model"]` dan pemilihan kelas di `main()`.
 
 `rtdetr-resnet50.yaml`/`resnet101.yaml` TIDAK didukung dan TIDAK akan
 ditambahkan lewat pola yang sama: `ResNetLayer` tidak menurunkan `c1` dari
 `ch[f]` sama sekali (`parse_model` punya cabang khusus untuknya yang tidak
-pernah menimpa `args[0]`) — `c1` di YAML-nya adalah literal hardcode yang
+pernah menimpa `args[0]`) - `c1` di YAML-nya adalah literal hardcode yang
 menyambung manual angka-per-angka ke `c2` lapisan sebelumnya. Premis "modul
 auto-derive lebar dari `ch[f]`" yang mendasari topeng+peta-indeks tidak
 berlaku untuk backbone ini; memakainya butuh menulis ulang penanganan
@@ -136,7 +136,7 @@ class _Topeng(nn.Module):
 
     Kenapa menutup dan bukan memotong: `parse_model` menghitung lebar kanal
     keluaran dari daftar tipe modul yang dikenalnya, dan modul kustom jatuh ke
-    cabang `c2 = ch[f]` — artinya pemotongan kanal TIDAK terlihat oleh parser,
+    cabang `c2 = ch[f]` - artinya pemotongan kanal TIDAK terlihat oleh parser,
     dan kedua cabang akan dibangun seolah menerima 4 kanal padahal menerima 3
     dan 1. Dengan menutup, pembukuan parser benar apa adanya sementara tiap
     cabang tetap hanya menerima informasi modalitasnya: bobot pada kanal yang
@@ -146,7 +146,7 @@ class _Topeng(nn.Module):
     Alasannya konkret: `YOLO(yaml)` membangun model sekali dengan `ch=3` untuk
     menghitung stride sebelum pelatihan menggantinya dengan `ch=4` dari
     `data.yaml`. Buffer tetap membuat lintasan pertama itu gagal dengan
-    "size of tensor a (3) must match tensor b (4)" — dan gagalnya di dalam
+    "size of tensor a (3) must match tensor b (4)" - dan gagalnya di dalam
     konstruktor, sebelum satu epoch pun berjalan.
     """
 
@@ -182,7 +182,7 @@ def daftarkan_modul() -> None:
 
     Hanya DUA modul yang ditambahkan, dan keduanya bebas parameter. Fusi sendiri
     TIDAK memakai modul kustom: ia dirakit dari `Concat` + `Conv` 1x1 bawaan
-    ultralytics. Alasannya bukan gaya — `parse_model` menghitung lebar kanal
+    ultralytics. Alasannya bukan gaya - `parse_model` menghitung lebar kanal
     keluaran lewat daftar tipe modul yang dikenalnya, dan modul multi-masukan di
     luar daftar itu jatuh ke cabang `c2 = ch[f]` yang langsung gagal untuk `f`
     berupa senarai. Memakai modul bawaan menghindari menambal parser.
@@ -196,12 +196,12 @@ def daftarkan_modul() -> None:
 
 # `parse_model` (ultralytics/nn/tasks.py) tidak menaruh c2 di `args[0]` untuk
 # SEMUA modul. `HGStem`/`HGBlock` memakai `c1, cm, c2 = ch[f], args[0], args[1]`
-# — c2 ada di args[1], args[0] adalah kanal TENGAH (cm). Modul lain yang dipakai
+# - c2 ada di args[1], args[0] adalah kanal TENGAH (cm). Modul lain yang dipakai
 # backbone (`Conv`, `C3k2`, `DWConv`, ...) memakai args[0] langsung sebagai c2.
 # Dua fungsi di bawah membaca TIPE modul di titik potong sebelum menafsirkan
 # args, supaya fusi mid/late pada backbone HGNetv2 (rtdetr-l) tidak diam-diam
 # memproyeksikan ke lebar kanal yang salah (lihat KAVEAT RT-DETR di kepala
-# berkas — bug ini lolos tanpa error di construct maupun forward pass).
+# berkas - bug ini lolos tanpa error di construct maupun forward pass).
 _MODUL_CM_C2 = frozenset({"HGStem", "HGBlock"})
 
 
@@ -214,7 +214,7 @@ def sunting_lebar(modul: str, a2: list, lebar_bagi: int) -> None:
     """Susutkan lebar kanal `a2` in-place untuk cabang depth yang diringankan.
 
     Untuk `HGStem`/`HGBlock`, kanal tengah (`cm`, args[0]) DAN keluaran (`c2`,
-    args[1]) sama-sama disusutkan — keduanya lebar riil, bukan hanya c2.
+    args[1]) sama-sama disusutkan - keduanya lebar riil, bukan hanya c2.
     Untuk modul lain, hanya args[0] (yaitu c2) yang disusutkan.
     """
     if modul in _MODUL_CM_C2:
@@ -255,7 +255,7 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
         """Salin sebagian backbone dasar sebagai satu cabang.
 
         `mulai`/`sampai` memungkinkan cabang dipotong di titik fusi lalu
-        dilanjutkan SETELAH lapisan fusi ditambahkan — urutan itu wajib, karena
+        dilanjutkan SETELAH lapisan fusi ditambahkan - urutan itu wajib, karena
         ultralytics mengeksekusi lapisan secara berurutan dan `from` hanya boleh
         merujuk lapisan yang sudah ada sebelumnya.
         """
@@ -280,7 +280,7 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
 
         Konkatenasi lalu proyeksi, bukan penjumlahan: penjumlahan memaksa kedua
         modalitas berbagi ruang fitur sejak awal, sedangkan proyeksi membiarkan
-        jaringan sendiri menentukan bobot tiap modalitas — dan bobot itu dapat
+        jaringan sendiri menentukan bobot tiap modalitas - dan bobot itu dapat
         diperiksa setelah latihan, sehingga klaim "depth dipakai" bisa
         diverifikasi alih-alih diasumsikan.
         """
@@ -328,12 +328,12 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
     # `guess_model_scale(path)`, yang menebak skala dari NAMA BERKAS lewat regex
     # `yolo(e-)?[v]?\d+([nslmx])`. Nama berkas turunan kita tidak cocok pola itu,
     # sehingga tebakannya string kosong dan `parse_model` jatuh ke
-    # `next(iter(scales.keys()))` — kunci PERTAMA — sambil hanya mencetak
+    # `next(iter(scales.keys()))` - kunci PERTAMA - sambil hanya mencetak
     # peringatan. Akibatnya `--skala l` akan diam-diam membangun model `n`:
     # 2,5 jt param, bukan 26 jt, tanpa error.
     #
     # Dengan menyisakan satu entri saja, jalur fallback itu justru menjadi benar
-    # menurut konstruksi — apa pun yang ditebak dari nama berkas, satu-satunya
+    # menurut konstruksi - apa pun yang ditebak dari nama berkas, satu-satunya
     # skala yang tersedia adalah yang diminta.
     if "scales" in d:
         if skala not in d["scales"]:
@@ -353,7 +353,7 @@ ARSITEKTUR: dict[str, dict] = {
     "rtdetr-l": {
         "path": "rt-detr/rtdetr-l.yaml",
         # akhir stage P2/4: bb[0]=HGStem (sudah P2/4), bb[1]=HGBlock stage1
-        # (masih P2/4) — bb[2] SUDAH DWConv turun ke P3/8. Titik yang benar
+        # (masih P2/4) - bb[2] SUDAH DWConv turun ke P3/8. Titik yang benar
         # untuk fusi P2/4 adalah 1, bukan 2 seperti yolo26.
         "titik_mid": 1,
         "titik_late": (3, 7, 9),

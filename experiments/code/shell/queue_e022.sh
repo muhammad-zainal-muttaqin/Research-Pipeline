@@ -23,7 +23,7 @@ for modal in rgb rgbd; do
 done
 
 if [ "$gagal" -ne 0 ]; then
-  echo "[antrean] SELESAI DENGAN KEGAGALAN — jangan pakai angkanya $(date -Is)" >&2
+  echo "[antrean] SELESAI DENGAN KEGAGALAN - jangan pakai angkanya $(date -Is)" >&2
   exit 1
 fi
 echo "[antrean] SELESAI $(date -Is)"

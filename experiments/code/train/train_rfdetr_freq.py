@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F-007 (K1a) — Cabang frekuensi samping ber-gate init-nol untuk RF-DETR-L.
+"""F-007 (K1a) - Cabang frekuensi samping ber-gate init-nol untuk RF-DETR-L.
 
 Gerbangnya sudah lolos: F-002 mengukur bahwa respons frekuensi tinggi memisahkan
 isi tandan dari PELEPAH pada B4 sebesar +0,0731 (dwt_hh) di atas kendali kotak
@@ -14,7 +14,7 @@ ini: backbone RF-DETR bukan CNN berjenjang melainkan satu ViT DINOv2 beraliran
 tunggal dengan resolusi token KONSTAN; "P3/P4/P5"-nya adalah keluaran SINTETIS
 `MultiScaleProjector` dari 4 lapisan ViT yang beresolusi sama. Mendefinisikan
 "menengah" di sana (di lapisan berapa, bagaimana token register ditangani,
-bagaimana jadwal windowed-attention disinkronkan) adalah proyek desain sendiri —
+bagaimana jadwal windowed-attention disinkronkan) adalah proyek desain sendiri -
 lihat `train_rfdetr_fusion_late.py:5-19` dan rancangan fusi menengah yang ditangguhkan (`git show 80bbba4:experiments/code/train/RANCANGAN-rfdetr-fusi-mid.md`).
 
 Titik sebelum projector punya padanan struktural yang bersih dan SUDAH terbukti
@@ -31,9 +31,9 @@ yang lebih dasar, yaitu **apakah informasi frekuensi tinggi yang disuntik
 sebelum projector menolong sama sekali**. Bila lengan ini lolos, varian
 attention yang lebih kaya baru layak dibayar. Bila tidak lolos, attention
 kemungkinan besar hanya menambah parameter pada sinyal yang memang tidak
-terpakai — dan itu justru yang dikhawatirkan E-030.
+terpakai - dan itu justru yang dikhawatirkan E-030.
 
-## Empat lengan — dua di antaranya KONTROL WAJIB
+## Empat lengan - dua di antaranya KONTROL WAJIB
 
   dwt          sub-band Haar frekuensi tinggi (LH, HL, HH)   <- yang diusulkan
   laplacian    |Laplacian| tiga skala                        <- pesaing E-011/F-002
@@ -42,7 +42,7 @@ terpakai — dan itu justru yang dikhawatirkan E-030.
 
 Kedua kontrol berparameter SAMA PERSIS dengan lengan perlakuan (3 kanal masuk,
 side encoder identik). Tanpa keduanya, kenaikan signifikan pun tidak membuktikan
-bahwa **frekuensi** penyebabnya — bisa saja sekadar kapasitas tambahan. Ini
+bahwa **frekuensi** penyebabnya - bisa saja sekadar kapasitas tambahan. Ini
 disiplin lengan `derau`/`tukar` yang sama seperti E-027 dan E-032.
 
 `fase_diacak` adalah kontrol yang lebih ketat daripada `freq_rendah`: ia
@@ -57,7 +57,7 @@ cabang yang tak berguna tidak boleh menjadi sumber derau yang menurunkan
 baseline, karena kalau begitu yang diukur adalah kerusakan, bukan manfaat.
 `--uji-sambungan` membuktikan dua arah: (a) pada init keluaran identik baseline,
 (b) setelah gate dibuka paksa keluaran berubah. Bila (b) gagal, cabangnya tidak
-tersambung dan seluruh runnya sia-sia — mode gagal senyap yang sudah beberapa
+tersambung dan seluruh runnya sia-sia - mode gagal senyap yang sudah beberapa
 kali terjadi di repo ini.
 
 Pemakaian:
@@ -99,7 +99,7 @@ def peta_frekuensi(rgb: torch.Tensor, lengan: str) -> torch.Tensor:
     """Hasilkan masukan 3 kanal untuk side encoder dari batch RGB (B,3,H,W).
 
     Seluruh lengan mengeluarkan TEPAT 3 kanal pada resolusi penuh supaya jumlah
-    parameter side encoder identik antar lengan — syarat kontrol berparameter
+    parameter side encoder identik antar lengan - syarat kontrol berparameter
     sama (rezim §5.5).
     """
     B, _, H, W = rgb.shape
@@ -148,7 +148,7 @@ class SideEncoder(nn.Module):
     """Encoder konvolusi sempit: 3 kanal -> `out_channels` pada grid projector.
 
     Sempit disengaja. Yang diuji adalah apakah SINYAL-nya berguna, bukan apakah
-    parameter tambahan berguna — dan E-030 sudah menunjukkan bahwa menambah
+    parameter tambahan berguna - dan E-030 sudah menunjukkan bahwa menambah
     kapasitas saja bisa menggerakkan angka.
 
     `GroupNorm` pada keluaran tiap tahap adalah "normalisasi energi" yang diminta
@@ -187,24 +187,24 @@ def _kelas_frekuensi_backbone():
 
     Dibuat lewat fungsi supaya `rfdetr` hanya diimpor saat dipakai.
 
-    ## Kenapa TURUNAN, bukan pembungkus — pelajaran mahal 6 Agustus 2026
+    ## Kenapa TURUNAN, bukan pembungkus - pelajaran mahal 6 Agustus 2026
 
     Versi pertama MEMBUNGKUS `Backbone` sebagai `self.dasar`. Itu mengubah nama
     parameter dari `backbone.0.encoder...` menjadi `backbone.0.dasar.encoder...`,
     sehingga `load_pretrain_weights` **gagal mencocokkan 264 parameter** dan
     SELURUH backbone DINOv2 berangkat dari inisialisasi ACAK. rfdetr hanya
-    mencetak WARNING, latihan tetap jalan, dan angkanya terlihat "wajar" —
+    mencetak WARNING, latihan tetap jalan, dan angkanya terlihat "wajar" -
     sampai dibandingkan: train/loss awal 11,56 vs baseline 9,28, dan val mAP50
     epoch 0 sebesar 0,1308 vs 0,4714.
 
     Kalau itu tidak ketahuan, 22 jam GPU akan menghasilkan perbandingan yang
     TIDAK SAH: lengan perlakuan berbackbone acak melawan baseline pratlatih.
-    Selisihnya akan didominasi ada-tidaknya pralatihan, bukan cabang frekuensi —
+    Selisihnya akan didominasi ada-tidaknya pralatihan, bukan cabang frekuensi -
     persis mode gagal yang sudah dicatat untuk E-032 di `EKSPERIMEN.md`.
 
     Sebagai turunan, nama parameter warisan TIDAK berubah, bobot pratlatih
     termuat penuh, dan `get_named_param_lr_pairs` bawaan `Backbone` (yang
-    mematok kunci `backbone.0.encoder`) bekerja apa adanya — sehingga peluruhan
+    mematok kunci `backbone.0.encoder`) bekerja apa adanya - sehingga peluruhan
     LR per lapisan pun tidak perlu ditulis ulang.
     """
     from rfdetr.models.backbone.backbone import Backbone
@@ -218,13 +218,13 @@ def _kelas_frekuensi_backbone():
         **Kenapa gate SKALAR, bukan per-kanal.** Rancangan menulis `alpha_c`,
         menyiratkan gate per kanal. Skalar dipilih karena yang harus dijamin
         adalah sifat *no-op saat init*, dan karena satu angka per titik suntik
-        dapat dilaporkan apa adanya setelah latihan — sehingga klaim "cabang
+        dapat dilaporkan apa adanya setelah latihan - sehingga klaim "cabang
         frekuensi terpakai" dapat diverifikasi, bukan diasumsikan.
 
         `get_named_param_lr_pairs` TIDAK ditulis ulang: versi bawaan `Backbone`
         mematok kunci `backbone.0.encoder`, dan karena kelas ini turunan (bukan
         pembungkus) nama parameternya tetap cocok. Parameter cabang samping
-        otomatis jatuh ke `other_params` dengan `args.lr` penuh — benar untuk
+        otomatis jatuh ke `other_params` dengan `args.lr` penuh - benar untuk
         modul berinisialisasi acak.
         """
 
@@ -270,7 +270,7 @@ def bangun_backbone_freq(
 ):
     """Pengganti `build_backbone`, tanda tangan IDENTIK.
 
-    Membangun TURUNAN `Backbone`, bukan pembungkus — lihat
+    Membangun TURUNAN `Backbone`, bukan pembungkus - lihat
     `_kelas_frekuensi_backbone` untuk alasannya (264 parameter pratlatih gagal
     termuat pada versi pembungkus).
     """
@@ -331,7 +331,7 @@ def uji_sambungan(model, resolusi: int) -> dict:
     Kelas = _kelas_frekuensi_backbone()
     bungkus = next((m for m in inti.modules() if type(m).__name__ == "FrekuensiBackbone"), None)
     if bungkus is None:
-        raise RuntimeError("FrekuensiBackbone tidak ditemukan di model — tambalan tidak terpakai")
+        raise RuntimeError("FrekuensiBackbone tidak ditemukan di model - tambalan tidak terpakai")
 
     torch.manual_seed(0)
     x = torch.randn(1, 3, resolusi, resolusi)

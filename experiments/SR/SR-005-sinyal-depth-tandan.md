@@ -1,4 +1,4 @@
-# SR-005 — Apakah kedalaman memisahkan tandan dari sekitarnya?
+# SR-005 - Apakah kedalaman memisahkan tandan dari sekitarnya?
 
 **Ide I-9 (sampel depth terkendala instans)** · **Eksperimen:** E-006
 **Putusan: DIPALSUKAN** · 2026-07-21
@@ -14,7 +14,7 @@ apa yang warna tidak bisa. Naskah merumuskannya di §14: *"When two similarly
 coloured regions occupy different spatial layers, depth can help separate them."*
 
 Kalau asumsi itu salah untuk tandan sawit, maka **tidak ada arsitektur fusi
-yang akan menolong B4** — early, middle, maupun late. Menguji ini lebih dulu
+yang akan menolong B4** - early, middle, maupun late. Menguji ini lebih dulu
 menghemat berjam-jam GPU dan mencegah kesimpulan yang salah arah.
 
 SR-004 sudah memberi sinyal peringatan: secara visual, area mahkota tampak
@@ -26,8 +26,8 @@ Jangan menilai dengan mata. Ukur langsung, memakai **kotak kebenaran-dasar** yan
 sudah tersedia: untuk tiap kotak tandan, bandingkan statistik kedalaman di
 **dalam** kotak terhadap **cincin** di sekelilingnya.
 
-**Kendali sangat penting di sini.** Peta kedalaman mana pun punya struktur —
-atas jauh, bawah dekat, tepi pelepah tajam — sehingga **kotak apa pun** akan
+**Kendali sangat penting di sini.** Peta kedalaman mana pun punya struktur -
+atas jauh, bawah dekat, tepi pelepah tajam - sehingga **kotak apa pun** akan
 menunjukkan "kontras" tertentu. Karena itu prosedur yang sama dijalankan pada
 **kotak acak berukuran sama di posisi acak** pada citra yang sama. Yang bermakna
 adalah **selisih terhadap kendali**, bukan angka mentahnya.
@@ -84,10 +84,10 @@ Uji permutasi: p = 0,0110. **Rasio identik (0,26×) pada kedua resolusi.**
 | B3 | 0,0090 | 0,6056 | 0,232 | 6.789 | 431 |
 | **B4** | 0,0108 | **0,6022** | 0,246 | **4.515** | 146 |
 
-## 5. Putusan — DIPALSUKAN
+## 5. Putusan - DIPALSUKAN
 
 Tandan **tidak menonjol** dalam kedalaman. Kontrasnya justru **0,26×** kotak
-acak — artinya kotak acak lebih sering memotong batas kedalaman nyata (langit,
+acak - artinya kotak acak lebih sering memotong batas kedalaman nyata (langit,
 tanah, tepi pelepah) daripada kotak tandan.
 
 Penjelasan fisiknya konsisten dengan data: tandan tumbuh **tertanam di ketiak
@@ -100,7 +100,7 @@ karena n besar, tetapi **ukuran efeknya dapat diabaikan**: +0,009 AUC, sementara
 signifikansi praktis, dan menyajikannya sebagai "depth membawa sinyal" akan
 menyesatkan.
 
-**Yang paling menentukan:** B4 — kelas yang paling diharapkan tertolong —
+**Yang paling menentukan:** B4 - kelas yang paling diharapkan tertolong -
 justru punya **AUC terendah (0,6022)**.
 
 Penggandaan resolusi tidak mengubah apa pun (rasio tetap 0,26×), sehingga ini
@@ -109,13 +109,13 @@ Penggandaan resolusi tidak mengubah apa pun (rasio tetap 0,26×), sehingga ini
 ## 6. Dampak
 
 **Yang dipalsukan:** versi hipotesis "kedalaman sebagai pemisah tandan di
-tingkat piksel". Karena itu fusi RGB-D naif — terutama **I-4 (4-kanal early
-fusion)** — tidak diharapkan menaikkan AP50 B4 secara berarti. Prediksi ini
+tingkat piksel". Karena itu fusi RGB-D naif - terutama **I-4 (4-kanal early
+fusion)** - tidak diharapkan menaikkan AP50 B4 secara berarti. Prediksi ini
 sejalan dengan Ophoff dkk. (§174) yang justru memperkirakan early fusion
 berkinerja rendah, dan sekarang kita punya alasan mekanistik **spesifik untuk
 sawit**, bukan sekadar analogi dari domain lain.
 
-**Yang TIDAK dipalsukan** — penting untuk tidak berlebihan menyimpulkan:
+**Yang TIDAK dipalsukan** - penting untuk tidak berlebihan menyimpulkan:
 
 1. **Geometri tingkat-pohon** (SR-003, SR-004) tetap berdiri kokoh: RMSE sudut
    19% relatif, urutan sisi benar 50/50. Nilai DA3 ada di **pose dan struktur
@@ -128,7 +128,7 @@ sawit**, bukan sekadar analogi dari domain lain.
    "depth memberi kerangka geometris antar-pandangan".
 
 **Konsekuensi rencana:** I-4 tetap dijalankan sebagai **pembanding yang
-diprediksi gagal** — nilainya justru sebagai kontrol, dan prediksinya sudah
+diprediksi gagal** - nilainya justru sebagai kontrol, dan prediksinya sudah
 dicatat di sini *sebelum* dijalankan sehingga tidak bisa dirasionalisasi
 belakangan.
 

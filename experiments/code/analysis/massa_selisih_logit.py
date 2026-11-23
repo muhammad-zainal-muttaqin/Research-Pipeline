@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F-005 (P1) — Massa selisih logit antar-kelas di dalam query yang sama.
+"""F-005 (P1) - Massa selisih logit antar-kelas di dalam query yang sama.
 
 Gerbang untuk K2 (kepala ordinal kumulatif berpenjaga-peringkat).
 

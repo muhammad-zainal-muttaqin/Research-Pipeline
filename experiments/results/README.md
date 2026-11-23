@@ -1,4 +1,4 @@
-# results/ — indeks JSON hasil
+# results/ - indeks JSON hasil
 
 Angka mentah di balik [metrik final E-021](../METRICS.md),
 [audit E-022](../AUDIT-E022.md), dan putusan
@@ -8,17 +8,17 @@ lama tetap dapat ditelusuri lewat pencarian nama.
 
 | Folder | Berkas | Eksperimen | Isi | Dikutip di |
 |---|---|---|---|---|
-| `E-001/` | `class_mismatch.json` | E-001 | Statistik `class_mismatch` — 0 dari 7.328 bunch multi-sisi | SR-001 (**dipalsukan**) |
+| `E-001/` | `class_mismatch.json` | E-001 | Statistik `class_mismatch` - 0 dari 7.328 bunch multi-sisi | SR-001 (**dipalsukan**) |
 | `E-003/`, `E-003b/` | `report.json` | E-003 | DA3 pada video orbit | SR-003 |
 | `E-004/` | `report_rot.json` | E-004 | DA3 video, uji rotasi | SR-003 |
 | `E-005/` | `report_4sides.json`, `report_8sides.json` | E-005 | DA3 pada 4/8 sisi foto | SR-004 |
 | `E-006/` | `report_res504.json`, `report_res1008.json` | E-006 | Kedalaman sebagai pemisah tandan, dua resolusi | SR-005 (**dipalsukan**) |
 | `E-007/` | `report_test.json`, `sweep.json` | E-007 | Penautan tandan lintas-sisi secara geometris | SR-006 (**dipalsukan**) |
 | `E-009/` | `box_sizes.json` | E-009 | Sebaran ukuran kotak per kelas | SR-007 |
-| `E-010/` | `why_b4.json` | E-010 | Diagnosis kegagalan B4 — kontras, bukan kepadatan | SR-007 |
+| `E-010/` | `why_b4.json` | E-010 | Diagnosis kegagalan B4 - kontras, bukan kepadatan | SR-007 |
 | `E-011/` | `contrast_boost.json` | E-011 | Lima peta penajam kontras (CLAHE, unsharp, dll.) | SR-008 |
 | `E-012/` | `separability.json` | E-012 | Keterpisahan kelas kematangan | SR-009 |
-| `E-014/` | `diag_bottleneck.json` | E-014 | Agnostik vs 4-kelas — lokasi hambatan | SR-010 |
+| `E-014/` | `diag_bottleneck.json` | E-014 | Agnostik vs 4-kelas - lokasi hambatan | SR-010 |
 | `E-015/` | `raw_map.json` | E-015 | Pemetaan 3.992 citra raw ↔ MVC berbasis isi, nol ambigu | SR-002 |
 | `E-016/` | `head_vs_crop.json`, `multiview_val.json`, `metric_variants.json`, `metric_pm1.json` | E-016 | Kepala kematangan, voting antar-sisi, varian metrik | SR-011 (**ditarik**, lihat E-018) |
 | `E-017/` | `two_stage_val_A.json`, `_B`, `_mini_rawtest`, `_smoke` | E-017 | Detektor dua tahap | SR-012 (**dipalsukan**) |
@@ -52,7 +52,7 @@ lama tetap dapat ditelusuri lewat pencarian nama.
 
 ## `lintas-eksperimen/`
 
-Berkas yang tidak dapat diatribusikan ke satu eksperimen tunggal. Tidak ditebak —
+Berkas yang tidak dapat diatribusikan ke satu eksperimen tunggal. Tidak ditebak -
 didaftar apa adanya.
 
 | Berkas | Isi | Catatan |

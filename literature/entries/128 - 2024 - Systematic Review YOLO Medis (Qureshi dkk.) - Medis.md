@@ -33,7 +33,7 @@ Selain itu, penyebaran literatur yang terfragmentasi menyulitkan para rekayasawa
 
 Gagasan utama dari makalah ini adalah menyusun taksonomi komprehensif dan sintesis performa dari 124 studi YOLO medis untuk menyembuhkan fragmentasi literatur. Penulis mengklasifikasikan kontribusi ilmiah ke dalam tiga sumbu utama: modalitas citra klinis, evolusi arsitektur YOLO yang digunakan, dan bagian anatomi tubuh yang ditargetkan.
 
-Melalui pendekatan ini, makalah menyajikan analisis mekanis mengenai bagaimana komponen utama YOLO—yaitu *backbone* (ekstraktor fitur), *neck* (jaringan penggabung fitur), dan *head* (kepala prediksi)—dimodifikasi untuk mengatasi tantangan visual citra medis. Dengan menyandingkan berbagai hasil eksperimen, penelitian ini mengidentifikasi kelebihan dan keterbatasan YOLO saat diterapkan pada berbagai kasus klinis nyata, serta merumuskan panduan untuk transisi dari eksperimen laboratorium menuju sistem pendukung keputusan klinis (*clinical decision support systems*).
+Melalui pendekatan ini, makalah menyajikan analisis mekanis mengenai bagaimana komponen utama YOLO-yaitu *backbone* (ekstraktor fitur), *neck* (jaringan penggabung fitur), dan *head* (kepala prediksi)-dimodifikasi untuk mengatasi tantangan visual citra medis. Dengan menyandingkan berbagai hasil eksperimen, penelitian ini mengidentifikasi kelebihan dan keterbatasan YOLO saat diterapkan pada berbagai kasus klinis nyata, serta merumuskan panduan untuk transisi dari eksperimen laboratorium menuju sistem pendukung keputusan klinis (*clinical decision support systems*).
 
 ## Cara Kerja Langkah demi Langkah
 

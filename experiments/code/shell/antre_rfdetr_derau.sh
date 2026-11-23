@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kontrol derau RF-DETR Nano — uji paling menentukan yang belum ada:
+# Kontrol derau RF-DETR Nano - uji paling menentukan yang belum ada:
 # RF-DETR menunjukkan kenaikan depth TERBESAR (+0,0439), jadi kalau derau juga
 # memberi kenaikan setara, maka kenaikan terbesar di E-022 pun bukan dari
 # kandungan informasi kedalaman.

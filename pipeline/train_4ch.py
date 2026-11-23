@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Pelatihan YOLO 4-kanal (RGB + kedalaman) — satu bobot untuk dua mode uji.
+"""Pelatihan YOLO 4-kanal (RGB + kedalaman) - satu bobot untuk dua mode uji.
 
 Prasyarat:
   1. data.yaml dengan `channels: 4` (lihat pipeline/README.md untuk templat).
   2. Folder PNG kedalaman kanonik senama dengan citranya
-     (hasil prepare_depth.py). Citra tanpa PNG kedalaman tetap ikut dilatih —
+     (hasil prepare_depth.py). Citra tanpa PNG kedalaman tetap ikut dilatih -
      kanal ke-4-nya nol, sama seperti mode RGB di lapangan.
 
 Contoh:

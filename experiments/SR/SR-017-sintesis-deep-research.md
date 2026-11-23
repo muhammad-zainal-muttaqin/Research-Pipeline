@@ -1,4 +1,4 @@
-# SR-017 — Sintesis dua laporan deep research: K1 frekuensi, K2 ordinal, K3 lintas-sisi
+# SR-017 - Sintesis dua laporan deep research: K1 frekuensi, K2 ordinal, K3 lintas-sisi
 
 **Ide:** perubahan formulasi/arsitektur di atas RF-DETR-L, bukan tuning · **Eksperimen:** F-001…F-009 ([seri F](../SERI-F.md)) · **Putusan sementara: K1 LOLOS gerbang · K3 DIPALSUKAN · K2 menunggu** · 2026-08-06
 
@@ -8,7 +8,7 @@
 
 Setelah E-021 menempatkan RF-DETR-L pada test mAP50 0,6038, jalur yang tersisa
 menyempit tajam. Pengguna menyatakan 21 Juli 2026 bahwa teknik siap-pakai dari
-literatur — termasuk SAHI — sudah dicoba sendiri dan **tidak satu pun** menaikkan
+literatur - termasuk SAHI - sudah dicoba sendiri dan **tidak satu pun** menaikkan
 mAP, dan bahwa tuning sudah habis dijalankan (ditegaskan dua kali). Jalur depth
 juga tidak memberi kenaikan: E-027 menemukan depth **merugikan** untuk YOLO26n,
 E-032 tidak konklusif untuk titik fusi, E-033b mencabut indikasi rentang metrik.
@@ -17,16 +17,16 @@ Yang tersisa adalah pertanyaan yang belum pernah diserang langsung: **apakah
 formulasi keluaran detektornya sendiri yang membatasi?** Dua diagnosis lama
 menunjuk ke sana:
 
-- **(A) geometris** — B4 kecil, tertanam, menyatu dengan pelepah. E-011 sudah
+- **(A) geometris** - B4 kecil, tertanam, menyatu dengan pelepah. E-011 sudah
   menunjukkan B4 **tak terlihat dalam intensitas tetapi terlihat dalam tekstur**
   (Laplacian +0,0458 di atas kendali, membalik urutan kelas).
-- **(B) fotometrik** — ambiguitas B2↔B3. E-028 mengukurnya tanpa label manusia:
+- **(B) fotometrik** - ambiguitas B2↔B3. E-028 mengukurnya tanpa label manusia:
   inkonsistensi lintas-sisi 0,2329, dan **B2 adalah kelas paling ambigu (0,434)**,
   bukan B4.
 
 Keduanya tetap ditangani detektor yang memperlakukan B1…B4 sebagai **empat kelas
-nominal yang saling asing** — padahal kematangan itu **ordinal** (B1 = matang →
-B4 = mentah) — dan yang membuang informasi bahwa 4–8 citra dalam satu pohon
+nominal yang saling asing** - padahal kematangan itu **ordinal** (B1 = matang →
+B4 = mentah) - dan yang membuang informasi bahwa 4–8 citra dalam satu pohon
 memuat tandan fisik yang sama.
 
 ## 2. Ide
@@ -44,14 +44,14 @@ disaring menjadi tiga komponen di atas trunk RF-DETR-L yang **tidak disentuh**:
 Tiga penyaring (P1/P2/P3) dirancang untuk menggugurkan komponen **tanpa melatih
 apa pun**. Itu jawaban langsung atas caveat terpenting dari brief: ukuran efek
 yang diprediksi 3–10× lebih besar daripada bukti eksternal mana pun yang dikutip
-(Align-DETR +0,6 AP, ViT-Adapter +1,0 AP, Wave-ViT +1,3 AP — semuanya jauh di
+(Align-DETR +0,6 AP, ViT-Adapter +1,0 AP, Wave-ViT +1,3 AP - semuanya jauh di
 bawah ambang +0,05). Prior jujurnya adalah tiap komponen memberi +0,01…+0,03,
 yaitu **di bawah lantai derau**.
 
 Mutu sumber juga ditandai sejak awal, bukan belakangan: laporan Gemini memuat
 **tabel hasil yang dikarang**, kedua laporan sitasinya belum dapat di-resolve,
 dan "MF-RF-DETR" adalah **nama karangan** tanpa makalah, kode, maupun bobot.
-Yang diambil dari laporan Gemini hanya rumusan loss — tidak satu angka pun.
+Yang diambil dari laporan Gemini hanya rumusan loss - tidak satu angka pun.
 
 ## 3. Solusi
 
@@ -65,20 +65,20 @@ mengira seluruh bobot hilang. Pemeriksaan disk menemukan itu hanya separuh
 benar:
 
 - Bobot RF-DETR-L E-021 memang **hilang**, begitu pula bobot pratlatihnya, dan
-  `rfdetr_ds` kosong — semuanya dipulihkan di F-001.
+  `rfdetr_ds` kosong - semuanya dipulihkan di F-001.
 - Tetapi `konsistensi_sawitmvc_rgb_seed42.json` hanya menyimpan **laju agregat**
   (tidak ada prediksi per-sisi) **sementara bobot yolo26n yang menghasilkannya
   MASIH ADA**.
 
 Akibatnya **P2 dan P3 dapat dipindahkan ke depan baseline** dan dijalankan lebih
-dulu — keduanya mampu menggugurkan komponen sebelum 9 jam GPU terbakar.
+dulu - keduanya mampu menggugurkan komponen sebelum 9 jam GPU terbakar.
 
 ## 4. Hasil
 
 ### F-002 (P2) → K1 **LOLOS**
 
 E-011 mengukur tandan vs **cincin sekeliling**; yang dikhawatirkan adalah tandan
-vs **pelepah** — struktur berfrekuensi sangat tinggi yang justru paling menyatu
+vs **pelepah** - struktur berfrekuensi sangat tinggi yang justru paling menyatu
 dengan B4. Wilayah pembanding didefinisikan ulang: cincin **dikurangi** seluruh
 kotak GT tandan lain.
 
@@ -89,14 +89,14 @@ kotak GT tandan lain.
 | **laplacian** | **+0,0721** |
 | **dwt_hh** | **+0,0731** |
 
-Mode gagal yang dikhawatirkan **tidak terjadi** — pemisahan terhadap pelepah
+Mode gagal yang dikhawatirkan **tidak terjadi** - pemisahan terhadap pelepah
 justru LEBIH BESAR daripada terhadap cincin generik di E-011 (0,0721 vs 0,0458).
 Urutan kelas **monoton B1 < B2 < B3 < B4 pada setiap lengan frekuensi tinggi**,
 dan terbalik pada luminans: makin mentah, makin menyatu dalam intensitas, makin
 terpisah dalam tekstur.
 
 **Laplacian dan DWT-HH praktis seri** (selisih 0,0010). Pada dataset ini sub-band
-DWT tidak membeli apa pun di atas Laplacian yang jauh lebih murah — sehingga
+DWT tidak membeli apa pun di atas Laplacian yang jauh lebih murah - sehingga
 lengan Laplacian di F-007 bukan formalitas melainkan pesaing sesungguhnya, dan
 **DWT wajib mengalahkannya** untuk membenarkan mesin tambahannya.
 
@@ -117,11 +117,11 @@ LEMAH, bukan tegas**, dan wajib dibaca demikian.
 Yang justru tegas adalah dua hal lain:
 
 1. **72% galat kelas salah di SEMUA sisi** (294 dari 408); 194 tandan bergalat
-   punya nol sisi benar. Galat kelas bukan kecelakaan per pandangan — ia sifat
+   punya nol sisi benar. Galat kelas bukan kecelakaan per pandangan - ia sifat
    tandannya. Konsisten dengan E-028 (B2 paling ambigu) dan dengan diagnosis (B):
    ambiguitas B2↔B3 tidak diselesaikan dengan melihat dari sisi lain.
 2. **B4 adalah kasus terburuk: 0,1038** (11 dari 106). Harapan bahwa K3 menolong
-   B4 tertutup — dan itu kebetulan kelas yang paling ingin ditolong.
+   B4 tertutup - dan itu kebetulan kelas yang paling ingin ditolong.
 
 Plafon **kehadiran** 0,4946 tegas di atas ambang, tetapi itu **mekanisme berbeda
 dengan plafon berbeda**, bukan penyelamat gerbang yang gagal. Bila mau dikejar,
@@ -130,7 +130,7 @@ ia harus didaftarkan sebagai hipotesis tersendiri dengan ambangnya sendiri.
 **Kaveat proksi:** bobot yang tersedia yolo26n, bukan RF-DETR-L. Menjawab "ada
 ruang?", bukan "berapa besar ruangnya". P3 definitif menunggu F-004.
 
-### Implementasi K1 dan K2 — uji sambungan LULUS
+### Implementasi K1 dan K2 - uji sambungan LULUS
 
 Keduanya menambal `rfdetr` saat runtime, tidak mem-fork paket (pola
 `train_rfdetr_4ch.py` / `train_rfdetr_fusion_late.py`).
@@ -159,12 +159,12 @@ Karena tinggal dua komponen, syarat F-009 ("≥ 2 lolos") sekarang menuntut
 **Yang belum boleh diklaim.** Tidak satu pun angka di atas adalah kenaikan mAP.
 F-002 menutup satu mode gagal; ia tidak meramalkan kenaikan. Keterpisahan piksel
 bukan AP. Bukti penjaga-peringkat K2 membuktikan **keamanan, bukan potensi naik**
-— ia menjamin urutan tidak rusak, bukan bahwa ada cukup kerugian AP yang tinggal
+- ia menjamin urutan tidak rusak, bukan bahwa ada cukup kerugian AP yang tinggal
 di pasangan rapat untuk direbut. Itu yang dijawab F-005.
 
 **Ambang +0,05 sendiri belum tervalidasi untuk jalur ini** (varians 0,0321 E-027
 dan 0,0488 E-031 diukur pada SawitMVC-Depth dengan YOLO26n). F-004 memberi
-varians seed jalur RGB RF-DETR yang sampai kini **nol terukur** — dan angka itu
+varians seed jalur RGB RF-DETR yang sampai kini **nol terukur** - dan angka itu
 yang menentukan apakah ambangnya diturunkan, dipertahankan, atau seri ini
 dihentikan karena tidak dapat diukur.
 

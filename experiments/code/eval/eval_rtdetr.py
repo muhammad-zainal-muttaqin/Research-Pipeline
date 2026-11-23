@@ -1,4 +1,4 @@
-"""Evaluasi akhir RT-DETR pada bobot terbaik — val DAN test, per-kelas.
+"""Evaluasi akhir RT-DETR pada bobot terbaik - val DAN test, per-kelas.
 
 Dijalankan setelah pelatihan selesai. Memberi angka bersih untuk tabel SR-013,
 bukan mengandalkan ekor log yang bisa terpotong. Test dilaporkan terpisah;

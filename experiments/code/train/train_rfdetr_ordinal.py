@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""F-006 (K2) — Kepala ordinal kumulatif CORN berpenjaga-peringkat untuk RF-DETR-L.
+"""F-006 (K2) - Kepala ordinal kumulatif CORN berpenjaga-peringkat untuk RF-DETR-L.
 
 MENUNGGU GERBANG F-005. Berkas ini ditulis lebih dulu karena menulis kode tidak
 memakai GPU dan K2 adalah tambalan paling berisiko di seri ini (menyentuh
 `LWDETR.forward` DAN `SetCriterion`). Bila F-005 memalsukan K2, yang terbuang
 hanya waktu tulis, bukan jam GPU.
 
-## Jalur skor yang ditempeli — dibaca dari kode, bukan diasumsikan
+## Jalur skor yang ditempeli - dibaca dari kode, bukan diasumsikan
 
 RF-DETR memakai **IA-BCE** (`criterion.py:268-296`), bukan softmax CE. Skor
 deteksi = `sigmoid(z[q,c])` per kelas INDEPENDEN, top-k `num_select=300` atas
@@ -27,7 +27,7 @@ q1 = P(y>B1), q2 = P(y>B2 | y>B1), q3 = P(y>B3 | y>B2), lalu
     pi1 = 1-q1,  pi2 = q1(1-q2),  pi3 = q1 q2 (1-q3),  pi4 = q1 q2 q3
 
 Sumbu ordinalnya nyata dan arahnya penting: **B1 = MATANG ... B4 = MENTAH**
-(CLAUDE.md §"Arah kelas — jangan dibalik").
+(CLAUDE.md §"Arah kelas - jangan dibalik").
 
 Residu: `r = log(pi)`, dipusatkan (mean nol antar 4 kelas), di-gate `alpha`
 (NOL saat init), lalu **di-clip ke +-eps**. Urutan itu penting: clip di akhir

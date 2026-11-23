@@ -17,13 +17,13 @@
 
 ## Gambaran Umum
 
-Makalah ini memperbaiki YOLOv1 (bab 001) pada tiga poros yang menjadi judulnya. *Better*: serangkaian perbaikan arsitektur dan pelatihan — *batch normalization*, pengklasifikasi resolusi tinggi, *anchor box* yang ditentukan dari data, dan pelatihan multi-skala — menaikkan akurasi dari 63,4% menjadi 78,6% mAP pada PASCAL VOC 2007 sambil mempertahankan kecepatan *real-time*. *Faster*: backbone baru Darknet-19 yang jauh lebih ringan dari pendahulunya. *Stronger*: mekanisme pelatihan gabungan bernama WordTree yang memungkinkan model mendeteksi lebih dari 9.000 kategori objek, jauh melampaui 20–80 kelas yang umum saat itu.
+Makalah ini memperbaiki YOLOv1 (bab 001) pada tiga poros yang menjadi judulnya. *Better*: serangkaian perbaikan arsitektur dan pelatihan - *batch normalization*, pengklasifikasi resolusi tinggi, *anchor box* yang ditentukan dari data, dan pelatihan multi-skala - menaikkan akurasi dari 63,4% menjadi 78,6% mAP pada PASCAL VOC 2007 sambil mempertahankan kecepatan *real-time*. *Faster*: backbone baru Darknet-19 yang jauh lebih ringan dari pendahulunya. *Stronger*: mekanisme pelatihan gabungan bernama WordTree yang memungkinkan model mendeteksi lebih dari 9.000 kategori objek, jauh melampaui 20–80 kelas yang umum saat itu.
 
 Kontribusi yang paling tahan lama dari makalah ini adalah *anchor box* dan pelatihan multi-skala; keduanya menjadi komponen baku pada hampir semua YOLO generasi berikutnya hingga era *anchor-free* (bab 005).
 
 ## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-YOLOv1 membuktikan deteksi *real-time* itu mungkin, tetapi membayar dua harga. Pertama, *recall*-nya rendah: karena setiap sel grid hanya memprediksi satu kelas dan dua kotak, banyak objek — terutama objek kecil berkelompok — terlewat. Kedua, lokalisasinya kurang presisi; galat lokalisasi adalah sumber kesalahan dominannya. Akibatnya mAP YOLOv1 (63,4%) tertinggal sekitar 10 poin dari detektor dua tahap seperti Faster R-CNN (73,2%).
+YOLOv1 membuktikan deteksi *real-time* itu mungkin, tetapi membayar dua harga. Pertama, *recall*-nya rendah: karena setiap sel grid hanya memprediksi satu kelas dan dua kotak, banyak objek - terutama objek kecil berkelompok - terlewat. Kedua, lokalisasinya kurang presisi; galat lokalisasi adalah sumber kesalahan dominannya. Akibatnya mAP YOLOv1 (63,4%) tertinggal sekitar 10 poin dari detektor dua tahap seperti Faster R-CNN (73,2%).
 
 Ada pula masalah kedua yang lebih mendasar: jumlah kategori yang dapat dideteksi. Dataset deteksi mahal dibuat karena setiap objek harus dilabeli kotak; VOC hanya memiliki 20 kelas dan COCO 80 kelas. Sementara itu, dataset klasifikasi seperti ImageNet memiliki ribuan kelas karena pelabelan per citra jauh lebih murah. Tanpa mekanisme baru, kosakata deteksi objek akan selalu tertinggal jauh di belakang klasifikasi.
 
@@ -31,7 +31,7 @@ Ada pula masalah kedua yang lebih mendasar: jumlah kategori yang dapat dideteksi
 
 Untuk masalah akurasi, gagasannya bukan satu perubahan besar, melainkan akumulasi perbaikan yang masing-masing diukur kontribusinya: sebagian membuat pelatihan lebih stabil, sebagian membuat prediksi lebih fleksibel, sebagian memperkuat fitur. Prinsipnya adalah mempertahankan formulasi satu jaringan dari YOLOv1, tetapi menghilangkan hambatan-hambatan yang menekan recall dan presisi lokalisasi.
 
-Untuk masalah kosakata, gagasannya adalah **pelatihan gabungan**: saat menerima citra dari dataset deteksi, jaringan belajar mendeteksi; saat menerima citra dari dataset klasifikasi (yang tidak punya label kotak), jaringan hanya belajar mengenali kelasnya. Hambatannya, label kedua dataset tidak konsisten — ImageNet memiliki "Norfolk terrier", COCO hanya memiliki "anjing". Solusinya adalah WordTree: label-label dari semua dataset disusun dalam satu pohon hierarki (dari umum ke khusus), dan jaringan memprediksi probabilitas di setiap tingkat pohon, bukan satu *softmax* datar. Dengan cara ini, kelas yang saling beririsan tidak lagi bertentangan.
+Untuk masalah kosakata, gagasannya adalah **pelatihan gabungan**: saat menerima citra dari dataset deteksi, jaringan belajar mendeteksi; saat menerima citra dari dataset klasifikasi (yang tidak punya label kotak), jaringan hanya belajar mengenali kelasnya. Hambatannya, label kedua dataset tidak konsisten - ImageNet memiliki "Norfolk terrier", COCO hanya memiliki "anjing". Solusinya adalah WordTree: label-label dari semua dataset disusun dalam satu pohon hierarki (dari umum ke khusus), dan jaringan memprediksi probabilitas di setiap tingkat pohon, bukan satu *softmax* datar. Dengan cara ini, kelas yang saling beririsan tidak lagi bertentangan.
 
 ## Cara Kerja Langkah demi Langkah
 
@@ -41,7 +41,7 @@ Semua lapis konvolusi diberi *batch normalization* (normalisasi keluaran lapis t
 
 ### Pengklasifikasi Resolusi Tinggi
 
-YOLOv1 melatih backbone sebagai pengklasifikasi ImageNet pada 224×224, lalu langsung menaikkan resolusi ke 448×448 untuk deteksi — jaringan harus beradaptasi pada resolusi baru dan tugas baru secara bersamaan. YOLOv2 memecah transisi ini: backbone terlebih dahulu disetel halus sebagai pengklasifikasi pada 448×448 selama 10 *epoch*, baru kemudian dipasang ke tugas deteksi. Kontribusinya +4% mAP.
+YOLOv1 melatih backbone sebagai pengklasifikasi ImageNet pada 224×224, lalu langsung menaikkan resolusi ke 448×448 untuk deteksi - jaringan harus beradaptasi pada resolusi baru dan tugas baru secara bersamaan. YOLOv2 memecah transisi ini: backbone terlebih dahulu disetel halus sebagai pengklasifikasi pada 448×448 selama 10 *epoch*, baru kemudian dipasang ke tugas deteksi. Kontribusinya +4% mAP.
 
 ### Anchor Box dan Penentuannya dari Data
 
@@ -76,32 +76,32 @@ Terakhir, karena arsitekturnya sepenuhnya konvolusional, ukuran masukan dapat di
 
 ### Darknet-19 (Faster)
 
-Backbone baru, Darknet-19, terdiri atas 19 lapis konvolusi (mayoritas 3×3 dengan konvolusi 1×1 sebagai pereduksi kanal) dan 5 lapis *max-pooling*, ditutup *global average pooling*. Biayanya hanya 5,58 miliar FLOPs per citra, dibandingkan ±30,7 miliar pada VGG-16, dengan akurasi klasifikasi ImageNet top-1 72,9% — jauh lebih ringan dengan akurasi yang layak.
+Backbone baru, Darknet-19, terdiri atas 19 lapis konvolusi (mayoritas 3×3 dengan konvolusi 1×1 sebagai pereduksi kanal) dan 5 lapis *max-pooling*, ditutup *global average pooling*. Biayanya hanya 5,58 miliar FLOPs per citra, dibandingkan ±30,7 miliar pada VGG-16, dengan akurasi klasifikasi ImageNet top-1 72,9% - jauh lebih ringan dengan akurasi yang layak.
 
 ### WordTree (Stronger)
 
-WordTree dibangun dari graf konsep WordNet: setiap label ditelusuri jalurnya ke akar (mis. "Norfolk terrier" → "terrier" → "anjing pemburu" → "anjing" → … → "objek fisik"). Prediksi kelas dilakukan secara hierarkis: pada setiap simpul, jaringan menghitung *softmax* hanya terhadap saudara-saudara satu induk; probabilitas sebuah kelas adalah perkalian probabilitas sepanjang jalurnya. Dengan struktur ini, dataset deteksi dan klasifikasi dapat dilatih bergantian pada satu jaringan — citra COCO memperbarui seluruh komponen deteksi, citra ImageNet hanya memperbarui bagian klasifikasi. Hasilnya, YOLO9000 mengenali 9.418 kategori.
+WordTree dibangun dari graf konsep WordNet: setiap label ditelusuri jalurnya ke akar (mis. "Norfolk terrier" → "terrier" → "anjing pemburu" → "anjing" → … → "objek fisik"). Prediksi kelas dilakukan secara hierarkis: pada setiap simpul, jaringan menghitung *softmax* hanya terhadap saudara-saudara satu induk; probabilitas sebuah kelas adalah perkalian probabilitas sepanjang jalurnya. Dengan struktur ini, dataset deteksi dan klasifikasi dapat dilatih bergantian pada satu jaringan - citra COCO memperbarui seluruh komponen deteksi, citra ImageNet hanya memperbarui bagian klasifikasi. Hasilnya, YOLO9000 mengenali 9.418 kategori.
 
 ## Eksperimen dan Hasil
 
 Deteksi diuji pada PASCAL VOC 2007 dan COCO; mekanisme WordTree diuji pada tugas deteksi ImageNet. Hasil utama:
 
 - YOLOv2 416×416: 76,8% mAP pada 67 FPS (VOC 2007).
-- YOLOv2 544×544: 78,6% mAP pada 40 FPS — melampaui Faster R-CNN (73,2% pada 7 FPS) baik dalam akurasi maupun kecepatan.
+- YOLOv2 544×544: 78,6% mAP pada 40 FPS - melampaui Faster R-CNN (73,2% pada 7 FPS) baik dalam akurasi maupun kecepatan.
 - Fleksibilitas resolusi: pada 288×288 model tetap berjalan ±90 FPS dengan mAP ±69%, sehingga satu model melayani spektrum kecepatan-akurasi.
 - YOLO9000 pada tugas deteksi ImageNet (200 kelas, hanya 44 yang memiliki label kotak saat pelatihan): 19,7% mAP keseluruhan; pada 156 kelas yang tidak pernah berlabel kotak, 16,0% mAP.
 
-Interpretasi baris terakhir: akurasi pada kelas tanpa label kotak memang jauh di bawah kelas berlabel penuh, tetapi angka itu membuktikan pengetahuan klasifikasi benar-benar berpindah ke kemampuan deteksi — sesuatu yang tidak mungkin dilakukan pelatihan deteksi biasa.
+Interpretasi baris terakhir: akurasi pada kelas tanpa label kotak memang jauh di bawah kelas berlabel penuh, tetapi angka itu membuktikan pengetahuan klasifikasi benar-benar berpindah ke kemampuan deteksi - sesuatu yang tidak mungkin dilakukan pelatihan deteksi biasa.
 
 ## Kelebihan dan Keterbatasan
 
 Kelebihan: (1) akurasi dan recall naik tajam tanpa mengorbankan kecepatan; (2) satu model fleksibel terhadap resolusi masukan; (3) Darknet-19 ringan dan menjadi fondasi Darknet-53 pada generasi berikutnya; (4) WordTree membuka pelatihan lintas-dataset berskala ribuan kelas.
 
-Keterbatasan: (1) objek kecil membaik tetapi belum tuntas — prediksi tetap pada satu skala 13×13; (2) deteksi 9.000 kelas jauh lebih lemah daripada deteksi kelas berlabel penuh, sehingga WordTree lebih bernilai sebagai bukti konsep; (3) kualitas WordTree bergantung pada kualitas hierarki WordNet; (4) dari sisi rekayasa, banyaknya perbaikan yang ditumpuk membuat kontribusi masing-masing sulit dipisahkan di luar ablation makalah.
+Keterbatasan: (1) objek kecil membaik tetapi belum tuntas - prediksi tetap pada satu skala 13×13; (2) deteksi 9.000 kelas jauh lebih lemah daripada deteksi kelas berlabel penuh, sehingga WordTree lebih bernilai sebagai bukti konsep; (3) kualitas WordTree bergantung pada kualitas hierarki WordNet; (4) dari sisi rekayasa, banyaknya perbaikan yang ditumpuk membuat kontribusi masing-masing sulit dipisahkan di luar ablation makalah.
 
 ## Kaitan dengan Bab Lain
 
-Bab ini adalah perbaikan langsung atas kelemahan bab 001 (recall rendah, lokalisasi kasar). Gagasan *anchor box*-nya dipinjam dari Faster R-CNN (keluarga bab 012–014), lalu disempurnakan dengan penentuan dari data. Bab 003 (YOLOv3) akan mengganti Darknet-19 dengan backbone residual dan menyerang sisa masalah objek kecil lewat prediksi multi-skala — pelatihan multi-skala di bab ini adalah pendahulunya. *Anchor* berbasis klaster yang diperkenalkan di sini menjadi standar hingga dihapus oleh bab 005 (YOLOX).
+Bab ini adalah perbaikan langsung atas kelemahan bab 001 (recall rendah, lokalisasi kasar). Gagasan *anchor box*-nya dipinjam dari Faster R-CNN (keluarga bab 012–014), lalu disempurnakan dengan penentuan dari data. Bab 003 (YOLOv3) akan mengganti Darknet-19 dengan backbone residual dan menyerang sisa masalah objek kecil lewat prediksi multi-skala - pelatihan multi-skala di bab ini adalah pendahulunya. *Anchor* berbasis klaster yang diperkenalkan di sini menjadi standar hingga dihapus oleh bab 005 (YOLOX).
 
 ## Poin untuk Sitasi
 

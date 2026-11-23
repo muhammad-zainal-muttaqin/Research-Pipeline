@@ -30,7 +30,7 @@ Dua masalah muncul dari kondisi tersebut. Pertama, tinjauan yang tersedia pada m
 
 ## Ide Utama
 
-Gagasan inti yang disarikan survei ini adalah rumusan deteksi sebagai regresi tunggal. Regresi di sini berarti jaringan memprediksi nilai numerik kontinu — koordinat dan ukuran kotak — alih-alih mengklasifikasikan wilayah satu per satu. Satu jaringan saraf konvolusi (CNN, jaringan yang mengekstrak fitur citra lewat operasi konvolusi berlapis) menerima seluruh citra dan, dalam satu evaluasi, mengeluarkan tensor yang memuat semua kotak beserta skor keyakinan dan probabilitas kelasnya.
+Gagasan inti yang disarikan survei ini adalah rumusan deteksi sebagai regresi tunggal. Regresi di sini berarti jaringan memprediksi nilai numerik kontinu - koordinat dan ukuran kotak - alih-alih mengklasifikasikan wilayah satu per satu. Satu jaringan saraf konvolusi (CNN, jaringan yang mengekstrak fitur citra lewat operasi konvolusi berlapis) menerima seluruh citra dan, dalam satu evaluasi, mengeluarkan tensor yang memuat semua kotak beserta skor keyakinan dan probabilitas kelasnya.
 
 Kontribusi survei itu sendiri adalah cara membacanya: empat versi YOLO disajikan sebagai satu garis optimasi; setiap versi memperbaiki kelemahan spesifik pendahulunya, dari galat lokalisasi pada v1 sampai kegagalan pada objek kecil pada v2. Pembaca memperoleh peta kronologis beserta ukuran kuantitatif tiap perbaikan.
 
@@ -98,7 +98,7 @@ Sebagai survei, makalah ini tidak menjalankan eksperimen baru; buktinya berupa s
 - YOLOv3 pada MS COCO: 57,9 mAP pada 20 FPS.
 - YOLOv4 pada MS COCO: 65,7 mAP pada 33 FPS.
 
-FPS (*frames per second*) adalah jumlah citra yang diproses per detik; 30 FPS umumnya dianggap batas *real-time*. Interpretasinya: mAP YOLOv2 (78,6) melampaui Fast R-CNN (70,0) pada tolok ukur yang sama, sambil tetap berjalan jauh lebih cepat — abstrak survei memperkirakan selisih kecepatan inferensi YOLO terhadap Fast R-CNN sekitar 300 kali. Perbandingan berikutnya menuntut kehati-hatian: v1 dan v2 diukur pada VOC, sedangkan v3 dan v4 pada COCO yang lebih sulit, sehingga penurunan angka dari 78,6 ke 57,9 bukan kemunduran mutlak, melainkan perpindahan tolok ukur. YOLO-LITE memperlihatkan sisi lain kompromi: akurasinya sekitar separuh YOLOv1, tetapi model berjalan pada perangkat tanpa akselerator GPU.
+FPS (*frames per second*) adalah jumlah citra yang diproses per detik; 30 FPS umumnya dianggap batas *real-time*. Interpretasinya: mAP YOLOv2 (78,6) melampaui Fast R-CNN (70,0) pada tolok ukur yang sama, sambil tetap berjalan jauh lebih cepat - abstrak survei memperkirakan selisih kecepatan inferensi YOLO terhadap Fast R-CNN sekitar 300 kali. Perbandingan berikutnya menuntut kehati-hatian: v1 dan v2 diukur pada VOC, sedangkan v3 dan v4 pada COCO yang lebih sulit, sehingga penurunan angka dari 78,6 ke 57,9 bukan kemunduran mutlak, melainkan perpindahan tolok ukur. YOLO-LITE memperlihatkan sisi lain kompromi: akurasinya sekitar separuh YOLOv1, tetapi model berjalan pada perangkat tanpa akselerator GPU.
 
 Dua tabel aplikasi melengkapi sintesis: di sisi dua tahap, sistem OCR Rosetta berbasis Faster R-CNN dan deteksi cacat tabung kertas dengan akurasi 98%; di sisi YOLO, deteksi kendaraan ganda dengan laju 98,6% (v2), masker wajah dengan presisi rata-rata 81% (v2), deteksi objek pada papan sirkuit dengan mAP 93,07% (v3), dan deteksi manusia dari citra termal udara dengan mAP 91% (v4). Daftar ini menunjukkan YOLO dipilih pada sistem produksi terutama karena kecepatan inferensinya. Dataset yang dibahas survei adalah PASCAL VOC (20 kelas sejak 2007; sekitar 11.530 citra latih dengan 27.540 RoI dan 6.929 segmentasi) dan MS COCO (91 kategori dengan instans lebih banyak per kategori).
 
@@ -106,7 +106,7 @@ Dua tabel aplikasi melengkapi sintesis: di sisi dua tahap, sistem OCR Rosetta be
 
 Kelebihan survei ini adalah kelengkapan pemetaan dalam satu naskah: tantangan, rumusan regresi, optimasi tiap versi, perbandingan dua tahap melawan satu tahap, dataset, dan aplikasi. Rincian sumbangan kuantitatif per teknik pada YOLOv2 jarang ditemukan terhimpun pada tinjauan lain.
 
-Keterbatasannya: cakupan berhenti di YOLOv4 — YOLOv5 sengaja tidak dibahas — sehingga peta ini tidak mencakup generasi sesudahnya. Dari sisi metodologi, angka kinerja dihimpun dari makalah asli masing-masing versi tanpa protokol evaluasi yang diseragamkan; basis metrik (AP50 atau mAP penuh) dan perangkat keras pengukuran tidak dicantumkan, sehingga angka pada tabel hasil harus dibaca sebagai indikasi, bukan perbandingan setara. Kedalaman tiap topik juga terbatas karena cakupannya yang luas.
+Keterbatasannya: cakupan berhenti di YOLOv4 - YOLOv5 sengaja tidak dibahas - sehingga peta ini tidak mencakup generasi sesudahnya. Dari sisi metodologi, angka kinerja dihimpun dari makalah asli masing-masing versi tanpa protokol evaluasi yang diseragamkan; basis metrik (AP50 atau mAP penuh) dan perangkat keras pengukuran tidak dicantumkan, sehingga angka pada tabel hasil harus dibaca sebagai indikasi, bukan perbandingan setara. Kedalaman tiap topik juga terbatas karena cakupannya yang luas.
 
 ## Kaitan dengan Bab Lain
 

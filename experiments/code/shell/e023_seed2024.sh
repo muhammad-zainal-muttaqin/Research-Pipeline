@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E-023 seed 2024 — penjadwal berbasis anggaran VRAM, tanpa barrier.
+# E-023 seed 2024 - penjadwal berbasis anggaran VRAM, tanpa barrier.
 #
 # `e023_fusi.sh` menahan seed berikutnya di balik `wait`: seluruh lima lengan
 # seed sebelumnya harus tuntas sebelum satu pun lengan seed berikutnya mulai.
@@ -36,7 +36,7 @@ for lengan in rgb awal mid late derau; do
   # nama bersuffiks (nama2), sehingga hasilnya tidak terbaca oleh evaluasi yang
   # mencari nama aslinya. Lebih baik gagal keras.
   if [ -d "$R/$nama" ]; then
-    echo "[GAGAL] $R/$nama sudah ada tapi belum lengkap — periksa manual" >&2
+    echo "[GAGAL] $R/$nama sudah ada tapi belum lengkap - periksa manual" >&2
     continue
   fi
   while true; do

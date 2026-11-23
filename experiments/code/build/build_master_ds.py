@@ -1,13 +1,13 @@
 """Bangun dataset YOLO yang menunjuk ke piksel MASTER 3024x4032.
 
 Dimungkinkan oleh E-015 (peta isi 3.992/3.992). Rasio aspek kedua tingkat
-identik (0,75), jadi koordinat YOLO ternormalisasi berlaku persis — label
+identik (0,75), jadi koordinat YOLO ternormalisasi berlaku persis - label
 disalin apa adanya, tidak ada anotasi ulang.
 
 Kenapa ini berbeda dari sekadar menaikkan imgsz pada SawitMVC: pada 960x1280,
 melatih di imgsz 1280 sudah memakai seluruh piksel yang ada. Menaikkannya lebih
 jauh hanya memperbesar interpolasi. Master menyediakan piksel yang BENAR-BENAR
-ada — 3,15x lipat linear — sehingga imgsz 1536/2048 berisi detail nyata.
+ada - 3,15x lipat linear - sehingga imgsz 1536/2048 berisi detail nyata.
 
 Citra di-symlink (tanpa menyalin 16 GB); label disalin karena kecil.
 """

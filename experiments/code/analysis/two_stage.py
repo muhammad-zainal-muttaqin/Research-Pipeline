@@ -1,11 +1,11 @@
-"""I-23 — rakit dan nilai detektor dua tahap.
+"""I-23 - rakit dan nilai detektor dua tahap.
 
 Tahap 1  deteksi kelas-agnostik (satu kelas "tandan").
 Tahap 2  potong tiap kotak pada resolusi ASLI citra, klasifikasikan
          kematangannya, lalu skor tiap kelas = skor_objek x peluang_kelas.
 
 Skor gabungan itu bukan pilihan gaya: mAP menilai peringkat, jadi tiap kotak
-menyumbang ke keempat kelas dengan bobot peluangnya — persis cara detektor
+menyumbang ke keempat kelas dengan bobot peluangnya - persis cara detektor
 dua-tahap klasik menilai. Menyimpan hanya argmax akan membuang informasi
 peringkat dan menurunkan AP.
 

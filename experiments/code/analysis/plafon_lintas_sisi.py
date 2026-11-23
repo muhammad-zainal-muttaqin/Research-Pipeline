@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F-003 (P3) — Plafon keras distilasi lintas-sisi.
+"""F-003 (P3) - Plafon keras distilasi lintas-sisi.
 
 Gerbang untuk K3 (konsistensi query lintas-sisi). Pertanyaannya satu kalimat:
 
@@ -14,7 +14,7 @@ SEMUA sisi, tidak ada yang bisa ditransfer, dan K3 gugur tanpa perlu dilatih.
 
 `experiments/results/E-028/konsistensi_sawitmvc_rgb_seed42.json` hanya
 menyimpan laju agregat (`laju_inkonsisten`, `per_kelas_gt_*`,
-`pasangan_kelas_bertabrakan`) — tidak ada satu pun prediksi per-sisi. Diperiksa
+`pasangan_kelas_bertabrakan`) - tidak ada satu pun prediksi per-sisi. Diperiksa
 langsung 6 Agustus 2026. Karena itu `cross_side_consistency.py` diberi flag
 `--dump-tandan`, dan berkas ini membaca hasilnya.
 
@@ -30,7 +30,7 @@ lebih sedikit galat (pembilang turun) tetapi juga lebih sedikit sisi terlewat
 
 ## Yang memalsukan (ditulis sebelum melihat hasil)
 
-K3 GUGUR bila fraksi galat-yang-dapat-diselamatkan < **0,30** — artinya
+K3 GUGUR bila fraksi galat-yang-dapat-diselamatkan < **0,30** - artinya
 mayoritas galat salah di semua sisi dan graf identitas tidak punya informasi
 untuk ditransfer.
 

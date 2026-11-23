@@ -18,7 +18,7 @@
 
 ## Gambaran Umum
 
-Makalah ini memiliki dua kontribusi. Pertama, NYU Depth v2: dataset citra RGB-D (citra warna yang tiap pikselnya berpasangan dengan nilai kedalaman) untuk adegan dalam ruang — 1.449 citra 640×480 beranotasi padat per piksel dari 464 adegan di tiga kota Amerika Serikat, memuat 35.064 objek dari 894 kelas, dengan label instans dan anotasi relasi dukungan fisik. Kedua, metode yang menguraikan adegan menjadi lantai, dinding, permukaan penyangga, dan region objek, sekaligus menginferensi objek mana yang menyangga objek lain.
+Makalah ini memiliki dua kontribusi. Pertama, NYU Depth v2: dataset citra RGB-D (citra warna yang tiap pikselnya berpasangan dengan nilai kedalaman) untuk adegan dalam ruang - 1.449 citra 640×480 beranotasi padat per piksel dari 464 adegan di tiga kota Amerika Serikat, memuat 35.064 objek dari 894 kelas, dengan label instans dan anotasi relasi dukungan fisik. Kedua, metode yang menguraikan adegan menjadi lantai, dinding, permukaan penyangga, dan region objek, sekaligus menginferensi objek mana yang menyangga objek lain.
 
 Dataset ini menjadi tolok ukur standar untuk segmentasi semantik RGB-D dan estimasi kedalaman dalam ruang.
 
@@ -30,9 +30,9 @@ Microsoft Kinect (2010) membuat citra RGB-D murah, tetapi dataset awalnya belum 
 
 ## Ide Utama
 
-Gagasan pertama: bangun dataset yang jauh lebih besar dan lebih beragam, rekam dengan Kinect, lalu anotasi secara padat — bukan hanya kelas objek per piksel, tetapi juga nomor instans dan relasi dukungan antarregion. Anotasi ini membuat dukungan fisik pertama kalinya dapat dipelajari dan dievaluasi dari data.
+Gagasan pertama: bangun dataset yang jauh lebih besar dan lebih beragam, rekam dengan Kinect, lalu anotasi secara padat - bukan hanya kelas objek per piksel, tetapi juga nomor instans dan relasi dukungan antarregion. Anotasi ini membuat dukungan fisik pertama kalinya dapat dipelajari dan dievaluasi dari data.
 
-Gagasan kedua: dalam ruang, kedalaman menyelesaikan soal geometri, warna menyelesaikan soal penampilan. Metode yang diusulkan memakai kedalaman untuk memperoleh struktur 3D ruangan, memakai struktur itu bersama fitur warna untuk menyegmentasi objek, lalu menginferensi relasi dukungan secara global dengan pemrograman integer. Dukungan tidak dimodelkan per kelas objek, melainkan lewat empat *kelas struktur* — Ground (lantai), Structure (dinding, langit-langit, kolom), Furniture (perabot besar), dan Prop (objek kecil yang mudah dibawa) — karena peran fisik region lebih menentukan pola dukungannya daripada nama objeknya.
+Gagasan kedua: dalam ruang, kedalaman menyelesaikan soal geometri, warna menyelesaikan soal penampilan. Metode yang diusulkan memakai kedalaman untuk memperoleh struktur 3D ruangan, memakai struktur itu bersama fitur warna untuk menyegmentasi objek, lalu menginferensi relasi dukungan secara global dengan pemrograman integer. Dukungan tidak dimodelkan per kelas objek, melainkan lewat empat *kelas struktur* - Ground (lantai), Structure (dinding, langit-langit, kolom), Furniture (perabot besar), dan Prop (objek kecil yang mudah dibawa) - karena peran fisik region lebih menentukan pola dukungannya daripada nama objeknya.
 
 ## Cara Kerja Langkah demi Langkah
 
@@ -52,9 +52,9 @@ Citra dipecah secara berlebihan (*oversegmentation*) menjadi 1.000–2.000 *supe
 
 ### Inferensi Dukungan dengan Pemrograman Integer
 
-Untuk tiap region i dicari tiga hal: Si (penopangnya — region lain, region tersembunyi di luar bingkai, atau lantai), Ti (tipe dukungan: dari bawah atau dari belakang), dan Mi (kelas strukturnya). Energi gabungan memuat dua suku *likelihood* dari classifier regresi logistik — classifier dukungan memakai fitur kedekatan 3D, bentuk, dan lokasi 3D, sedangkan classifier kelas struktur memakai fitur SIFT (deskriptor penampilan lokal), histogram normal, dimensi *bounding box* (kotak pembatas) 2D/3D, histogram warna, dan kedalaman relatif — serta empat prior: prior transisi dari frekuensi dukungan antarkelas struktur, konsistensi dukungan (penopang harus dekat secara 3D), konsistensi lantai (region non-lantai wajib ditopang), dan konsistensi lantai global (region lantai harus terendah).
+Untuk tiap region i dicari tiga hal: Si (penopangnya - region lain, region tersembunyi di luar bingkai, atau lantai), Ti (tipe dukungan: dari bawah atau dari belakang), dan Mi (kelas strukturnya). Energi gabungan memuat dua suku *likelihood* dari classifier regresi logistik - classifier dukungan memakai fitur kedekatan 3D, bentuk, dan lokasi 3D, sedangkan classifier kelas struktur memakai fitur SIFT (deskriptor penampilan lokal), histogram normal, dimensi *bounding box* (kotak pembatas) 2D/3D, histogram warna, dan kedalaman relatif - serta empat prior: prior transisi dari frekuensi dukungan antarkelas struktur, konsistensi dukungan (penopang harus dekat secara 3D), konsistensi lantai (region non-lantai wajib ditopang), dan konsistensi lantai global (region lantai harus terendah).
 
-Penugasan terbaik diformulasikan sebagai program integer dengan variabel biner untuk setiap kombinasi region, penopang, tipe, dan kelas struktur. Karena persoalan ini NP-hard (sukar dipecahkan tepat), kendala kebulatan direlaksasi menjadi program linear yang dipecahkan solver Gurobi; solusi pecahan dibulatkan ke penugasan berpeluang terbesar. Pada 1.394 dari 1.449 citra, *duality gap* relaksasi ini nol — solusinya praktis optimal.
+Penugasan terbaik diformulasikan sebagai program integer dengan variabel biner untuk setiap kombinasi region, penopang, tipe, dan kelas struktur. Karena persoalan ini NP-hard (sukar dipecahkan tepat), kendala kebulatan direlaksasi menjadi program linear yang dipecahkan solver Gurobi; solusi pecahan dibulatkan ke penugasan berpeluang terbesar. Pada 1.394 dari 1.449 citra, *duality gap* relaksasi ini nol - solusinya praktis optimal.
 
 Alur lengkap dari masukan ke keluaran diringkas pada diagram berikut.
 
@@ -108,9 +108,9 @@ Kualitas segmentasi diukur dengan *overlap* rata-rata: untuk tiap region kebenar
 | RGB-D + dukungan | 63,4 / 53,7 | 60,7 / 48,8 |
 | RGB-D + dukungan + kelas struktur | 63,9 / 54,1 | 61,1 / 49,1 |
 
-Interpretasinya konsisten pada kedua versi: RGB-D mengungguli modalitas tunggal dengan margin sekitar 10 poin terhadap RGB saja dan 7 poin terhadap kedalaman saja (versi koreksi), sedangkan dukungan dan kelas struktur menambah sekitar 1 poin — penalaran fisik memperbaiki segmentasi sekalipun kecil.
+Interpretasinya konsisten pada kedua versi: RGB-D mengungguli modalitas tunggal dengan margin sekitar 10 poin terhadap RGB saja dan 7 poin terhadap kedalaman saja (versi koreksi), sedangkan dukungan dan kelas struktur menambah sekitar 1 poin - penalaran fisik memperbaiki segmentasi sekalipun kecil.
 
-Inferensi dukungan dibandingkan dengan tiga *baseline*: aturan bidang citra (penopang = region tepat di bawahnya), aturan kelas struktur, dan classifier dukungan saja. Metriknya proporsi region yang penopangnya benar, dalam varian *type agnostic* (tipe boleh salah) dan *type aware* (tipe harus benar). Pada region kebenaran, model energi penuh (LP) mencapai 75,9% *agnostic* dan 72,6% *aware*, mengungguli baseline terkuat (aturan kelas struktur, 72,0/57,7) terutama pada varian *aware* dengan margin 15 poin — penalaran global menentukan jenis dukungan, bukan hanya pasangannya. Pada region segmentasi otomatis, selisihnya lebih tajam: LP 55,1/54,5 melawan 45,8/41,4 dan 22,1/19,4; aturan sederhana kehilangan sebagian besar kinerjanya ketika region tidak ideal.
+Inferensi dukungan dibandingkan dengan tiga *baseline*: aturan bidang citra (penopang = region tepat di bawahnya), aturan kelas struktur, dan classifier dukungan saja. Metriknya proporsi region yang penopangnya benar, dalam varian *type agnostic* (tipe boleh salah) dan *type aware* (tipe harus benar). Pada region kebenaran, model energi penuh (LP) mencapai 75,9% *agnostic* dan 72,6% *aware*, mengungguli baseline terkuat (aturan kelas struktur, 72,0/57,7) terutama pada varian *aware* dengan margin 15 poin - penalaran global menentukan jenis dukungan, bukan hanya pasangannya. Pada region segmentasi otomatis, selisihnya lebih tajam: LP 55,1/54,5 melawan 45,8/41,4 dan 22,1/19,4; aturan sederhana kehilangan sebagian besar kinerjanya ketika region tidak ideal.
 
 Akurasi kelas struktur 79,9% pada region kebenaran dan 58,7% pada region segmentasi; LP hanya mengubahnya tipis (80,3% dan 58,6%). Analisis kegagalan menemukan dua galat berantai: karpet yang dikenali sebagai lantai membuat dinding dan tempat tidur seolah ditopang karpet, dan kelas struktur yang salah menyeret inferensi dukungan ikut salah.
 
@@ -122,7 +122,7 @@ Keterbatasan yang diakui penulis: metode bergantung pada kualitas segmentasi awa
 
 ## Kaitan dengan Bab Lain
 
-Dalam klaster Dataset, bab 144 ([KITTI](144%20-%202012%20-%20KITTI%20-%20Dataset.md)) adalah tolok ukur sezaman untuk domain berlawanan — luar ruang, LiDAR, kendaraan — sedangkan bab ini menutup sisi dalam ruang. Bab ini diwarisi dua penerus langsung: bab 142 ([SUN RGB-D](142%20-%202015%20-%20SUN%20RGB-D%20-%20Dataset.md)) yang memperluas skala dan ragam sensor, dan bab 143 ([ScanNet](143%20-%202017%20-%20ScanNet%20-%20Dataset.md)) yang menaikkan skala ke rekonstruksi 3D; bab 145 ([nuScenes](145%20-%202020%20-%20nuScenes%20-%20Dataset.md)) dan bab 146 ([Microsoft COCO](146%20-%202014%20-%20Microsoft%20COCO%20-%20Dataset.md)) meneruskan gagasan tolok ukur beranotasi padat ke domain mengemudi otonom dan deteksi umum.
+Dalam klaster Dataset, bab 144 ([KITTI](144%20-%202012%20-%20KITTI%20-%20Dataset.md)) adalah tolok ukur sezaman untuk domain berlawanan - luar ruang, LiDAR, kendaraan - sedangkan bab ini menutup sisi dalam ruang. Bab ini diwarisi dua penerus langsung: bab 142 ([SUN RGB-D](142%20-%202015%20-%20SUN%20RGB-D%20-%20Dataset.md)) yang memperluas skala dan ragam sensor, dan bab 143 ([ScanNet](143%20-%202017%20-%20ScanNet%20-%20Dataset.md)) yang menaikkan skala ke rekonstruksi 3D; bab 145 ([nuScenes](145%20-%202020%20-%20nuScenes%20-%20Dataset.md)) dan bab 146 ([Microsoft COCO](146%20-%202014%20-%20Microsoft%20COCO%20-%20Dataset.md)) meneruskan gagasan tolok ukur beranotasi padat ke domain mengemudi otonom dan deteksi umum.
 
 Di luar klaster Dataset, NYU Depth v2 menjadi data evaluasi de facto: bab 051 ([FuseNet](051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)) dan hampir seluruh klaster Segmentasi RGB-D (052–061) melaporkan akurasi pada 1.449 citra ini, sedangkan bab 062 ([Eigen dkk.](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20(Eigen%20dkk.)%20-%20Estimasi%20Kedalaman.md)) dan klaster Estimasi Kedalaman menjadikannya tolok ukur kedalaman monokular dalam ruang.
 
@@ -130,7 +130,7 @@ Di luar klaster Dataset, NYU Depth v2 menjadi data evaluasi de facto: bab 051 ([
 
 Kutip dengan kunci `silberman2012nyu`. Ringkasan yang aman dikutip: "Silberman dkk. (ECCV 2012) memperkenalkan NYU Depth v2, 1.449 citra RGB-D dalam ruang beranotasi padat dari 464 adegan, dengan label instans untuk 35.064 objek dari 894 kelas dan anotasi relasi dukungan fisik; makalah yang sama mengusulkan penguraian adegan berbasis struktur 3D dan inferensi dukungan yang diformulasikan sebagai program integer."
 
-Catatan verifikasi: (1) angka segmentasi tercetak sekitar 2 poin terlalu tinggi akibat bug evaluasi; gunakan koreksi resmi dari halaman proyek. (2) Angka dukungan (75,9/72,6 dan 55,1/54,5) berasal dari Tabel 2 naskah. (3) Naskah menyebut 1.449 citra dipilih dari 435.103 bingkai; halaman proyek menyebut 407.024 bingkai mentah tanpa label — keduanya berbeda cakupan.
+Catatan verifikasi: (1) angka segmentasi tercetak sekitar 2 poin terlalu tinggi akibat bug evaluasi; gunakan koreksi resmi dari halaman proyek. (2) Angka dukungan (75,9/72,6 dan 55,1/54,5) berasal dari Tabel 2 naskah. (3) Naskah menyebut 1.449 citra dipilih dari 435.103 bingkai; halaman proyek menyebut 407.024 bingkai mentah tanpa label - keduanya berbeda cakupan.
 
 ---
 

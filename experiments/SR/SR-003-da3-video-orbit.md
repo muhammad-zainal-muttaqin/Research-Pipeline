@@ -1,4 +1,4 @@
-# SR-003 — DA3 multi-view pada video orbit pohon
+# SR-003 - DA3 multi-view pada video orbit pohon
 
 **Ide I-1** · **Eksperimen:** E-003, E-004 · **Putusan: DIKONFIRMASI** · 2026-07-21
 
@@ -11,7 +11,7 @@ input) dan angkanya tetap. Yang dibutuhkan perubahan arsitektur, bukan pencarian
 hyperparameter. Kandidat terkuat dari korpus: menambahkan **kedalaman**.
 
 Tetapi kedalaman monokular biasa (entri 175, DA V2) punya kelemahan yang
-tercatat di entri 198: *"tidak menjamin konsistensi lintas pandangan — dua foto
+tercatat di entri 198: *"tidak menjamin konsistensi lintas pandangan - dua foto
 dari sudut berbeda bisa memperoleh kedalaman yang saling bertentangan pada titik
 3D yang sama."* Untuk dataset 4–8 sisi per pohon, ketidakkonsistenan itu fatal.
 
@@ -24,7 +24,7 @@ lintas-pandangan** plus pose kamera.
 Uji pertama sengaja dilakukan pada **video**, bukan foto 4-sisi. Alasannya:
 risiko terbesar rencana ini adalah *baseline* ~90° yang terlalu lebar untuk
 rekonstruksi multi-view. Video orbit memberi ratusan frame dengan *baseline*
-antar-frame kecil — kondisi paling menguntungkan. Kalau di sini pun gagal,
+antar-frame kecil - kondisi paling menguntungkan. Kalau di sini pun gagal,
 seluruh jalur geometris gugur lebih awal tanpa membakar jam GPU.
 
 **Yang akan memalsukan:** rekonstruksi gagal, pusat kamera tidak membentuk orbit
@@ -34,11 +34,11 @@ masuk akal, atau peta kedalaman kanopi datar.
 
 Dua tahap.
 
-**E-003** (`experiments/code/analysis/da3_video_test.py`) — satu video, 16 dan 48 frame.
+**E-003** (`experiments/code/analysis/da3_video_test.py`) - satu video, 16 dan 48 frame.
 Diagnosa: PCA pusat kamera → kecocokan lingkaran pada bidang orbit; rentang
 dinamis kedalaman; pratinjau RGB|depth|conf untuk inspeksi mata.
 
-**E-004** (`experiments/code/analysis/da3_video_multi.py`) — menuntaskan tiga keterbatasan
+**E-004** (`experiments/code/analysis/da3_video_multi.py`) - menuntaskan tiga keterbatasan
 E-003: 6 video (bukan 1), ekstraksi frame lewat **ffmpeg** yang menerapkan
 display matrix (`cv2` mengabaikannya; video terkonfirmasi memuat
 `displaymatrix: rotation of -90.00 degrees`), dan pengukuran **di mana** orbit
@@ -49,7 +49,7 @@ terpanjang (langkah searah, besar ≤40°).
 
 ## 4. Hasil
 
-### E-003 — satu video, frame miring
+### E-003 - satu video, frame miring
 
 Cepat: 16 frame dalam **2,2 detik** (0,14 dtk/frame, GPU L4). Keluaran
 `Prediction` memuat `depth`, **`conf` per piksel**, `extrinsics` (N,3,4),
@@ -62,10 +62,10 @@ Dua sub-hipotesis penyebab diuji dan **keduanya dipalsukan**:
 
 | Dugaan | Uji | Hasil |
 |---|---|---|
-| Operator berhenti → *baseline* kecil | Ukur perpindahan pusat kamera | **Salah** — ekor justru 2,2× lebih besar |
-| Sampling terlalu jarang | Rapatkan 16 → 48 frame | **Salah** — batas kegagalan tidak bergeser |
+| Operator berhenti → *baseline* kecil | Ukur perpindahan pusat kamera | **Salah** - ekor justru 2,2× lebih besar |
+| Sampling terlalu jarang | Rapatkan 16 → 48 frame | **Salah** - batas kegagalan tidak bergeser |
 
-### E-004 — enam video, rotasi diperbaiki
+### E-004 - enam video, rotasi diperbaiki
 
 | Video | `smooth_frac` | Sapuan mulus | Residual lingkaran | Kerataan |
 |---|---|---|---|---|
@@ -83,7 +83,7 @@ Uji sebab pada frame di luar segmen mulus: **ketajaman justru lebih tinggi**
 (7.725 vs 6.526), kecerahan dan gerak hampir sama. Jadi blur, pencahayaan, dan
 gerak **bukan** penyebabnya.
 
-## 5. Putusan — DIKONFIRMASI
+## 5. Putusan - DIKONFIRMASI
 
 DA3 merekonstruksi orbit pohon sawit secara andal pada 5 dari 6 video, dengan
 sapuan mendekati lingkaran penuh dan pusat kamera yang hampir sebidang.
@@ -93,7 +93,7 @@ Kedalaman memisahkan pelepah satu per satu dari latar, dan **tandan buah terliha
 E-003 mengukur satu video yang kebetulan bermasalah. Koreksi oleh E-004 persis
 alasan keterbatasan `n=1` dicatat sejak awal, bukan disembunyikan.
 
-**Sebab kegagalan video 090556 masih belum diketahui** — tiga kandidat sudah
+**Sebab kegagalan video 090556 masih belum diketahui** - tiga kandidat sudah
 dipalsukan. Tidak dikarang penjelasan untuk sisa satu video ini.
 
 ## 6. Dampak

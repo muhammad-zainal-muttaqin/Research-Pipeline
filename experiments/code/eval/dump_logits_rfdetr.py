@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""F-004 — Simpan logit MENTAH per query dari checkpoint RF-DETR.
+"""F-004 - Simpan logit MENTAH per query dari checkpoint RF-DETR.
 
 E-021 hanya mengarsipkan JSON agregat (`pr_curves.json`, `confusion.json`,
 `bootstrap_ci.json`); tidak ada satu pun deteksi mentah per objek. Akibatnya P1
-(F-005) tidak dapat dihitung tanpa inferensi ulang — dan setelah bobotnya hilang,
+(F-005) tidak dapat dihitung tanpa inferensi ulang - dan setelah bobotnya hilang,
 tanpa latihan ulang. Berkas ini menutup lubang itu untuk seterusnya.
 
 ## Kenapa perlu logit, bukan hasil `predict()`
@@ -19,7 +19,7 @@ P1 menanyakan selisih logit ANTAR KELAS DI DALAM query yang sama:
 
 Untuk itu keempat logit tiap query harus utuh, termasuk yang tidak lolos top-k.
 Karena itu `PostProcess.forward` ditambal untuk menyimpan `pred_logits` mentah
-(B, Q, C) plus kotak SELURUH query yang sudah diskalakan ke piksel — bukan hanya
+(B, Q, C) plus kotak SELURUH query yang sudah diskalakan ke piksel - bukan hanya
 yang terpilih.
 
 ## Kenapa menambal, bukan menulis ulang inferensi

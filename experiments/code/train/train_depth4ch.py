@@ -13,7 +13,7 @@ Tiga pagar keadilan yang dipasang sengaja:
    untuk dua-duanya.
 2. **Inflasi conv pertama.** Transfer bobot ultralytics melewati tensor yang
    bentuknya beda, jadi tanpa callback `fourch.make_inflate_callback` conv
-   pertama 4-kanal mulai ACAK — lengan RGB-D akan kalah karena inisialisasi,
+   pertama 4-kanal mulai ACAK - lengan RGB-D akan kalah karena inisialisasi,
    bukan karena depth. Callback mengisi kanal 1..3 dari bobot pratlatih (urutan
    BGR) dan kanal ke-4 = 0, sehingga model berangkat PERSIS dari perilaku RGB
    pratlatih.
@@ -123,7 +123,7 @@ def main() -> int:
 def _pohon(stem: str) -> str:
     """Pohon dari nama berkas: DAMIMAS_A21B_0002_3 -> DAMIMAS_A21B_0002.
 
-    Sama persis dengan pohon_dari() di eval_e022_pycoco.py — unit resample
+    Sama persis dengan pohon_dari() di eval_e022_pycoco.py - unit resample
     bootstrap dan unit pemisah donor tukar HARUS memakai definisi yang sama.
     """
     return stem.rsplit("_", 1)[0]
@@ -135,7 +135,7 @@ def _patch_depth_tukar(depth_dir: str, split_dir: str) -> None:
     Kontrol derau hanya menguji "apakah kanal ke-4 mana pun berpengaruh". Kontrol
     ini lebih ketat: statistik, tekstur, dan rentang nilai depth tetap realistis;
     yang dihancurkan HANYA keselarasan spasialnya dengan RGB. Jadi kalau depth
-    asli mengalahkan depth-tertukar, yang bekerja memang REGISTRASI — bukan
+    asli mengalahkan depth-tertukar, yang bekerja memang REGISTRASI - bukan
     sekadar "ada peta bernuansa halus di kanal keempat".
 
     Pertukaran memakai pergeseran daftar (deterministik, tanpa seed acak) supaya
@@ -197,7 +197,7 @@ def _patch_depth_acak(seed: int) -> None:
 
     Kalau lengan 'RGB-D' derau ini menaikkan mAP sebanyak lengan depth asli,
     maka kenaikannya berasal dari kapasitas tambahan di stem, bukan dari
-    kedalaman — dan klaim 'depth menolong' batal.
+    kedalaman - dan klaim 'depth menolong' batal.
     """
     import zlib
 

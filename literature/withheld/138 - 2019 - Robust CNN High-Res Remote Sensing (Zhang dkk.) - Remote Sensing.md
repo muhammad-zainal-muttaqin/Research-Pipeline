@@ -113,7 +113,7 @@ Pada NWPU VHR-10, model HRCNN dengan backbone ResNet-50 mencapai performa mAP ko
 - **Faster R-CNN Standar (tanpa FPN):** Mencapai mAP sekitar **76,5%**.
 - **SSD Standar:** Mencapai mAP sekitar **71,2%**.
 
-Eksperimen ablasi (*ablation study*) — uji coba mematikan komponen tertentu untuk menganalisis kontribusinya — membuktikan bahwa integrasi piramida fitur hierarkis meningkatkan performa deteksi sebesar **3,4%** mAP. Penggunaan kepala prediksi robust dengan penumpukan fitur `fc6 + fc7` memberikan peningkatan tambahan sebesar **1,5%** mAP, terutama menaikkan nilai AP pada objek yang rentan terhadap rotasi seperti kapal (*ship*) dan pesawat (*airplane*).
+Eksperimen ablasi (*ablation study*) - uji coba mematikan komponen tertentu untuk menganalisis kontribusinya - membuktikan bahwa integrasi piramida fitur hierarkis meningkatkan performa deteksi sebesar **3,4%** mAP. Penggunaan kepala prediksi robust dengan penumpukan fitur `fc6 + fc7` memberikan peningkatan tambahan sebesar **1,5%** mAP, terutama menaikkan nilai AP pada objek yang rentan terhadap rotasi seperti kapal (*ship*) dan pesawat (*airplane*).
 
 ## Kelebihan dan Keterbatasan
 

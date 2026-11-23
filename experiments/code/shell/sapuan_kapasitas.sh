@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# G7 — sapuan kapasitas YOLO26 n -> m -> l pada SawitMVC-Depth.
+# G7 - sapuan kapasitas YOLO26 n -> m -> l pada SawitMVC-Depth.
 #
 # Menutup lubang dalam argumen SR-015. Temuan strukturalnya berbunyi "arah efek
 # kanal ke-4 ditentukan KAPASITAS MODEL, bukan isi kanal": pada 2,57 jt param
@@ -20,7 +20,7 @@
 # diuji justru efek kapasitas, jadi tanpa pembanding kanal-tanpa-informasi
 # kenaikan apa pun tidak dapat diatribusikan.
 #
-# Menunggu GPU longgar lebih dulu — yolo26m/l jauh lebih berat daripada n, dan
+# Menunggu GPU longgar lebih dulu - yolo26m/l jauh lebih berat daripada n, dan
 # dua RT-DETR-L saja sudah memakai ~16 GB dari 20,4 GB.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1

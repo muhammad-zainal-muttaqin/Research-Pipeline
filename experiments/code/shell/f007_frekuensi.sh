@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# F-007 (K1a) — Cabang frekuensi samping, 4 lengan x 3 seed = 12 run.
+# F-007 (K1a) - Cabang frekuensi samping, 4 lengan x 3 seed = 12 run.
 #
 # Gerbangnya sudah lolos (F-002: dwt_hh +0,0731 pada B4, tiga kali ambang).
 #
@@ -10,7 +10,7 @@
 #   fase_diacak  fase diacak di Fourier  [KONTROL]     <- spektrum sama, struktur hancur
 #
 # Tanpa kedua kontrol, kenaikan signifikan pun tidak membuktikan bahwa
-# FREKUENSI penyebabnya — bisa saja sekadar 192.289 parameter tambahan. Ini
+# FREKUENSI penyebabnya - bisa saja sekadar 192.289 parameter tambahan. Ini
 # disiplin lengan `derau`/`tukar` yang sama seperti E-027 dan E-032.
 # Uji sambungan sudah membuktikan keempat lengan berparameter IDENTIK.
 #
@@ -21,7 +21,7 @@
 # MODE PERIKSA: `bash shell/f007_frekuensi.sh --periksa` hanya memvalidasi
 # prasyarat lalu keluar TANPA melatih apa pun. Wajib ada karena menjalankan
 # skrip ini "sekadar untuk melihat" pernah menyalakan run sungguhan di atas
-# latihan yang sedang berjalan — dua run RF-DETR-L serentak = OOM (F-001 §5.4).
+# latihan yang sedang berjalan - dua run RF-DETR-L serentak = OOM (F-001 §5.4).
 set -euo pipefail
 
 PERIKSA=0
@@ -46,7 +46,7 @@ fi
 for L in dwt laplacian freq_rendah fase_diacak; do
   U="$HASIL/uji_sambungan_${L}.json"
   if ! grep -q '"PUTUSAN": "LULUS"' "$U" 2>/dev/null; then
-    echo "[F-007] uji sambungan $L BELUM LULUS ($U) — jalankan dulu:"
+    echo "[F-007] uji sambungan $L BELUM LULUS ($U) - jalankan dulu:"
     echo "        $PY train/train_rfdetr_freq.py --uji-sambungan --lengan $L"
     exit 1
   fi

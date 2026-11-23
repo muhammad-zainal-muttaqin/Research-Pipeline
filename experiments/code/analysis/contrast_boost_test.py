@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-011 — Bisakah praproses menaikkan keterpisahan B4? (ide I-20)
+"""E-011 - Bisakah praproses menaikkan keterpisahan B4? (ide I-20)
 
 SR-007 menemukan B4 tersamar: kontras dE 11,55, DI BAWAH kendali kotak acak
 (12,92). Satu-satunya sinyal tersisa adalah tekstur, di mana B4 justru
@@ -142,7 +142,7 @@ def main() -> int:
 
     W_ = 80
     print("=" * W_)
-    print(f"E-011 — KETERPISAHAN SETELAH PRAPROSES ({len(names)} citra)")
+    print(f"E-011 - KETERPISAHAN SETELAH PRAPROSES ({len(names)} citra)")
     print("=" * W_)
     print("AUC isi-kotak vs cincin; 0,5 = tidak informatif")
     print("Yang bermakna: selisih terhadap kendali kotak acak\n")

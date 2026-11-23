@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ringkas seluruh hasil P0 jadi satu tabel — protokol beku pycocotools.
+"""Ringkas seluruh hasil P0 jadi satu tabel - protokol beku pycocotools.
 
 Membaca results/p0_multiseed/<arch>_depth_vs_<pembanding>_seed<N>.json
 (keluaran eval_e022_paired.py: titik-estimasi + bootstrap 2.000x per POHON)
@@ -7,7 +7,7 @@ lalu menulis RINGKASAN.md + RINGKASAN.json.
 
 Ini deliverable akhir P0: perbandingan 3 arsitektur x (RGB vs RGB+Depth) di
 SawitMVC-Depth, plus dua kontrol metodologis sebagai lampiran. Ditulis supaya
-mendarat TANPA perlu agen — dipanggil di ujung antre_lanjut_p0.sh.
+mendarat TANPA perlu agen - dipanggil di ujung antre_lanjut_p0.sh.
 
 Konvensi angka: koma sebagai desimal, 4 angka di belakang koma.
 """
@@ -24,11 +24,11 @@ KELAS = ("B1", "B2", "B3", "B4")
 
 
 def koma(x, n=4):
-    return "—" if x is None else f"{x:.{n}f}".replace(".", ",")
+    return "-" if x is None else f"{x:.{n}f}".replace(".", ",")
 
 
 def tanda(x, n=4):
-    return "—" if x is None else f"{x:+.{n}f}".replace(".", ",")
+    return "-" if x is None else f"{x:+.{n}f}".replace(".", ",")
 
 
 def muat(arch, pembanding, seed):
@@ -42,14 +42,14 @@ def main() -> None:
     baris = []
     kumpul: dict = {}
 
-    baris.append("# RINGKASAN P0 — SawitMVC-Depth, protokol beku pycocotools\n")
+    baris.append("# RINGKASAN P0 - SawitMVC-Depth, protokol beku pycocotools\n")
     baris.append(
         "Semua angka: split **test**, evaluasi 1-protokol pycocotools, CI95 dari "
         "bootstrap 2.000x yang di-resample **per pohon** (4 sisi satu pohon tidak "
         "independen). Dihasilkan otomatis oleh `ringkas_p0.py`.\n"
     )
 
-    baris.append("\n## 1. Hasil utama — RGB vs RGB+Depth\n")
+    baris.append("\n## 1. Hasil utama - RGB vs RGB+Depth\n")
     baris.append("| Arsitektur | seed | RGB | RGB+D | Δ | CI95 Δ | frac boot > 0 |")
     baris.append("|---|---|---:|---:|---:|---|---:|")
     for arch in ARCH:
@@ -57,7 +57,7 @@ def main() -> None:
         for s in SEED:
             d = muat(arch, "rgb", s)
             if not d:
-                baris.append(f"| {arch} | {s} | — | — | — | — | — |")
+                baris.append(f"| {arch} | {s} | - | - | - | - | - |")
                 continue
             t, dl = d["titik"], d["delta"]["mAP50"]
             ci = dl["ci95"]
@@ -81,11 +81,11 @@ def main() -> None:
         "**Belum direplikasi ke seed lain.**\n"
     )
 
-    baris.append("\n## 2. Lampiran — kontrol metodologis\n")
+    baris.append("\n## 2. Lampiran - kontrol metodologis\n")
     baris.append(
         "`derau` = kanal ke-4 diisi bilangan acak tetap per berkas (kontrol "
         "KAPASITAS). `tukar` = depth nyata dari pohon lain dalam split yang sama "
-        "(kontrol REGISTRASI). Δ di bawah adalah RGB+D **dikurangi kontrol** — "
+        "(kontrol REGISTRASI). Δ di bawah adalah RGB+D **dikurangi kontrol** - "
         "positif berarti depth nyata lebih baik daripada kontrol.\n"
     )
     baris.append("| Arsitektur | seed | kontrol | AP kontrol | RGB+D | Δ | CI95 Δ |")
@@ -95,7 +95,7 @@ def main() -> None:
             for s in SEED:
                 d = muat(arch, pemb, s)
                 if not d:
-                    baris.append(f"| {arch} | {s} | {pemb} | — | — | — | — |")
+                    baris.append(f"| {arch} | {s} | {pemb} | - | - | - | - |")
                     continue
                 t, dl = d["titik"], d["delta"]["mAP50"]
                 ci = dl["ci95"]
@@ -128,7 +128,7 @@ def main() -> None:
         baris.append(f"\n**{arch}**")
         baris.extend(cek)
 
-    baris.append("\n## 4. Per kelas — Δ AP50 (RGB+D − RGB)\n")
+    baris.append("\n## 4. Per kelas - Δ AP50 (RGB+D − RGB)\n")
     baris.append("| Arsitektur | seed | " + " | ".join(KELAS) + " |")
     baris.append("|---|---|" + "---:|" * len(KELAS))
     for arch in ARCH:
@@ -143,7 +143,7 @@ def main() -> None:
             baris.append(f"| {arch} | {s} | " + " | ".join(sel) + " |")
     baris.append(
         "\nB4 hanya punya 95 kotak di seluruh dataset. Sebaran AP B4 antar-seed "
-        "jauh melebihi setiap Δ agregat di tabel 1 — itu lantai derau eksperimen "
+        "jauh melebihi setiap Δ agregat di tabel 1 - itu lantai derau eksperimen "
         "ini, dan tidak bisa diperbaiki oleh arsitektur fusi mana pun.\n"
     )
 

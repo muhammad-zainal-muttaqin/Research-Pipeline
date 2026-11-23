@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Pustaka penjadwalan run — memperbaiki tiga bug yang terverifikasi 1 Agustus.
+# Pustaka penjadwalan run - memperbaiki tiga bug yang terverifikasi 1 Agustus.
 #
 # Sumberkan, jangan jalankan:  source shell/jadwal.sh
 #
-# ## Bug 1 — peluncuran ganda
+# ## Bug 1 - peluncuran ganda
 #
 # Pola lama menjaga dengan "lewati bila berkas hasil sudah ada". Itu tidak
 # melindungi apa pun SELAMA pekerjaan berjalan, karena hasil baru ditulis di
@@ -11,17 +11,17 @@
 # menit setelah yang pertama mulai; keduanya menulis ke berkas yang sama.
 #
 # Perbaikannya kunci berbasis proses: `flock` non-blocking pada berkas penanda,
-# diambil saat MULAI dan dilepas otomatis oleh kernel saat proses mati — termasuk
+# diambil saat MULAI dan dilepas otomatis oleh kernel saat proses mati - termasuk
 # saat mati karena SIGKILL, sehingga kunci tidak pernah tertinggal basi.
 #
-# ## Bug 2 — pekerja yatim
+# ## Bug 2 - pekerja yatim
 #
 # Membunuh induk TIDAK membunuh 12 pekerja ProcessPoolExecutor-nya; mereka
 # berpindah ke ppid 1 dan terus membakar CPU. Perbaikannya menjalankan tiap run
 # di grup proses sendiri (`setsid`) lalu membunuh seluruh grup (`kill -TERM --`
 # dengan PID negatif), bukan satu pid.
 #
-# ## Bug 3 — ambang VRAM berbasis peluncuran
+# ## Bug 3 - ambang VRAM berbasis peluncuran
 #
 # Run yolo26n tumbuh 2,35 -> 4,04 GB selama latihan. Ambang yang mengukur
 # pemakaian SAAT PELUNCURAN menyebabkan dua OOM pada 1 Agustus. Ambang di sini
@@ -50,7 +50,7 @@ ambil_kunci() {
 tunggu_vram() {
   local ambang=$1 jeda=${2:-30} bebas
   if [ "$ambang" -lt 4500 ]; then
-    echo "[jadwal] TOLAK ambang ${ambang} MiB — di bawah puncak terukur yolo26n (4,04 GB)." >&2
+    echo "[jadwal] TOLAK ambang ${ambang} MiB - di bawah puncak terukur yolo26n (4,04 GB)." >&2
     echo "[jadwal] Ambang harus puncak + margin, bukan pemakaian saat peluncuran." >&2
     return 2
   fi
@@ -102,7 +102,7 @@ _periksa_mandiri() {
   else echo "GAGAL: kunci tertinggal basi"; gagal=1; fi
 
   if tunggu_vram 3400 2>/dev/null; then
-    echo "GAGAL: ambang 3400 MiB diterima — inilah yang menyebabkan OOM"; gagal=1
+    echo "GAGAL: ambang 3400 MiB diterima - inilah yang menyebabkan OOM"; gagal=1
   else
     echo "ok  ambang di bawah puncak terukur ditolak"
   fi
@@ -116,7 +116,7 @@ _periksa_mandiri() {
   if [ "$sebelum" -ge 2 ] && [ "$sesudah" -eq 0 ]; then
     echo "ok  seluruh grup proses mati ($sebelum -> 0), tidak ada yatim"
   else
-    echo "GAGAL: $sebelum proses sebelum, $sesudah sesudah — ada yang yatim"; gagal=1
+    echo "GAGAL: $sebelum proses sebelum, $sesudah sesudah - ada yang yatim"; gagal=1
   fi
 
   rm -rf "$JADWAL_KUNCI_DIR"

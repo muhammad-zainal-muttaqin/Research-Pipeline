@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tambal 3 lubang matriks P0 RT-DETR-L (task #27).
 #
-# PENTING — bug yang diperbaiki di skrip ini (task #26):
+# PENTING - bug yang diperbaiki di skrip ini (task #26):
 #   Pola LAMA di antre_p0a/p0b/p0b_controls.sh:
 #       echo "[$(date +%H:%M:%S)] SELESAI $nama rc=$?"
 #   Substitusi $(date) DIEKSEKUSI LEBIH DULU dan me-reset $?, jadi $? yang
@@ -11,7 +11,7 @@
 #
 # Dijalankan dengan setsid supaya proses latih TIDAK ikut mati saat terminal
 # atau sesi agen mana pun ditutup (dugaan penyebab tukar_seed1337 mati di
-# epoch 27 — waktunya bertepatan dengan Codex distop).
+# epoch 27 - waktunya bertepatan dengan Codex distop).
 set -u
 cd experiments/code
 source .venv/bin/activate
@@ -34,7 +34,7 @@ jalankan() {  # nama arch seed imgsz batch flag
   local akhir=0
   [ -f "$csv" ] && akhir=$(wc -l < "$csv")
   if [ "$rc" -ne 0 ] || [ "$akhir" -le 60 ]; then
-    echo "[$(date +%H:%M:%S)] *** GAGAL ${nama} rc=${rc} baris=${akhir} — lihat logs_gap/${nama}.log"
+    echo "[$(date +%H:%M:%S)] *** GAGAL ${nama} rc=${rc} baris=${akhir} - lihat logs_gap/${nama}.log"
   else
     echo "[$(date +%H:%M:%S)] SELESAI ${nama} rc=${rc} baris=${akhir}"
   fi

@@ -5,17 +5,17 @@ Dua koreksi, keduanya menyerang tepat di tempat kerugian mAP berada (E-014:
 38% mAP50 hilang di klasifikasi kematangan, bukan di deteksi):
 
 1. AUGMENTASI AMAN-WARNA. Baseline memakai bawaan ultralytics hsv_s=0.7,
-   hsv_v=0.4 — saturasi diacak sampai ±70% tiap batch. Kematangan sawit ADALAH
+   hsv_v=0.4 - saturasi diacak sampai ±70% tiap batch. Kematangan sawit ADALAH
    warna: B1 MATANG (jingga-merah) → B4 MENTAH (gelap kehijauan). Resep bawaan
    itu mengacak persis bukti yang harus dipelajari, dan pengklasifikasi
-   potongan di E-016 dilatih aman-warna sedangkan head YOLO tidak — jadi
+   potongan di E-016 dilatih aman-warna sedangkan head YOLO tidak - jadi
    perbandingan plafon sebelumnya memang belum adil bagi head. Geometri tetap
    diacak bebas.
 
 2. RESOLUSI 1280 = ASLI (SawitMVC 960×1280), jadi tidak ada piksel yang dibuang
    sama sekali. Pada 640 tandan bermedian 46–63 px; pada 1280 dua kali lipat.
    Deteksi agnostik sudah naik 0,7191 → 0,7730 hanya dengan 640→960, dan
-   mAP50-95 — sasaran yang lebih berat — ditentukan oleh ketepatan lokalisasi,
+   mAP50-95 - sasaran yang lebih berat - ditentukan oleh ketepatan lokalisasi,
    yang paling langsung dibayar oleh resolusi.
 
 Diinisialisasi dari baseline yang sudah konvergen; jadwal penuh dengan kosinus.

@@ -19,7 +19,7 @@
 
 ## Gambaran Umum
 
-Makalah ini adalah survei skala besar atas seluruh keluarga YOLO, disusun oleh dua belas penulis lintas lembaga. Cakupannya membentang dari YOLOv1 (2016) hingga YOLOv12, menjadikannya salah satu survei YOLO dengan rentang versi terpanjang yang tercatat dalam tinjauan pustaka ini — melampaui cakupan entri 026, 028, dan 031 yang berhenti di sekitar YOLOv8.
+Makalah ini adalah survei skala besar atas seluruh keluarga YOLO, disusun oleh dua belas penulis lintas lembaga. Cakupannya membentang dari YOLOv1 (2016) hingga YOLOv12, menjadikannya salah satu survei YOLO dengan rentang versi terpanjang yang tercatat dalam tinjauan pustaka ini - melampaui cakupan entri 026, 028, dan 031 yang berhenti di sekitar YOLOv8.
 
 Analisis disusun secara kronologis terbalik (dari versi terbaru mundur ke versi awal), menelusuri perubahan pada kecepatan, akurasi deteksi, dan efisiensi komputasi untuk deteksi *real-time*. Selain versi resmi, survei ini turut meninjau varian turunan seperti YOLO-NAS, YOLO-X, YOLO-R, DAMO-YOLO, dan Gold-YOLO. Cakupan aplikasinya mencakup lima domain: kendaraan otonom dan keselamatan lalu lintas, kesehatan dan pencitraan medis, manufaktur industri, pengawasan dan keamanan, serta pertanian.
 
@@ -29,7 +29,7 @@ Survei-survei YOLO terdahulu dalam tinjauan pustaka ini (bab 026, 028, 031, 033,
 
 ## Ide Utama
 
-Berbeda dari survei sebelumnya yang menelusuri silsilah versi secara maju (kronologis), makalah ini memakai pendekatan kronologis terbalik: dimulai dari YOLOv12 lalu ditelusuri mundur ke YOLOv1. Pendekatan ini menegaskan bahwa desain versi terbaru — misalnya modul *Area Attention* dan *Residual Efficient Layer Aggregation Network* pada YOLOv12 — dapat dipahami sebagai jawaban atas keterbatasan versi-versi pendahulunya, bukan sekadar daftar kronologis lepas.
+Berbeda dari survei sebelumnya yang menelusuri silsilah versi secara maju (kronologis), makalah ini memakai pendekatan kronologis terbalik: dimulai dari YOLOv12 lalu ditelusuri mundur ke YOLOv1. Pendekatan ini menegaskan bahwa desain versi terbaru - misalnya modul *Area Attention* dan *Residual Efficient Layer Aggregation Network* pada YOLOv12 - dapat dipahami sebagai jawaban atas keterbatasan versi-versi pendahulunya, bukan sekadar daftar kronologis lepas.
 
 ## Eksperimen dan Hasil
 
@@ -39,7 +39,7 @@ Sebagai survei, makalah ini tidak melaporkan eksperimen baru buatan sendiri, mel
 
 Kelebihan utamanya adalah cakupan versi yang paling mutakhir di antara survei YOLO dalam tinjauan pustaka ini (hingga YOLOv12), jumlah penulis dan lembaga yang luas, serta ketersediaan pracetak akses terbuka di arXiv sehingga isi lengkapnya dapat diverifikasi tanpa hambatan langganan.
 
-Keterbatasannya: makalah mengalami revisi panjang (tujuh revisi pracetak dari Juni 2024 hingga Juni 2025) sebelum diterima di *Artificial Intelligence Review*, mengindikasikan cakupan yang terus berubah mengikuti rilis versi YOLO baru — pembaca perlu memeriksa versi final jurnal untuk detail terkini. Sebagai survei naratif berskala besar, kedalaman pembahasan tiap versi individual tetap lebih dangkal dibanding makalah aslinya, sehingga bab ini tetap merujuk ke bab-bab fondasi (001–009) untuk rincian arsitektur per versi.
+Keterbatasannya: makalah mengalami revisi panjang (tujuh revisi pracetak dari Juni 2024 hingga Juni 2025) sebelum diterima di *Artificial Intelligence Review*, mengindikasikan cakupan yang terus berubah mengikuti rilis versi YOLO baru - pembaca perlu memeriksa versi final jurnal untuk detail terkini. Sebagai survei naratif berskala besar, kedalaman pembahasan tiap versi individual tetap lebih dangkal dibanding makalah aslinya, sehingga bab ini tetap merujuk ke bab-bab fondasi (001–009) untuk rincian arsitektur per versi.
 
 ## Kaitan dengan Bab Lain
 

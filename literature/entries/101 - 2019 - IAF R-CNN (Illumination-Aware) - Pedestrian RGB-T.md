@@ -25,7 +25,7 @@ Pada tolok ukur KAIST Multispectral Pedestrian (bab 100), IAF R-CNN mencapai *mi
 
 Deteksi pejalan kaki untuk kendaraan otonom dan sistem pengawasan harus tetap andal pada malam hari, saat citra RGB kehilangan banyak informasi karena minimnya cahaya tampak. Kamera termal mengukur radiasi inframerah panjang yang dipancarkan tubuh manusia sehingga tetap kontras pada kegelapan, tetapi citra termal miskin tekstur dan warna sehingga sering gagal membedakan pejalan dari benda panas lain (misalnya knalpot kendaraan) pada siang hari. Dataset KAIST Multispectral Pedestrian (bab 100) menyediakan pasangan citra RGB-termal yang selaras spasial dan waktu, menjadikan riset fusi dua modal ini mungkin dilakukan secara sistematis.
 
-Sebelum makalah ini, pendekatan fusi yang populer — misalnya *Halfway Fusion* yang diusulkan Liu dkk. (2016) — menetapkan satu arsitektur penggabungan tunggal yang dipakai sama untuk seluruh citra, tanpa mempertimbangkan apakah citra itu diambil siang atau malam. Pendekatan yang lebih tua, ACF+T+THOG, memakai fitur tangan (*handcrafted feature*) seperti *Aggregated Channel Features* dan *Thermal Histogram of Oriented Gradients* yang juga tidak menyesuaikan bobot modal terhadap kondisi cahaya. Padahal, keandalan RGB dan termal bersifat komplementer secara terbalik: RGB unggul saat cahaya cukup, termal unggul saat gelap. Fusi statis memaksa satu bobot untuk kedua situasi tersebut, sehingga performa tertekan pada salah satu kondisi. Masalah inilah yang mendorong penulis mengukur iluminasi secara eksplisit dan menjadikannya sinyal kontrol bobot fusi.
+Sebelum makalah ini, pendekatan fusi yang populer - misalnya *Halfway Fusion* yang diusulkan Liu dkk. (2016) - menetapkan satu arsitektur penggabungan tunggal yang dipakai sama untuk seluruh citra, tanpa mempertimbangkan apakah citra itu diambil siang atau malam. Pendekatan yang lebih tua, ACF+T+THOG, memakai fitur tangan (*handcrafted feature*) seperti *Aggregated Channel Features* dan *Thermal Histogram of Oriented Gradients* yang juga tidak menyesuaikan bobot modal terhadap kondisi cahaya. Padahal, keandalan RGB dan termal bersifat komplementer secara terbalik: RGB unggul saat cahaya cukup, termal unggul saat gelap. Fusi statis memaksa satu bobot untuk kedua situasi tersebut, sehingga performa tertekan pada salah satu kondisi. Masalah inilah yang mendorong penulis mengukur iluminasi secara eksplisit dan menjadikannya sinyal kontrol bobot fusi.
 
 ## Ide Utama
 
@@ -35,7 +35,7 @@ Gagasan inti makalah adalah mengukur kondisi cahaya sebuah citra sebagai satu ni
 
 ### Kerangka Deteksi Dua Cabang Berbasis Faster R-CNN
 
-IAF R-CNN memakai dua jaringan VGG-16 (arsitektur konvolusi 16 lapis berbobot) sebagai penyari fitur, satu menerima citra RGB dan satu menerima citra termal. Berbeda dari metode fusi multispektral sebelumnya yang mengambil usulan wilayah objek dari algoritme eksternal ACF, sistem ini memakai *Region Proposal Network* (RPN) — komponen Faster R-CNN yang menghasilkan kandidat kotak objek langsung dari peta fitur konvolusi — sehingga seluruh pipeline dapat dilatih *end-to-end* (dari masukan citra ke keluaran deteksi tanpa tahap eksternal terpisah). Fitur dari kedua modal digabungkan pada satu titik dalam jaringan, kemudian dilewatkan ke lapis *Region of Interest* (ROI) *pooling* yang menyeragamkan ukuran fitur tiap kandidat kotak sebelum diklasifikasikan dan diregresikan posisinya.
+IAF R-CNN memakai dua jaringan VGG-16 (arsitektur konvolusi 16 lapis berbobot) sebagai penyari fitur, satu menerima citra RGB dan satu menerima citra termal. Berbeda dari metode fusi multispektral sebelumnya yang mengambil usulan wilayah objek dari algoritme eksternal ACF, sistem ini memakai *Region Proposal Network* (RPN) - komponen Faster R-CNN yang menghasilkan kandidat kotak objek langsung dari peta fitur konvolusi - sehingga seluruh pipeline dapat dilatih *end-to-end* (dari masukan citra ke keluaran deteksi tanpa tahap eksternal terpisah). Fitur dari kedua modal digabungkan pada satu titik dalam jaringan, kemudian dilewatkan ke lapis *Region of Interest* (ROI) *pooling* yang menyeragamkan ukuran fitur tiap kandidat kotak sebelum diklasifikasikan dan diregresikan posisinya.
 
 ### Enam Arsitektur Fusi yang Dibandingkan
 
@@ -43,7 +43,7 @@ Sebelum menetapkan rancangan akhir, penulis membandingkan enam titik penggabunga
 
 ### Jaringan Sadar-Iluminasi (Illumination-Aware Network)
 
-IAN adalah jaringan konvolusi kecil — dua lapis konvolusi diikuti dua lapis terhubung penuh — yang menerima potongan citra RGB berukuran 56×56 piksel dan mengeluarkan satu nilai iluminasi iv dalam rentang [0, 1], dengan 0 berarti gelap (malam) dan 1 berarti terang (siang). Jaringan ini dilatih secara terawasi memakai label siang/malam yang tersedia pada metadata KAIST, sehingga tidak memerlukan anotasi tambahan. Pada pengujian ablasi, IAN yang dipelajari dari data terbukti lebih baik daripada ukuran iluminasi berbasis statistik piksel tangan (misalnya rata-rata dan rentang nilai kecerahan citra).
+IAN adalah jaringan konvolusi kecil - dua lapis konvolusi diikuti dua lapis terhubung penuh - yang menerima potongan citra RGB berukuran 56×56 piksel dan mengeluarkan satu nilai iluminasi iv dalam rentang [0, 1], dengan 0 berarti gelap (malam) dan 1 berarti terang (siang). Jaringan ini dilatih secara terawasi memakai label siang/malam yang tersedia pada metadata KAIST, sehingga tidak memerlukan anotasi tambahan. Pada pengujian ablasi, IAN yang dipelajari dari data terbukti lebih baik daripada ukuran iluminasi berbasis statistik piksel tangan (misalnya rata-rata dan rentang nilai kecerahan citra).
 
 ### Fungsi Gerbang Adaptif
 
@@ -67,7 +67,7 @@ Pada malam hari, iv mendekati 0 sehingga bobot cabang termal mendominasi; pada s
 
 ### Fungsi Loss Multi-Tugas
 
-Pelatihan menggabungkan beberapa komponen loss sekaligus: loss RPN untuk kualitas usulan wilayah, loss klasifikasi dan regresi kotak untuk masing-masing cabang modal, serta dua loss tambahan berupa segmentasi semantik pejalan — satu pada tingkat citra penuh dan satu pada tingkat ROI — yang berfungsi sebagai sinyal pelatihan tambahan (*auxiliary supervision*) agar fitur yang dipelajari lebih peka terhadap bentuk manusia. Seluruh komponen loss diberi bobot yang sama pada penjumlahannya.
+Pelatihan menggabungkan beberapa komponen loss sekaligus: loss RPN untuk kualitas usulan wilayah, loss klasifikasi dan regresi kotak untuk masing-masing cabang modal, serta dua loss tambahan berupa segmentasi semantik pejalan - satu pada tingkat citra penuh dan satu pada tingkat ROI - yang berfungsi sebagai sinyal pelatihan tambahan (*auxiliary supervision*) agar fitur yang dipelajari lebih peka terhadap bentuk manusia. Seluruh komponen loss diberi bobot yang sama pada penjumlahannya.
 
 ### Penyesuaian Rekayasa untuk Data Multispektral
 
@@ -83,7 +83,7 @@ Evaluasi dilakukan pada KAIST Multispectral Pedestrian Benchmark (bab 100), yang
 | Siang | 6,84% | 8,51% | 6,08% |
 | Malam | 22,24% | 17,89% | 18,20% |
 
-Pada keseluruhan data uji, fusi menekan *miss rate* menjadi kurang dari setengah performa cabang tunggal terbaik (22,71% menjadi 15,73%), yang menegaskan manfaat menggabungkan dua modal dengan bobot adaptif. Pada siang hari, hasil gabungan (6,08%) bahkan lebih baik daripada RGB saja (6,84%) maupun termal saja (8,51%), menunjukkan kedua modal saling melengkapi meski RGB dominan. Pada malam hari, hasil gabungan (18,20%) justru sedikit lebih buruk daripada termal saja (17,89%) — indikasi bahwa sinyal RGB yang nyaris tak berguna pada kegelapan total kadang tetap mengganggu keputusan gerbang alih-alih diabaikan sepenuhnya.
+Pada keseluruhan data uji, fusi menekan *miss rate* menjadi kurang dari setengah performa cabang tunggal terbaik (22,71% menjadi 15,73%), yang menegaskan manfaat menggabungkan dua modal dengan bobot adaptif. Pada siang hari, hasil gabungan (6,08%) bahkan lebih baik daripada RGB saja (6,84%) maupun termal saja (8,51%), menunjukkan kedua modal saling melengkapi meski RGB dominan. Pada malam hari, hasil gabungan (18,20%) justru sedikit lebih buruk daripada termal saja (17,89%) - indikasi bahwa sinyal RGB yang nyaris tak berguna pada kegelapan total kadang tetap mengganggu keputusan gerbang alih-alih diabaikan sepenuhnya.
 
 Dibandingkan metode sebelumnya, IAF R-CNN mengungguli ACF+T+THOG berbasis fitur tangan (25,94%), *Halfway Fusion* (18,59%), dan *Fusion RPN+BF* (16,53%), menjadikannya *miss rate* terendah di antara metode yang dibandingkan pada masa publikasinya. Dari sisi kecepatan, model ini memproses satu citra dalam 0,21 detik (kira-kira 4,8 *frame* per detik), tercepat di antara metode fusi multispektral yang dibandingkan, meski jauh dari kecepatan *real-time* detektor satu tahap seperti YOLO (bab 001).
 
@@ -99,7 +99,7 @@ IAF R-CNN mewarisi kerangka deteksi dua tahap dari Faster R-CNN ([014 - Faster R
 
 ## Poin untuk Sitasi
 
-Kutip dengan kunci `li2019illumination`. Ringkasan yang aman dikutip: "IAF R-CNN menaksir iluminasi citra melalui jaringan IAN, lalu memakai nilai itu untuk menimbang cabang RGB dan termal secara adaptif dalam kerangka Faster R-CNN, mencapai *miss rate* 15,73% pada KAIST Multispectral Pedestrian Benchmark — lebih rendah daripada RGB saja (34,62%), termal saja (22,71%), dan metode fusi sebelumnya seperti Halfway Fusion (18,59%)." Angka-angka berikut diringkas dari pembacaan versi HTML pracetak (ar5iv) dan sebaiknya diverifikasi ulang ke tabel PDF/jurnal asli sebelum dikutip formal: perbandingan enam arsitektur fusi (17,4–17,6%), delta ablasi gerbang (0,67 poin dan 5,03 poin), kontribusi 10,4 poin dari penyesuaian rekayasa (*stride* 8 piksel, instans tertutup sebagian, wilayah taksamar), angka pembanding Fusion RPN+BF (16,53%), serta kecepatan inferensi 0,21 detik per citra.
+Kutip dengan kunci `li2019illumination`. Ringkasan yang aman dikutip: "IAF R-CNN menaksir iluminasi citra melalui jaringan IAN, lalu memakai nilai itu untuk menimbang cabang RGB dan termal secara adaptif dalam kerangka Faster R-CNN, mencapai *miss rate* 15,73% pada KAIST Multispectral Pedestrian Benchmark - lebih rendah daripada RGB saja (34,62%), termal saja (22,71%), dan metode fusi sebelumnya seperti Halfway Fusion (18,59%)." Angka-angka berikut diringkas dari pembacaan versi HTML pracetak (ar5iv) dan sebaiknya diverifikasi ulang ke tabel PDF/jurnal asli sebelum dikutip formal: perbandingan enam arsitektur fusi (17,4–17,6%), delta ablasi gerbang (0,67 poin dan 5,03 poin), kontribusi 10,4 poin dari penyesuaian rekayasa (*stride* 8 piksel, instans tertutup sebagian, wilayah taksamar), angka pembanding Fusion RPN+BF (16,53%), serta kecepatan inferensi 0,21 detik per citra.
 
 ---
 

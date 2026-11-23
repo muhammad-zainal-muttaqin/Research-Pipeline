@@ -1,4 +1,4 @@
-# Metrik lengkap seluruh run E-022/G7/G8 — protokol tunggal
+# Metrik lengkap seluruh run E-022/G7/G8 - protokol tunggal
 
 Tabel rujukan untuk **semua** run pada SawitMVC-Depth, split test 72 pohon /
 288 citra / 504 kotak. Seluruh angka lewat **pycocotools**, protokol yang
@@ -18,7 +18,7 @@ lain).
 
 - **P / R / F1** pada conf 0,25 dan IoU 0,5, pencocokan serakah, tiap kotak GT
   hanya boleh dipakai sekali. Ini angka **operasional** pada satu ambang, bukan
-  integral kurva — jadi tidak sebanding dengan mAP.
+  integral kurva - jadi tidak sebanding dengan mAP.
 - **mAP50 / mAP50-95** dari matriks presisi COCOeval, seluruh kelas.
 - Prediksi: conf 0,001, NMS IoU 0,7, `max_det` 300, imgsz 640.
 
@@ -74,7 +74,7 @@ jadi perbedaan perilaku ini **tidak terlihat sama sekali** dari mAP.
 Konsekuensinya praktis: untuk penghitungan tandan, detektor ber-recall tinggi
 lebih berguna karena kotak berlebih dapat disaring tahap berikutnya sementara
 tandan yang terlewat hilang selamanya. Itu argumen memilih RT-DETR-L yang tidak
-bersandar pada mAP — dan tidak pernah muncul di catatan mana pun sebelum tabel
+bersandar pada mAP - dan tidak pernah muncul di catatan mana pun sebelum tabel
 ini dibuat.
 
 ## Provenans, karena bobot tidak diarsipkan
@@ -83,5 +83,5 @@ Kebijakan repo tidak menyimpan checkpoint, jadi angka ini tidak dapat
 diverifikasi dengan membuka bobotnya. JSON sumber mencatat **SHA-256 dan ukuran
 byte** tiap `best.pt`, jumlah epoch tercatat, dan modalitas kanal ke-4. Gunanya:
 bila hasil latih-ulang berbeda, hash memberi tahu apakah checkpoint-nya memang
-lain atau resepnya yang tidak tereproduksi — dua kemungkinan yang tanpa ini
+lain atau resepnya yang tidak tereproduksi - dua kemungkinan yang tanpa ini
 tidak dapat dibedakan.

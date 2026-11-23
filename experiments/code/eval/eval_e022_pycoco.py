@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """E-022: evaluasi 1-protokol pycocotools untuk seluruh lengan RGB / RGB-D.
 
-Menghapus caveat evaluator campur — semua model (ultralytics YOLO/RT-DETR dan
+Menghapus caveat evaluator campur - semua model (ultralytics YOLO/RT-DETR dan
 nanti RF-DETR) diprediksi pada daftar citra split yang SAMA, lalu dinilai oleh
 COCOeval atas GT yang dibangun sekali dari label YOLO. Ini protokol yang sama
 seperti E-021 (`eval_all_pycoco.py`), diadaptasi ke split per-pohon dataset
 SawitMVC-Depth dan ke masukan 4-kanal.
 
 Untuk lengan RGB-D, kanal ke-4 disusun di memori dari PNG depth kanonik
-(`fourch.compose`) — tidak ada penyalinan dataset, dan urutan kanal [B,G,R,D]
+(`fourch.compose`) - tidak ada penyalinan dataset, dan urutan kanal [B,G,R,D]
 persis sama dengan jalur latih.
 
 Tambahan yang tidak ada di E-021: CI bootstrap 2000x yang di-resample per
-POHON (bukan per citra), karena 4 sisi satu pohon tidak independen — resample
+POHON (bukan per citra), karena 4 sisi satu pohon tidak independen - resample
 per citra membuat CI terlalu sempit.
 """
 from __future__ import annotations
@@ -140,7 +140,7 @@ def coco_eval(gt: COCO, dets: list[dict], img_ids: list[int]) -> dict:
 
 def bootstrap_pohon(gt: COCO, dets: list[dict], paths: list[Path], peta: dict[str, int],
                     B: int = 2000, seed: int = 42) -> dict:
-    """CI bootstrap dengan resample per POHON — 4 sisi satu pohon tidak independen."""
+    """CI bootstrap dengan resample per POHON - 4 sisi satu pohon tidak independen."""
     pohon = sorted({pohon_dari(p.stem) for p in paths})
     per_pohon = {t: [peta[p.stem] for p in paths if pohon_dari(p.stem) == t] for t in pohon}
     rng = np.random.default_rng(seed)

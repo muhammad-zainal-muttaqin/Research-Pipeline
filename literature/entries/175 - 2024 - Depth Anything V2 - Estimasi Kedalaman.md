@@ -31,7 +31,7 @@ Masalah yang tersisa terletak pada sumber label kedalaman nyata itu sendiri. Lab
 
 Gagasan inti Depth Anything V2 adalah memisahkan sumber label akurat dari sumber keragaman data. Citra sintetis yang dihasilkan mesin grafis 3D memiliki label kedalaman piksel demi piksel yang presisi sempurna, tetapi jumlah dan keragamannya terbatas sehingga model yang dilatih langsung di atasnya cenderung tidak menggeneralisasi ke citra dunia nyata. Citra nyata tanpa label tersedia dalam jumlah besar dan sangat beragam, tetapi tidak memiliki label kedalaman sama sekali.
 
-Solusinya adalah pola guru-siswa (*teacher-student*) tiga tahap. Model guru berkapasitas besar dilatih murni pada citra sintetis berlabel presisi, sehingga mewarisi ketajaman label tanpa terpapar derau label nyata. Guru ini kemudian dipakai untuk memprediksi kedalaman pada jutaan citra nyata tanpa label, menghasilkan label semu. Model siswa yang lebih kecil dan efisien lalu dilatih pada label semu tersebut. Karena label semu berasal dari guru yang tajam, siswa mewarisi ketajaman itu sekaligus mendapat keragaman visual dari skala citra nyata yang besar — dua sifat yang sebelumnya sulit didapat bersamaan dari satu sumber data saja.
+Solusinya adalah pola guru-siswa (*teacher-student*) tiga tahap. Model guru berkapasitas besar dilatih murni pada citra sintetis berlabel presisi, sehingga mewarisi ketajaman label tanpa terpapar derau label nyata. Guru ini kemudian dipakai untuk memprediksi kedalaman pada jutaan citra nyata tanpa label, menghasilkan label semu. Model siswa yang lebih kecil dan efisien lalu dilatih pada label semu tersebut. Karena label semu berasal dari guru yang tajam, siswa mewarisi ketajaman itu sekaligus mendapat keragaman visual dari skala citra nyata yang besar - dua sifat yang sebelumnya sulit didapat bersamaan dari satu sumber data saja.
 
 ## Cara Kerja Langkah demi Langkah
 
@@ -39,15 +39,15 @@ Solusinya adalah pola guru-siswa (*teacher-student*) tiga tahap. Model guru berk
 
 Setiap model, baik guru maupun siswa, memakai DINOv2 (model *encoder* citra yang telah dilatih awal secara *self-supervised*, yaitu tanpa label manusia, untuk menghasilkan fitur visual umum) sebagai tulang punggung (*backbone*, jaringan ekstraksi fitur utama), diikuti kepala DPT sebagai dekoder yang mengubah fitur menjadi peta kedalaman padat per piksel. Dibandingkan V1, penulis mengambil fitur dari lapisan menengah tulang punggung, bukan hanya empat lapisan terakhir, agar selaras dengan praktik umum pemakaian DPT pada literatur.
 
-### Tahap 1 — Melatih Guru pada Data Sintetis
+### Tahap 1 - Melatih Guru pada Data Sintetis
 
 Guru memakai tulang punggung terbesar, ViT-Giant/DINOv2-G berkapasitas sekitar 1,3 miliar parameter. Guru dilatih pada gabungan lima dataset sintetis (BlendedMVS, Hypersim, IRS, TartanAir, VKITTI2) berjumlah total 595 ribu citra, pada resolusi masukan 518×518 piksel. Fungsi *loss* memakai kombinasi *scale-and-shift-invariant loss* (mengukur selisih kedalaman terlepas dari skala dan pergeseran absolut, karena kedalaman relatif tidak memiliki satuan tetap) dan *gradient matching loss* (menyamakan gradien spasial peta kedalaman prediksi dan kebenaran, mendorong ketajaman tepi). Karena seluruh data pelatihan tahap ini sintetis dan berlabel presisi, guru mempelajari batas objek yang tajam tanpa gangguan derau sensor.
 
-### Tahap 2 — Pelabelan Semu pada Citra Nyata
+### Tahap 2 - Pelabelan Semu pada Citra Nyata
 
 Guru yang telah dilatih dipakai untuk memprediksi peta kedalaman pada lebih dari 62 juta citra nyata tanpa label yang dikumpulkan dari berbagai sumber publik. Prediksi ini menjadi label semu: bukan kebenaran lapangan asli, melainkan taksiran dari model guru yang dipakai sebagai target pelatihan tahap berikutnya. Skala data pada tahap ini jauh lebih besar daripada tahap sintetis, sehingga menyuntikkan keragaman skenario dunia nyata yang tidak dimiliki data sintetis.
 
-### Tahap 3 — Melatih Siswa dengan Distilasi
+### Tahap 3 - Melatih Siswa dengan Distilasi
 
 Model siswa berukuran Small (24,8 juta parameter), Base (97,5 juta parameter), atau Large (335,3 juta parameter) dilatih pada label semu dari Tahap 2. Proses ini disebut distilasi karena pengetahuan model besar (guru) dipindahkan ke model kecil (siswa) lewat label yang dihasilkan guru, bukan lewat pelatihan langsung pada label kebenaran manusia. Karena label semu berjumlah puluhan juta dan berasal dari guru yang tajam, siswa memperoleh generalisasi luas sekaligus ketajaman tepi, dengan biaya komputasi inferensi jauh lebih rendah daripada guru.
 

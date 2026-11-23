@@ -1,4 +1,4 @@
-# SR-006 — Penautan tandan lintas-sisi secara geometris
+# SR-006 - Penautan tandan lintas-sisi secara geometris
 
 **Ide I-6 / I-7** · **Eksperimen:** E-007 · **Putusan: DIPALSUKAN** · 2026-07-21
 
@@ -24,7 +24,7 @@ SR-004 sudah membuktikan DA3 memulihkan pose kamera 4/8 sisi dengan benar
 kesesuaian spasialnya di kerangka koordinat bersama: **tandan fisik yang sama
 harus menempati titik 3D yang sama dari sisi mana pun ia dilihat.**
 
-Penautan menjadi **geometris, bukan statistik** — dan identitas tandan
+Penautan menjadi **geometris, bukan statistik** - dan identitas tandan
 diturunkan sebagai komponen terhubung, persis cara dataset menurunkan
 kebenaran-dasarnya.
 
@@ -47,21 +47,21 @@ ke 3D dengan `Xw = Rᵀ(d·K⁻¹[u,v,1] − t)`, lalu tautkan pasangan lintas-s
 berjarak di bawah ambang. Identitas akhir = komponen terhubung (union-find).
 Metrik identik dengan Tabel 4 DiB.
 
-Ambang **disapu**, bukan dipilih sekali — karena kegagalan pada satu ambang
+Ambang **disapu**, bukan dipilih sekali - karena kegagalan pada satu ambang
 tidak boleh dianggap kegagalan ide.
 
 ## 4. Hasil
 
-### Validasi perangkat — penting
+### Validasi perangkat - penting
 
 Dua baris pembanding direproduksi **persis** dari publikasi:
 
 | | Class±1 | Tree±1 | MAE | Bias |
 |---|---|---|---|---|
-| Jumlah mentah — skrip ini | 50,00% | 6,38% | 2,142 | +2,142 |
-| Jumlah mentah — DiB Tabel 4 | 50,00% | 6,38% | 2,142 | +2,142 |
-| Koreksi k — skrip ini | 95,57% | 86,52% | 0,356 | +0,009 |
-| Koreksi k — DiB Tabel 4 | 95,57% | 86,52% | 0,356 | +0,009 |
+| Jumlah mentah - skrip ini | 50,00% | 6,38% | 2,142 | +2,142 |
+| Jumlah mentah - DiB Tabel 4 | 50,00% | 6,38% | 2,142 | +2,142 |
+| Koreksi k - skrip ini | 95,57% | 86,52% | 0,356 | +0,009 |
+| Koreksi k - DiB Tabel 4 | 95,57% | 86,52% | 0,356 | +0,009 |
 
 Kecocokan digit-per-digit ini menetapkan bahwa pipeline evaluasinya benar,
 sehingga angka di bawah adalah perbandingan yang sah.
@@ -73,16 +73,16 @@ sehingga angka di bawah adalah perbandingan yang sah.
 | A. penampilan | 0,1 | **77,13%** | 32,62% | 0,876 |
 | B. depth tanpa pose | 0,01 | 75,00% | 29,08% | 0,966 |
 | **C. sadar-pose (3D)** | 1,0 | **69,50%** | 22,70% | 1,367 |
-| D. koreksi global k | — | **95,57%** | 86,52% | 0,356 |
+| D. koreksi global k | - | **95,57%** | 86,52% | 0,356 |
 
-## 5. Putusan — DIPALSUKAN
+## 5. Putusan - DIPALSUKAN
 
 Ketiga metode penautan **kalah telak** dari koreksi global yang sederhana, dan
 metode geometris justru **paling buruk** di antara ketiganya (69,50% vs 77,13%
 penampilan). Sapuan ambang menutup kemungkinan bahwa ini sekadar salah setelan:
 pose diuji pada sembilan ambang dari 0,05 sampai 10,0.
 
-### Kenapa gagal — dan batas dari klaim ini
+### Kenapa gagal - dan batas dari klaim ini
 
 Dua penjelasan yang tidak dapat dipisahkan oleh eksperimen ini:
 
@@ -95,7 +95,7 @@ Dua penjelasan yang tidak dapat dipisahkan oleh eksperimen ini:
 2. **Idenya memang tidak cocok di sini.**
 
 Kejujurannya: eksperimen ini **memalsukan implementasi**, dan hanya melemahkan
-— bukan menggugurkan — idenya. Untuk mengujinya dengan adil diperlukan
+- bukan menggugurkan - idenya. Untuk mengujinya dengan adil diperlukan
 kedalaman **metrik** terkalibrasi (ide I-19: Metric3D entri 177 / ZoeDepth) dan
 verifikasi intrinsik. Itu dicatat sebagai pekerjaan terbuka, bukan diklaim
 sebagai sudah dijawab.
@@ -108,7 +108,7 @@ rata-rata kemunculan). Metode penautan apa pun harus nyaris sempurna untuk
 mengalahkannya.
 
 **Konsekuensi strategis:** ruang perbaikan di tahap counting sudah tipis.
-Bersama SR-005, ini mempersempit arah secara tegas — sisa perbaikan harus datang
+Bersama SR-005, ini mempersempit arah secara tegas - sisa perbaikan harus datang
 dari **detektor**, persis kesimpulan DiB sendiri dan prioritas pertama
 laporan *deep research* Juli 2026 (kini di tag Git `arsip-pra-rapi-2026-11-18`).
 

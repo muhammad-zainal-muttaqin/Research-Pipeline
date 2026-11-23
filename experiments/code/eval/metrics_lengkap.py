@@ -3,7 +3,7 @@
 
 Uji berpasangan (`eval_e022_paired.py`) hanya melaporkan mAP50 karena itu yang
 dibutuhkan untuk selisih antar lengan. Skrip ini melengkapi rekamnya: mAP50,
-mAP50-95, AP per kelas pada kedua ambang, precision, recall, dan F1 — semuanya
+mAP50-95, AP per kelas pada kedua ambang, precision, recall, dan F1 - semuanya
 lewat pycocotools, protokol yang dibekukan [E-025] setelah terbukti bahwa
 evaluator internal trainer tidak boleh dipakai membandingkan antar lengan.
 
@@ -13,11 +13,11 @@ Kebijakan repo tidak mengarsipkan bobot model, jadi angka di sini tidak dapat
 diverifikasi dengan cara membuka checkpoint-nya. Sebagai gantinya tiap run
 mencatat:
 
-  - SHA-256 dan ukuran `weights/best.pt` — siapa pun yang melatih ulang dengan
+  - SHA-256 dan ukuran `weights/best.pt` - siapa pun yang melatih ulang dengan
     resep yang sama dapat membandingkan hash-nya; kalau berbeda, minimal
     diketahui bahwa checkpoint-nya bukan yang sama, bukan sekadar menduga.
   - epoch tercatat, durasi, dan hiperparameter efektif dari `args.yaml`.
-  - perangkat (GPU) — angka absolut tidak identik antar perangkat.
+  - perangkat (GPU) - angka absolut tidak identik antar perangkat.
 
 Itu tidak menggantikan bobot, tetapi membuat selisih antara "hasil tidak
 tereproduksi" dan "checkpoint-nya memang lain" dapat dibedakan.
@@ -85,7 +85,7 @@ def metrik(gt, dets, img_ids) -> dict:
     # TIDAK memakai ev.evalImgs: senarai itu berisi satu entri per
     # (kelas x rentang-area x citra), sehingga menjumlahkan dtMatches di
     # seluruhnya menghitung tiap TP sebanyak jumlah rentang area dan
-    # menghasilkan precision > 1 serta recall > 1 — mustahil, tetapi tidak
+    # menghasilkan precision > 1 serta recall > 1 - mustahil, tetapi tidak
     # error, jadi mudah lolos sebagai hasil. Pencocokan sendiri dapat diperiksa.
     kuat = sorted((d for d in dets if d["score"] >= 0.25), key=lambda d: -d["score"])
     gt_per: dict = {}
@@ -146,7 +146,7 @@ def main() -> int:
 
     keluar: dict = {"_protokol": {
         "evaluator": "pycocotools",
-        "aturan": "E-025 — hasil.json tidak boleh dipakai membandingkan antar lengan",
+        "aturan": "E-025 - hasil.json tidak boleh dipakai membandingkan antar lengan",
         "split": args.split, "split_dir": args.split_dir,
         "n_citra": len(paths), "n_kotak_gt": len(gt.dataset["annotations"]),
         "conf_prediksi": 0.001, "iou_nms": 0.7, "max_det": 300, "imgsz": args.imgsz,
@@ -157,7 +157,7 @@ def main() -> int:
         if not bobot.is_file() or rd.name.endswith("_test"):
             continue
         if ("sawitmvc" in rd.name) != ("sawitmvc" in args.split_dir):
-            print(f"   lewati {rd.name} — dataset tidak cocok dengan {args.split_dir}")
+            print(f"   lewati {rd.name} - dataset tidak cocok dengan {args.split_dir}")
             continue
         csv = rd / "results.csv"
         n_ep = 0

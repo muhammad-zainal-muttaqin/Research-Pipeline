@@ -1,35 +1,35 @@
-# SR-015 — Depth SENSOR 4-kanal simultan: informasinya ada, cara memasukkannya salah
+# SR-015 - Depth SENSOR 4-kanal simultan: informasinya ada, cara memasukkannya salah
 
 **Ide I-4/I-8** · **Eksperimen:** E-022, direplikasi [E-027]/[E-029] · **Putusan: DIPALSUKAN (fusi awal), diperkuat 3 seed × 2 arsitektur; klausa "mekanisme depth TERKONFIRMASI pada model besar" DICABUT PENUH 2026-08-01** · 2026-07-29
 
-> **⚠ PENCABUTAN KLAUSA PUTUSAN — 2026-07-30.** Putusan "fusi awal DIPALSUKAN"
+> **⚠ PENCABUTAN KLAUSA PUTUSAN - 2026-07-30.** Putusan "fusi awal DIPALSUKAN"
 > **tetap berdiri** dan justru diperkuat replikasi 3 seed. Yang **dicabut**
 > adalah klausa keduanya: "mekanisme depth terkonfirmasi pada model besar".
 > Klausa itu bertumpu pada satu perbandingan seed-42 RT-DETR-L depth − derau
-> (+0,0365, B1 +0,0698, B4 +0,1001) — dan lengan derau pembandingnya dibuat
+> (+0,0365, B1 +0,0698, B4 +0,1001) - dan lengan derau pembandingnya dibuat
 > dengan kode cacat. Setelah diperbaiki, derau RT-DETR-L naik 0,3552 → 0,3894,
 > sehingga selisih itu menyusut drastis. Pada seed1337 derau bahkan
 > **mengalahkan** depth (0,4353 vs 0,4125) dengan B4 0,3147 vs 0,1206.
 > B4 hanya punya 95 kotak; sebaran antar-seed-nya melebihi seluruh efek yang
 > diklaim. Detail: [AUDIT-E022.md](../AUDIT-E022.md).
 
-> **⚠ TAMBAHAN 2026-08-01 — pembanding derau juga tidak bertahan.** Matriks
+> **⚠ TAMBAHAN 2026-08-01 - pembanding derau juga tidak bertahan.** Matriks
 > multi-seed YOLO26n protokol beku ([E-027](../EKSPERIMEN.md)) menunjukkan
 > temuan "derau mengalahkan depth" **tidak tereproduksi**. Angka +0,0437 pada
-> seed-42 lama — satu-satunya delta signifikan di seluruh E-022 dan dasar
-> beberapa kalimat di bawah — menjadi +0,0032 / +0,0011 / −0,0443 (rerata
+> seed-42 lama - satu-satunya delta signifikan di seluruh E-022 dan dasar
+> beberapa kalimat di bawah - menjadi +0,0032 / +0,0011 / −0,0443 (rerata
 > −0,0133) setelah dijalankan ulang dengan kode `_fix`. Sebaliknya, putusan
 > utama "fusi awal DIPALSUKAN" **makin kuat**: depth − RGB kini rerata −0,0230
 > dengan dua dari tiga seed signifikan NEGATIF, jadi untuk YOLO26n depth bukan
 > netral melainkan **merugikan**. Tabel di bawah dipertahankan sebagai rekam
 > seed-42; jangan mengutip angka deraunya sebagai temuan.
 
-> **⚠ PENCABUTAN PENUH KLAUSA KAPASITAS — 2026-08-01.** Matriks RT-DETR-L
+> **⚠ PENCABUTAN PENUH KLAUSA KAPASITAS - 2026-08-01.** Matriks RT-DETR-L
 > lengkap 3 seed ([E-029](../EKSPERIMEN.md)) mencabut klausa terakhir yang masih
 > berdiri. depth − derau menjadi **+0,0183 / +0,0153 / +0,0035** (rerata
 > +0,0124), **ketiganya CI memuat nol**, dan **B4 +0,1001 yang menjadi tulang
 > punggung klausa itu tidak direproduksi**. Sebagai ukuran skalanya: lengan RGB
-> saja berayun **0,0759** antar seed — enam kali rerata efek yang diklaim.
+> saja berayun **0,0759** antar seed - enam kali rerata efek yang diklaim.
 > Lebih telak lagi, depth − RGB bertanda **berlawanan** pada dua seed yang
 > sama-sama signifikan (−0,0350 seed42 vs +0,0702 seed2024).
 >
@@ -47,7 +47,7 @@
 
 Status eksperimen saat itu mencatat satu lubang yang tidak bisa ditutup dengan analisis:
 **depth SENSOR belum pernah diuji.** Yang pernah diuji hanya pseudo-depth
-(E-006/SR-005, dipalsukan) — dan pseudo-depth punya cacat bawaan yang dicatat di
+(E-006/SR-005, dipalsukan) - dan pseudo-depth punya cacat bawaan yang dicatat di
 `evidence-body.tex` §133: ia diturunkan dari RGB yang sama, jadi galatnya
 berkorelasi dan ia prior struktural, bukan pengukuran independen.
 
@@ -57,13 +57,13 @@ Pertanyaannya jadi bisa diuji langsung: **apakah depth dari sensor sungguhan
 menaikkan mAP deteksi tandan?**
 
 Diagnosa yang sudah disepakati membatasi harapan sejak awal (`CLAUDE.md`):
-kegagalan deteksi terbelah dua — **(A) geometris** (B4 kecil/tertanam/tertutup
+kegagalan deteksi terbelah dua - **(A) geometris** (B4 kecil/tertanam/tertutup
 pelepah), di sinilah depth relevan; dan **(B) fotometrik** (ambiguitas kematangan
 B2↔B3), di mana depth **tidak** akan menolong.
 
 ## 2. Ide
 
-Masukan 4 kanal `[B,G,R,D]` — depth masuk **bersamaan** dengan RGB dalam satu
+Masukan 4 kanal `[B,G,R,D]` - depth masuk **bersamaan** dengan RGB dalam satu
 model, satu forward pass, satu loss. Bukan kaskade deteksi-lalu-proyeksi.
 Kanal ke-4 diisi depth metrik terkuantisasi pada rentang TETAP (inverse depth),
 tanpa normalisasi per-citra, dengan 0 = "tidak ada data".
@@ -72,10 +72,10 @@ tanpa normalisasi per-citra, dengan 0 = "tidak ada data".
 protokol identik, atau CI 95% bootstrap berpasangan memuat 0, atau kontrol
 negatif tanpa informasi memberi kenaikan sebanding.
 
-## 3. Solusi — apa yang persis dikerjakan
+## 3. Solusi - apa yang persis dikerjakan
 
 **Prasyarat yang hampir merusak segalanya.** Sidecar setiap berkas depth
-menyatakan `"alignedTo": "color"`. **Itu menyesatkan** — buffer 848×480 masih di
+menyatakan `"alignedTo": "color"`. **Itu menyesatkan** - buffer 848×480 masih di
 grid kamera depth pabrikan. Tiga bukti independen:
 
 1. Intrinsik depth (fx=fy=416,55, piksel persegi) bukan versi terskala intrinsik
@@ -88,11 +88,11 @@ grid kamera depth pabrikan. Tiga bukti independen:
    di 84% citra. Kontrol pergeseran buatan ±24 px menurunkan MI ke ~0,23,
    membuktikan metriknya peka terhadap registrasi.
 
-`cv2.resize` naif — yang diasumsikan `pipeline/prepare_depth.py` — meleset
+`cv2.resize` naif - yang diasumsikan `pipeline/prepare_depth.py` - meleset
 **median 29,3 px, maksimum 61 px** pada bidang 1280×800, seukuran tandan B4 itu
 sendiri. Maka dibangun `build/reproject_depth.py`: depth → titik 3D (intrinsik depth) →
 ekstrinsik → intrinsik color + distorsi Brown-Conrady K6, forward-warp
-**ber-z-buffer** (tanpa ini latar menimpa objek di tepi oklusi — justru sinyal
+**ber-z-buffer** (tanpa ini latar menimpa objek di tepi oklusi - justru sinyal
 yang dicari), tambal lubang **median 3×3** (operator ranking; blur menghasilkan
 kedalaman hantu melintasi batas objek). Kalibrasi dibaca **per berkas** karena
 dataset memuat **dua unit kamera** (fx_depth 416,55 vs 414,38; rotasi ekstrinsik
@@ -110,7 +110,7 @@ kelas-dominan). Tiga pagar keadilan: HSV dimatikan di **kedua** lengan
 pertama diinflasi dari bobot pratlatih (kanal RGB utuh, kanal ke-4 = 0, model
 **dan** EMA); modality dropout 0.
 
-RF-DETR 4-kanal dibuat tanpa fork paket — `rfdetr 1.8.3` sudah punya
+RF-DETR 4-kanal dibuat tanpa fork paket - `rfdetr 1.8.3` sudah punya
 `ModelConfig.num_channels`, ditambah empat tambalan: pemuat data, normalisasi
 (mean/std kanal depth dari train saja), validasi kanal `PatchEmbeddings`, dan
 penimpaan heuristik `_adapt_input_conv` yang secara bawaan mengubin bobot RGB ke
@@ -122,8 +122,8 @@ kanal ke-4 lalu mengalikan **seluruh** bobot dengan 0,75.
 |---|---|---|---|
 | tidak ada (RGB) | 0,3249 | **0,4076** | 0,4196 |
 | depth terregistrasi | 0,3501 | 0,3900 | **0,4635** |
-| derau acak | 0,3686 | 0,3535 | — |
-| depth pohon LAIN | 0,3721 | — | — |
+| derau acak | 0,3686 | 0,3535 | - |
+| depth pohon LAIN | 0,3721 | - | - |
 
 Selisih berpasangan, bootstrap 2000× per **pohon**:
 
@@ -142,7 +142,7 @@ Selisih berpasangan, bootstrap 2000× per **pohon**:
 
 **DIPALSUKAN untuk fusi 4-kanal awal.** Dua kriteria falsifikasi yang ditulis
 sebelum run pertama sama-sama terpenuhi: CI memuat nol untuk ketiga arsitektur,
-**dan** kontrol negatif menyamai — kanal berisi derau memberi satu-satunya delta
+**dan** kontrol negatif menyamai - kanal berisi derau memberi satu-satunya delta
 signifikan di seluruh E-022 (+0,0437, CI tidak memuat nol).
 
 **Registrasi tidak membeli apa pun pada model kecil.** Depth dari pohon LAIN
@@ -153,7 +153,7 @@ yang terbukti lebih selaras di §3 tidak diterjemahkan menjadi mAP.
 **Tetapi kandungan informasi depth NYATA pada model besar.** Pada RT-DETR-L, depth
 mengalahkan kontrol deraunya sendiri secara signifikan justru pada kelas yang
 diprediksi teori: **B4 +0,1001 [+0,0062; +0,1618]** dan B1 +0,0698 [+0,0306;
-+0,1100]. Ini bukan hasil nol — ini hasil "informasinya ada, salurannya salah".
++0,1100]. Ini bukan hasil nol - ini hasil "informasinya ada, salurannya salah".
 
 Pola ini konsisten pada **dua** model kecil: depth tidak dapat dibedakan dari
 derau (YOLO26n −0,0186; RF-DETR Nano +0,0087) dan signifikan lebih buruk di B1
@@ -169,14 +169,14 @@ sebagai regularisasi; pada model besar berbobot pratlatih, ia mengganggu stem
 ## 6. Dampak
 
 Kegagalan ada pada **cara memasukkan** depth, bukan pada depth-nya. Itu persis
-prediksi korpus sendiri — FuseNet tumpukan 4-kanal 31,95 IoU **di bawah** RGB
+prediksi korpus sendiri - FuseNet tumpukan 4-kanal 31,95 IoU **di bawah** RGB
 32,47 sementara fusi fitur mencapai 37,29; sapuan 28 titik fusi Ophoff dkk.
 menemukan fusi tengah-hingga-akhir konsisten mengungguli fusi awal
 (`evidence-body.tex` §174). Bedanya sekarang: itu bukan lagi kutipan literatur
 indoor, melainkan terukur pada FFB sawit dengan depth sensor.
 
 **Lanjutan yang diusulkan (E-023): fusi MENENGAH dua cabang** pada RT-DETR-L atau
-RF-DETR — arsitektur di mana depth sudah terbukti membawa informasi B4. Kontrol
+RF-DETR - arsitektur di mana depth sudah terbukti membawa informasi B4. Kontrol
 derau dan kontrol tukar **wajib** diulang di sana; tanpa keduanya, kenaikan
 apa pun tidak dapat dibedakan dari efek kapasitas.
 
@@ -185,18 +185,18 @@ apa pun tidak dapat dibedakan dari efek kapasitas.
 - **Satu seed, satu split.** Selisih yang diukur 0,02–0,04 sementara CI-nya
   0,05–0,09 lebar dan deviasi antar-run wajar ±0,005. Varians split belum diukur;
   3-fold CV yang direncanakan tidak dijalankan.
-- **B4 hanya 148 kotak di SELURUH dataset**, 38 di test. Setiap klaim B4 —
-  termasuk temuan positif +0,1001 di atas — bersandar pada puluhan kotak.
+- **B4 hanya 148 kotak di SELURUH dataset**, 38 di test. Setiap klaim B4 -
+  termasuk temuan positif +0,1001 di atas - bersandar pada puluhan kotak.
 - **Dataset 8× lebih kecil** dari SawitMVC (2.299 vs 18.540 kotak) dengan prior
   kelas terbalik. Daya ujinya rendah: "tidak terbukti" bukan "terbukti tidak ada".
-- Angka di sini **tidak sebanding** dengan test mAP50 0,6038 milik E-021 —
+- Angka di sini **tidak sebanding** dengan test mAP50 0,6038 milik E-021 -
   dataset, resolusi, orientasi, dan sebaran kelasnya berbeda.
 
-## 7b. Pembaruan setelah E-032 — "titik fusi salah" GUGUR sebagai penyebab
+## 7b. Pembaruan setelah E-032 - "titik fusi salah" GUGUR sebagai penyebab
 
 SR ini semula hanya menguji fusi di satu titik: konkatenasi 4-kanal di masukan.
 Penjelasan tandingan yang paling jelas adalah bahwa kegagalannya soal TITIK
-fusi, bukan soal depth — depth dipaksa masuk sebelum jaringan membentuk fitur.
+fusi, bukan soal depth - depth dipaksa masuk sebelum jaringan membentuk fitur.
 
 E-032 menguji dua alternatif secara sejajar, semua dari nol, 3 seed:
 
@@ -217,7 +217,7 @@ kualitas depth itu sendiri, dan ukuran data.
 
 Batas pembaruan ini: satu skala (n), satu arsitektur, satu split, dan SELURUH
 lengan dari nol. Ia TIDAK menjawab apakah fusi menengah menolong ketika cabang
-RGB memakai bobot pratlatih — konfigurasi yang justru paling mungkin dipakai.
+RGB memakai bobot pratlatih - konfigurasi yang justru paling mungkin dipakai.
 
 ## 8. Reproduksi
 

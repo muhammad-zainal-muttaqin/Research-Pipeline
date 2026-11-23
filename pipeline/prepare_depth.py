@@ -10,11 +10,11 @@ Dua sumber yang didukung:
 
   --mode relative : peta relatif (Depth Anything dsb., uint8/uint16 apa pun).
                     Disebar per-citra ke 1..255. HANYA untuk pralatihan dengan
-                    pseudo-depth — skala absolutnya tidak berarti, jadi model
+                    pseudo-depth - skala absolutnya tidak berarti, jadi model
                     yang dilatih dengannya perlu dilatih ulang / disetel-halus
                     begitu data sensor asli tersedia.
 
-Syarat: peta kedalaman sudah SEJAJAR (registered) ke RGB — pakai fitur
+Syarat: peta kedalaman sudah SEJAJAR (registered) ke RGB - pakai fitur
 alignment SDK sensor (depth-to-color). Ukuran boleh beda; pipeline akan
 me-resize nearest-neighbor saat memuat.
 

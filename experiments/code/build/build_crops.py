@@ -2,7 +2,7 @@
 kematangan tahap-2.
 
 Alasannya langsung dari E-014: head klasifikasi YOLO memutuskan kematangan dari
-peta fitur citra yang sudah diperkecil ke 640 — tandan bermedian ~46 px di sana.
+peta fitur citra yang sudah diperkecil ke 640 - tandan bermedian ~46 px di sana.
 Potongan asli memberi 2-4x piksel lebih banyak pada objek yang sama, dan warna
 serta tekstur permukaan buah adalah bukti kematangan.
 

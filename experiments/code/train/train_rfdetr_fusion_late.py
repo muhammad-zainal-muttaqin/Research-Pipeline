@@ -4,16 +4,16 @@
 ## Kenapa hanya fusi AKHIR, dan bukan fusi MENENGAH (baca sebelum menjalankan)
 
 Tahap pemetaan sebelum berkas ini menyimpulkan: backbone RF-DETR (`rfdetr` 1.8.3)
-BUKAN CNN berjenjang seperti YOLO26 (lihat `train_fusion_2branch.py`) — ia satu
+BUKAN CNN berjenjang seperti YOLO26 (lihat `train_fusion_2branch.py`) - ia satu
 ViT DINOv2 beraliran tunggal (`WindowedDinov2WithRegistersEncoder`, 12 lapisan,
 resolusi token KONSTAN). "P3/P4/P5" RF-DETR adalah keluaran SINTETIS dari
 `MultiScaleProjector` yang meng-upsample/downsample 4 lapisan ViT yang beresolusi
-SAMA (indeks token ke-3/6/9/12) — bukan tahap spasial P2/P3/P4 seperti pada CNN.
+SAMA (indeks token ke-3/6/9/12) - bukan tahap spasial P2/P3/P4 seperti pada CNN.
 Konsekuensinya: definisi "fusi menengah = sebelum P2/4" yang dipakai
 `train_fusion_2branch.py --fusi mid` TIDAK punya padanan struktural di sini.
 Mendefinisikan ulang "menengah" untuk RF-DETR (di lapisan transformer keberapa,
 bagaimana token CLS/register ditangani, bagaimana jadwal windowed-attention
-disinkronkan antar dua cabang) adalah proyek desain sendiri — lihat
+disinkronkan antar dua cabang) adalah proyek desain sendiri - lihat
 rancangan fusi menengah yang ditangguhkan (`git show 80bbba4:experiments/code/train/RANCANGAN-rfdetr-fusi-mid.md`). Fusi MENENGAH ditangguhkan;
 fusi AKHIR (titik ini) punya padanan struktural yang bersih dan diimplementasikan
 di bawah.
@@ -24,11 +24,11 @@ Tepat setelah `Backbone.forward` (encoder DINOv2 + `MultiScaleProjector`),
 sebelum posisi embedding + transformer LWDETR membaca `srcs`/`masks`
 (`rfdetr/models/lwdetr.py:465`, `self.backbone(samples)`). Dua cabang menjalankan
 SELURUH backbone (encoder + projector) secara terpisah, lalu fusi terjadi per
-skala proyektor (mis. P4) lewat Concat + Conv1x1 — pola PERSIS `--fusi late`
+skala proyektor (mis. P4) lewat Concat + Conv1x1 - pola PERSIS `--fusi late`
 di `train_fusion_2branch.py`, dipindahkan ke arsitektur yang berbeda:
 
   RGB (3ch, DINOv2 pratlatih jika --pretrained) --> Backbone RGB --> [P4_rgb]
-  Depth (1ch, ACAK — lihat KAVEAT)              --> Backbone Depth --> [P4_dep]
+  Depth (1ch, ACAK - lihat KAVEAT)              --> Backbone Depth --> [P4_dep]
                                                         |
                                         Concat(dim=kanal) + Conv1x1 --> [P4_fusi]
                                                         |
@@ -39,31 +39,31 @@ rfdetr (`daftarkan_pembangun_fusi`), bukan menyalin `LWDETR`/`build_model`.
 Alasannya sama dengan `daftarkan_modul()` di `train_fusion_2branch.py`: titik
 tambal itu satu-satunya tempat semua argumen arsitektur (skala proyektor,
 `out_feature_indexes`, ukuran patch, jumlah window, ...) sudah terkumpul
-konsisten — menyalin `build_model` berarti dua sumber kebenaran yang bisa
+konsisten - menyalin `build_model` berarti dua sumber kebenaran yang bisa
 menyimpang diam-diam saat rfdetr naik versi.
 
-## KAVEAT YANG BELUM TERSELESAIKAN — baca sebelum melatih
+## KAVEAT YANG BELUM TERSELESAIKAN - baca sebelum melatih
 
 1. **Tidak ada bobot DINOv2 pratlatih 1-kanal.** Patch-embed cabang depth
-   (`nn.Conv2d(1, hidden, patch, patch)`) SELALU acak — beda dari
+   (`nn.Conv2d(1, hidden, patch, patch)`) SELALU acak - beda dari
    `train_rfdetr_4ch.py` (fusi awal) yang bisa mewarisi 3 kanal pratlatih dan
    menginflasi kanal ke-4 dengan nol. Di sini seluruh cabang depth (bukan cuma
    satu conv) tidak pratlatih. Ini KONSEKUENSI ARSITEKTUR, bukan bug: pratlatihan
    DINOv2 adalah alasan utama RF-DETR-L unggul di E-021 (test mAP50 0,6038), dan
    membandingkan lengan ini head-to-head dengan RGB pratlatih penuh **bukan
-   perbandingan yang sah** sampai strategi pratlatihan diputuskan — pilihan yang
+   perbandingan yang sah** sampai strategi pratlatihan diputuskan - pilihan yang
    sama seperti KAVEAT `train_fusion_2branch.py` baris 42-50, diterapkan di sini.
 2. **Cabang depth TIDAK bisa dipersempit** seperti `lebar_bagi=4` pada YOLO26
    (`train_fusion_2branch.py:216`). Keluarga config DINOv2 di paket ini hanya
    punya JSON untuk `small/base/large` (`rfdetr/models/backbone/dinov2.py`);
    tidak ada `tiny`. Maka cabang depth memakai encoder DINOv2 SAMA UKURAN dengan
-   RGB (mis. `dinov2_windowed_small`, 384-d, 12 lapisan) — dua kali ongkos forward
+   RGB (mis. `dinov2_windowed_small`, 384-d, 12 lapisan) - dua kali ongkos forward
    dibanding YOLO26 late fusion, yang cabang depth-nya sengaja dibuat murah.
 3. **`.train()` (jalur PyTorch Lightning di rfdetr 1.8.3) belum diverifikasi
    TIDAK membangun ulang backbone dari config di titik lain** selain
    `build_model`. `daftarkan_pembangun_fusi()` menambal fungsi yang dipanggil
    `build_model`/`build_model_from_config`, sehingga SEHARUSNYA bertahan
-   melewati pembangunan ulang apa pun yang lewat jalur resmi itu — tapi ini
+   melewati pembangunan ulang apa pun yang lewat jalur resmi itu - tapi ini
    BELUM diuji dengan menjalankan `.train()` sungguhan (GPU dipakai penuh
    pelatihan lain saat berkas ini ditulis; `--latih` di baris perintah TIDAK
    dijalankan). Perlakukan `--latih` sebagai TIDAK TERVERIFIKASI sampai
@@ -94,14 +94,14 @@ def _tambal_kanal_tunggal(cabang, kanal: int) -> None:
 
     Tidak ada mekanisme bawaan rfdetr untuk membangun `DinoV2` dengan
     `num_channels` != 3 (parameter itu memang tidak diekspos ke `DinoV2.__init__`
-    maupun `Backbone.__init__` — hanya dibaca dari JSON config, selalu 3).
+    maupun `Backbone.__init__` - hanya dibaca dari JSON config, selalu 3).
     Menukar `nn.Conv2d` di `patch_embeddings.projection` setelah konstruksi, lalu
     menyelaraskan `patch_embeddings.num_channels` dan `config.num_channels`
     (dipakai `Dinov2WithRegistersPatchEmbeddings.forward` untuk memvalidasi
     bentuk masukan, `dinov2_with_windowed_attn.py:307-311`), adalah satu-satunya
     jalan tanpa menambal kelas config itu sendiri. `bias` disalin apa adanya
     dari conv lama (DINOv2 patch-embed defaultnya tanpa bias, tapi tidak
-    diasumsikan — dibaca dari conv yang sesungguhnya dibangun).
+    diasumsikan - dibaca dari conv yang sesungguhnya dibangun).
     """
     patch_embed = cabang.encoder.encoder.embeddings.patch_embeddings
     lama = patch_embed.projection
@@ -165,7 +165,7 @@ def bangun_backbone_fusi(
     """Pengganti `rfdetr.models.backbone.build_backbone`, tanda tangan IDENTIK.
 
     Dipanggil oleh `build_model`/`build_model_from_config` setelah
-    `daftarkan_pembangun_fusi()` menambalnya — argumen di sini adalah persis
+    `daftarkan_pembangun_fusi()` menambalnya - argumen di sini adalah persis
     argumen yang biasanya diteruskan ke `Backbone` tunggal RF-DETR
     (`rfdetr/models/backbone/__init__.py:61`).
     """
@@ -187,7 +187,7 @@ def bangun_backbone_fusi(
     )
 
     # `load_dinov2_weights` yang diteruskan `build_model` dihitung dari
-    # `args.pretrain_weights is None` — bukan apa yang kita mau di sini (ada
+    # `args.pretrain_weights is None` - bukan apa yang kita mau di sini (ada
     # tidaknya CHECKPOINT RF-DETR penuh, bukan niat memuat DINOv2 hub untuk
     # cabang RGB). Dikendalikan lewat `_MUAT_PRATLATIH_RGB` yang disetel
     # `daftarkan_pembangun_fusi`, bukan lewat argumen ini.
@@ -195,7 +195,7 @@ def bangun_backbone_fusi(
                     load_dinov2_weights=_MUAT_PRATLATIH_RGB, **kw_bersama)
 
     # Cabang depth: TIDAK PERNAH bisa memuat bobot DINOv2 pratlatih (yang ada
-    # di hub adalah 3-kanal) — lihat KAVEAT 1 di kepala berkas. Selalu acak.
+    # di hub adalah 3-kanal) - lihat KAVEAT 1 di kepala berkas. Selalu acak.
     kedalaman = Backbone(encoder, pretrained_encoder=None, freeze_encoder=False,
                           load_dinov2_weights=False, **kw_bersama)
     _tambal_kanal_tunggal(kedalaman, kanal=1)
@@ -212,7 +212,7 @@ def daftarkan_pembangun_fusi(muat_pratlatih_rgb: bool = False) -> None:
     """Tambal `build_backbone` di namespace `rfdetr.models.lwdetr`.
 
     `lwdetr.py` mengimpor nama itu lewat `from rfdetr.models.backbone import
-    build_backbone` — artinya `lwdetr.build_backbone` adalah rujukan terpisah
+    build_backbone` - artinya `lwdetr.build_backbone` adalah rujukan terpisah
     di namespace modul `lwdetr`, dan menambal DI SANA (bukan di
     `rfdetr.models.backbone.build_backbone`) adalah satu-satunya cara tambalan
     ini benar-benar dipakai `build_model`.
@@ -222,7 +222,7 @@ def daftarkan_pembangun_fusi(muat_pratlatih_rgb: bool = False) -> None:
     import rfdetr.models.lwdetr as lwdetr_mod
     lwdetr_mod.build_backbone = bangun_backbone_fusi
     print(f"pembangun fusi akhir terdaftar (RGB pratlatih={muat_pratlatih_rgb}, "
-          f"depth SELALU acak — lihat KAVEAT 1)")
+          f"depth SELALU acak - lihat KAVEAT 1)")
 
 
 def uji_forward_cpu(model, resolusi: int) -> dict:
@@ -259,7 +259,7 @@ def main() -> int:
                      help="muat DINOv2 pratlatih di cabang RGB (unduh dari HF hub; "
                           "lambat di CPU, dimatikan secara default untuk uji cepat)")
     ap.add_argument("--latih", action="store_true",
-                     help="BELUM TERVERIFIKASI (lihat KAVEAT 3) — menolak jalan kecuali dipaksa")
+                     help="BELUM TERVERIFIKASI (lihat KAVEAT 3) - menolak jalan kecuali dipaksa")
     args = ap.parse_args()
 
     if args.latih:

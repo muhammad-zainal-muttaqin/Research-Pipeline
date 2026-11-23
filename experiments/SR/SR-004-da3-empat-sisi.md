@@ -1,4 +1,4 @@
-# SR-004 — DA3 multi-view pada 4 dan 8 sisi foto asli
+# SR-004 - DA3 multi-view pada 4 dan 8 sisi foto asli
 
 **Ide I-2** · **Eksperimen:** E-005 · **Putusan: DIKONFIRMASI** · 2026-07-21
 
@@ -17,7 +17,7 @@ antar-pandangan. Pada 90°:
 - objeknya menutupi dirinya sendiri (pelepah menghalangi sisi jauh),
 - kanopi sawit nyaris simetris berputar sehingga rawan *visual aliasing*.
 
-Kalau geometri gagal di sini, seluruh jalur geometris (I-6, I-7) gugur —
+Kalau geometri gagal di sini, seluruh jalur geometris (I-6, I-7) gugur -
 karena video hanya tersedia untuk 45 pohon dari `Kelompok 6`, sedangkan foto
 tersedia untuk seluruh 953 pohon.
 
@@ -43,7 +43,7 @@ seluruh sisinya sekaligus, hitung pusat kamera dari `extrinsics`
 (C = −Rᵀt), proyeksikan ke bidang orbit lewat PCA, cocokkan lingkaran, lalu
 ukur:
 
-- **RMSE sudut** — simpangan langkah sudut terhadap nilai harapan,
+- **RMSE sudut** - simpangan langkah sudut terhadap nilai harapan,
 - residual kecocokan lingkaran, rasio kerataan PCA,
 - kebenaran **urutan melingkar** sisi,
 - rentang dinamis kedalaman.
@@ -69,7 +69,7 @@ Sampel: 20 pohon 4-sisi dan 30 pohon 8-sisi, acak `seed=42`.
 Galat relatifnya konsisten antar-konfigurasi: 17,3/90 = **19%** dan
 8,5/45 = **19%**.
 
-## 5. Putusan — DIKONFIRMASI
+## 5. Putusan - DIKONFIRMASI
 
 Risiko *wide baseline* yang dikhawatirkan **tidak terwujud**. DA3 memulihkan
 susunan melingkar sisi dengan urutan benar pada **seluruh 50 pohon**, jauh di
@@ -78,7 +78,7 @@ atas pembanding acak, dengan pusat kamera hampir sebidang.
 ### Peringatan yang menyertai putusan ini
 
 Inspeksi visual (`results/e005/preview_*.jpg`) menunjukkan kedalaman memisahkan
-**pelepah** dari latar dengan sangat bersih — tetapi di area mahkota tempat
+**pelepah** dari latar dengan sangat bersih - tetapi di area mahkota tempat
 tandan berada, peta tampak **halus dan menyatu dengan batang**.
 
 Jadi yang terbukti adalah **geometri tingkat-pohon**. Pemisahan
@@ -91,7 +91,7 @@ pertanyaan tandan.
 - Jalur geometris berlaku untuk **seluruh 953 pohon**, bukan hanya 45 pohon
   bervideo. I-6 dan I-7 layak dikerjakan.
 - Peringatan visual di atas langsung memicu **SR-005**: uji kuantitatif apakah
-  kedalaman membawa sinyal di tingkat tandan — dijalankan **sebelum** jam GPU
+  kedalaman membawa sinyal di tingkat tandan - dijalankan **sebelum** jam GPU
   dibakar untuk pelatihan fusi.
 
 ## 7. Reproduksi

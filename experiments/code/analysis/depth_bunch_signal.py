@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-006 — Apakah kedalaman membawa sinyal di tingkat TANDAN? (ide I-9)
+"""E-006 - Apakah kedalaman membawa sinyal di tingkat TANDAN? (ide I-9)
 
 Ini penentu. E-005 membuktikan DA3 memulihkan geometri tingkat-pohon, tetapi
 inspeksi visual menunjukkan area mahkota tampak menyatu. Kalau kedalaman tidak
@@ -194,7 +194,7 @@ def main() -> int:
 
     W = 74
     print("\n" + "=" * W)
-    print(f"E-006 — SINYAL KEDALAMAN TINGKAT TANDAN ({n_boxes} kotak, "
+    print(f"E-006 - SINYAL KEDALAMAN TINGKAT TANDAN ({n_boxes} kotak, "
           f"process_res={args.process_res})")
     print("=" * W)
 

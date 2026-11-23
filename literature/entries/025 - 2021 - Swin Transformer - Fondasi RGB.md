@@ -20,13 +20,13 @@
 
 Makalah ini memperkenalkan Swin Transformer, *backbone* (jaringan pengekstrak fitur) visi berbasis Transformer untuk tujuan umum. Dua kelemahan Transformer visi sebelumnya, ViT (bab 024), diperbaiki sekaligus: biaya *self-attention* (atensi-diri, mekanisme yang membobot relasi antartoken) yang kuadratik terhadap jumlah token, dan peta fitur beresolusi tunggal yang tidak cocok untuk prediksi padat seperti deteksi objek dan segmentasi semantik. Solusinya: *self-attention* hanya dihitung di dalam jendela lokal yang tidak tumpang tindih, partisi jendela digeser pada lapisan berikutnya agar informasi tetap mengalir antar-jendela, dan peta fitur disusun hierarkis dari resolusi tinggi ke rendah.
 
-Model terbesarnya mencapai akurasi top-1 87,3% pada klasifikasi ImageNet-1K (dengan pra-pelatihan ImageNet-22K), 58,7 box AP dan 51,1 mask AP pada COCO *test-dev*, serta 53,5 mIoU pada ADE20K — ketiganya melampaui hasil terbaik sebelumnya dengan margin lebih dari dua poin.
+Model terbesarnya mencapai akurasi top-1 87,3% pada klasifikasi ImageNet-1K (dengan pra-pelatihan ImageNet-22K), 58,7 box AP dan 51,1 mask AP pada COCO *test-dev*, serta 53,5 mIoU pada ADE20K - ketiganya melampaui hasil terbaik sebelumnya dengan margin lebih dari dua poin.
 
 ## Latar Belakang: Masalah yang Ingin Dipecahkan
 
 Pemodelan visi lama didominasi jaringan saraf konvolusi (CNN) seperti ResNet, yang membangun representasi secara hierarkis: resolusi peta fitur diturunkan bertahap sambil jumlah kanal dinaikkan. Struktur multi-skala ini penting karena ukuran objek dalam citra sangat bervariasi, dan kerangka hilir seperti FPN (*Feature Pyramid Network*, modul yang menggabungkan peta fitur beberapa resolusi untuk mendeteksi objek berbagai ukuran) dirancang di atasnya.
 
-Vision Transformer (ViT, bab 024) membuktikan arsitektur Transformer mampu menyaingi CNN pada klasifikasi: citra dipotong menjadi *patch* (petak piksel) berukuran tetap, setiap petak diubah menjadi satu *token* (vektor satuan pemrosesan), dan semua token berinteraksi melalui *self-attention* global. Desain ini menyimpan dua masalah. Pertama, biaya komputasinya kuadratik terhadap jumlah token karena setiap token berelasi dengan semua token lain — tidak terjangkau pada citra beresolusi tinggi yang menghasilkan ribuan token. Kedua, resolusi token dipertahankan sama dari awal sampai akhir, sehingga hanya dihasilkan peta fitur satu skala.
+Vision Transformer (ViT, bab 024) membuktikan arsitektur Transformer mampu menyaingi CNN pada klasifikasi: citra dipotong menjadi *patch* (petak piksel) berukuran tetap, setiap petak diubah menjadi satu *token* (vektor satuan pemrosesan), dan semua token berinteraksi melalui *self-attention* global. Desain ini menyimpan dua masalah. Pertama, biaya komputasinya kuadratik terhadap jumlah token karena setiap token berelasi dengan semua token lain - tidak terjangkau pada citra beresolusi tinggi yang menghasilkan ribuan token. Kedua, resolusi token dipertahankan sama dari awal sampai akhir, sehingga hanya dihasilkan peta fitur satu skala.
 
 Upaya lain menekan biaya attention dengan *sliding window* (jendela geser): attention setiap piksel dibatasi pada tetangganya, tetapi himpunan pembanding yang berbeda per piksel membuat akses memorinya tidak efisien. Makalah ini merancang Transformer yang sekaligus efisien, hierarkis, dan kuat daya modelnya.
 
@@ -48,9 +48,9 @@ Blok Swin Transformer adalah blok Transformer standar yang modul attention-nya d
 
 ### Attention di dalam Jendela (W-MSA)
 
-Pada W-MSA (*window multi-head self-attention*), peta fitur h×w token dipartisi menjadi jendela-jendela berisi M×M token (M = 7 secara baku, 49 token per jendela), dan attention hanya dihitung antar-token dalam jendela yang sama. Biaya attention global adalah Ω(MSA) = 4hwC² + 2(hw)²C — suku kedua kuadratik terhadap jumlah token hw — sedangkan versi berjendela Ω(W-MSA) = 4hwC² + 2M²hwC, linear terhadap hw karena M tetap.
+Pada W-MSA (*window multi-head self-attention*), peta fitur h×w token dipartisi menjadi jendela-jendela berisi M×M token (M = 7 secara baku, 49 token per jendela), dan attention hanya dihitung antar-token dalam jendela yang sama. Biaya attention global adalah Ω(MSA) = 4hwC² + 2(hw)²C - suku kedua kuadratik terhadap jumlah token hw - sedangkan versi berjendela Ω(W-MSA) = 4hwC² + 2M²hwC, linear terhadap hw karena M tetap.
 
-Contoh numerik pada tahap pertama (h = w = 56): attention global membutuhkan 3.136² ≈ 9,8 juta pasangan token per kepala, sedangkan W-MSA membutuhkan 64 jendela × 49² = 153.664 pasangan — 64 kali lebih sedikit. Selisih ini makin besar pada citra beresolusi tinggi.
+Contoh numerik pada tahap pertama (h = w = 56): attention global membutuhkan 3.136² ≈ 9,8 juta pasangan token per kepala, sedangkan W-MSA membutuhkan 64 jendela × 49² = 153.664 pasangan - 64 kali lebih sedikit. Selisih ini makin besar pada citra beresolusi tinggi.
 
 ### Partisi Jendela yang Digeser (SW-MSA)
 
@@ -74,7 +74,7 @@ Jendela tengah pada konfigurasi bergeser mencakup seperempat wilayah jendela A, 
 
 ### Penggabungan Patch dan Empat Tahap Hierarkis
 
-Lapisan *patch merging* ditempatkan antar-tahap: fitur setiap kelompok 2×2 token bertetangga digabungkan menjadi vektor 4C, lalu lapisan linear memproyeksikannya ke 2C. Jumlah token berkurang empat kali lipat dan resolusi turun dua kali lipat per dimensi. Pengulangan prosedur ini membentuk empat tahap beresolusi H/4×W/4, H/8×W/8, H/16×W/16, dan H/32×W/32 — sama dengan pembagian resolusi pada CNN seperti ResNet. Alurnya untuk Swin-T pada citra 224×224:
+Lapisan *patch merging* ditempatkan antar-tahap: fitur setiap kelompok 2×2 token bertetangga digabungkan menjadi vektor 4C, lalu lapisan linear memproyeksikannya ke 2C. Jumlah token berkurang empat kali lipat dan resolusi turun dua kali lipat per dimensi. Pengulangan prosedur ini membentuk empat tahap beresolusi H/4×W/4, H/8×W/8, H/16×W/16, dan H/32×W/32 - sama dengan pembagian resolusi pada CNN seperti ResNet. Alurnya untuk Swin-T pada citra 224×224:
 
 ```
 citra RGB 224x224
@@ -110,15 +110,15 @@ Hasil utamanya sebagai berikut:
 
 - ImageNet-1K: Swin-T mencapai 81,3% top-1, melampaui DeiT-S (79,8%), varian ViT berukuran sebanding, dengan margin +1,5 poin. Dengan pra-pelatihan ImageNet-22K (14,2 juta citra), Swin-B mencapai 86,4% pada resolusi 384², unggul 2,4 poin atas ViT-B/16 (84,0%) pada *throughput* (citra per detik) yang hampir sama (84,7 banding 85,9) dan FLOPs lebih rendah (47,0G banding 55,4G). Swin-L mencapai 87,3%.
 - COCO: Swin-T unggul konsisten +3,4 sampai +4,2 box AP atas ResNet-50 pada keempat kerangka deteksi (pada Cascade Mask R-CNN: 50,5 banding 46,3). Pada ukuran model dan kecepatan sebanding, Swin-B mencapai 51,9 box AP dan 45,0 mask AP, mengungguli ResNeXt101-64x4d (48,3 dan 41,7). Sistem terbaik (Swin-L pada kerangka HTC++ dengan pengujian multi-skala) mencapai 58,7 box AP dan 51,1 mask AP pada *test-dev*, melampaui hasil terbaik sebelumnya sebesar +2,7 (Copy-paste) dan +2,6 (DetectoRS). Kenaikan beberapa poin AP tergolong besar untuk tolok ukur ini.
-- ADE20K: Swin-S mencapai 49,3 mIoU, jauh di atas DeiT-S (44,0) pada biaya komputasi sebanding. Swin-L dengan pra-pelatihan ImageNet-22K mencapai 53,5 mIoU, unggul +3,2 atas SETR (50,3) — pendekatan berbasis ViT untuk segmentasi — dengan model lebih kecil (234 juta banding 308 juta parameter).
+- ADE20K: Swin-S mencapai 49,3 mIoU, jauh di atas DeiT-S (44,0) pada biaya komputasi sebanding. Swin-L dengan pra-pelatihan ImageNet-22K mencapai 53,5 mIoU, unggul +3,2 atas SETR (50,3) - pendekatan berbasis ViT untuk segmentasi - dengan model lebih kecil (234 juta banding 308 juta parameter).
 
-Ablasi (uji dengan mematikan satu komponen) pada Swin-T menegaskan rancangannya. Tanpa penggeseran jendela, akurasi turun ke 80,2% top-1 (−1,1), 47,7 box AP (−2,8), dan 43,3 mIoU (−2,8) — bukti bahwa koneksi antar-jendela berkontribusi nyata. Bias posisi relatif memberi tambahan +1,2 poin top-1 dibanding tanpa posisi dan +2,3 mIoU; menambahkan posisi absolut justru sedikit merugikan deteksi dan segmentasi. Partisi bergeser seakurat *sliding window* (81,3% banding 81,4% top-1), tetapi Swin-T utuh 4,1 kali lebih cepat daripada implementasi *sliding window* naif.
+Ablasi (uji dengan mematikan satu komponen) pada Swin-T menegaskan rancangannya. Tanpa penggeseran jendela, akurasi turun ke 80,2% top-1 (−1,1), 47,7 box AP (−2,8), dan 43,3 mIoU (−2,8) - bukti bahwa koneksi antar-jendela berkontribusi nyata. Bias posisi relatif memberi tambahan +1,2 poin top-1 dibanding tanpa posisi dan +2,3 mIoU; menambahkan posisi absolut justru sedikit merugikan deteksi dan segmentasi. Partisi bergeser seakurat *sliding window* (81,3% banding 81,4% top-1), tetapi Swin-T utuh 4,1 kali lebih cepat daripada implementasi *sliding window* naif.
 
 ## Kelebihan dan Keterbatasan
 
 Kelebihan: (1) kompleksitas linear membuat attention terjangkau pada citra beresolusi tinggi; (2) peta fitur hierarkis beresolusi standar CNN sehingga langsung kompatibel dengan FPN maupun UperNet; (3) partisi bergeser memulihkan koneksi antar-jendela dengan latensi tambahan kecil dan efisien pada perangkat keras umum; (4) satu arsitektur yang sama kuat pada klasifikasi, deteksi, dan segmentasi.
 
-Keterbatasan: attention tetap lokal per lapisan; interaksi sangat jauh hanya terjalin tidak langsung melalui tumpukan lapisan. Dari sisi rekayasa, implementasinya lebih rumit dari CNN standar (partisi bergeser, *cyclic shift*, *attention mask* khusus), dan *throughput* yang dilaporkan masih berbasis fungsi PyTorch umum — pembanding ResNe(X)t diuntungkan kernel cuDNN yang sangat dioptimalkan, sehingga perbandingan kecepatan belum final. Angka terbaik pada ketiga tolok ukur juga bergantung pada pra-pelatihan ImageNet-22K; tanpa data tambahan itu keunggulannya lebih tipis. Ukuran jendela baku 7×7 mengikat: pada resolusi yang jauh berbeda diperlukan *padding* atau interpolasi bias posisi.
+Keterbatasan: attention tetap lokal per lapisan; interaksi sangat jauh hanya terjalin tidak langsung melalui tumpukan lapisan. Dari sisi rekayasa, implementasinya lebih rumit dari CNN standar (partisi bergeser, *cyclic shift*, *attention mask* khusus), dan *throughput* yang dilaporkan masih berbasis fungsi PyTorch umum - pembanding ResNe(X)t diuntungkan kernel cuDNN yang sangat dioptimalkan, sehingga perbandingan kecepatan belum final. Angka terbaik pada ketiga tolok ukur juga bergantung pada pra-pelatihan ImageNet-22K; tanpa data tambahan itu keunggulannya lebih tipis. Ukuran jendela baku 7×7 mengikat: pada resolusi yang jauh berbeda diperlukan *padding* atau interpolasi bias posisi.
 
 ## Kaitan dengan Bab Lain
 
@@ -128,7 +128,7 @@ Bab ini menjawab keterbatasan ViT pada [bab 024](024%20-%202021%20-%20Vision%20T
 
 Kutip dengan kunci `liu2021swin` (ICCV 2021, halaman 10012–10022). Ringkasan yang aman dikutip: "Swin Transformer adalah *backbone* visi hierarkis yang menghitung *self-attention* di dalam jendela lokal tidak tumpang tindih dan menggeser partisi jendela antar-lapisan, sehingga berkompleksitas linear terhadap ukuran citra sekaligus tetap menghubungkan antar-jendela. Model ini mencapai 87,3% top-1 pada ImageNet-1K, 58,7 box AP pada COCO *test-dev*, dan 53,5 mIoU pada ADE20K."
 
-Catatan verifikasi sebelum sitasi formal: angka 87,3% top-1 dan 53,5 mIoU diperoleh dengan pra-pelatihan ImageNet-22K, dan angka COCO terbaik memakai kerangka HTC++ dengan pengujian multi-skala — sebutkan konteks ini bila mengutip. Akurasi Swin-B 224² pada ImageNet-1K tercatat 83,3% pada teks tetapi 83,5% pada tabel makalah (arXiv v2); periksa versi prosiding sebelum mengutipnya.
+Catatan verifikasi sebelum sitasi formal: angka 87,3% top-1 dan 53,5 mIoU diperoleh dengan pra-pelatihan ImageNet-22K, dan angka COCO terbaik memakai kerangka HTC++ dengan pengujian multi-skala - sebutkan konteks ini bila mengutip. Akurasi Swin-B 224² pada ImageNet-1K tercatat 83,3% pada teks tetapi 83,5% pada tabel makalah (arXiv v2); periksa versi prosiding sebelum mengutipnya.
 
 ---
 

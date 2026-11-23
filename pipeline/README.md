@@ -1,4 +1,4 @@
-# Pipeline YOLO 4-Kanal (RGB + Kedalaman) — Sawit FFB
+# Pipeline YOLO 4-Kanal (RGB + Kedalaman) - Sawit FFB
 
 Pipeline produksi untuk deteksi tandan dengan kamera *depth sensor* (Orbbec
 Gemini dan sejenisnya). Satu bobot model melayani dua mode uji di lapangan:
@@ -19,7 +19,7 @@ aplikasi.
 > di sana buffer masih di grid kamera depth walau sidecar menyatakan
 > `alignedTo: "color"`, dan reproyeksi penuh dikerjakan
 > [`../experiments/code/build/reproject_depth.py`](../experiments/code/build/reproject_depth.py). Kedua jalur ini
-> berdampingan dengan sengaja — pilih menurut asal datanya, bukan menurut mana
+> berdampingan dengan sengaja - pilih menurut asal datanya, bukan menurut mana
 > yang lebih baru. Rinciannya di
 > [SR-015](../experiments/SR/SR-015-depth-sensor-4kanal.md).
 
@@ -34,7 +34,7 @@ aplikasi.
 
 Butuh `ultralytics >= 8.4` dan `opencv-python`. Tidak ada dependensi lain.
 
-## Kontrak kanal kedalaman — WAJIB sama saat latih dan uji
+## Kontrak kanal kedalaman - WAJIB sama saat latih dan uji
 
 PNG uint8 satu kanal, senama dengan citranya (`foto_001.jpg` ↔ `foto_001.png`),
 sejajar (*registered*) ke RGB lewat fitur *depth-to-color alignment* SDK sensor.
@@ -45,7 +45,7 @@ sejajar (*registered*) ke RGB lewat fitur *depth-to-color alignment* SDK sensor.
   dekat → 255, jauh → 1.
 
 Rentang metrik itu dibekukan bersama bobot (`fourch.Z_NEAR/Z_FAR`). Jangan
-menormalkan per-citra pada data sensor — itu membuang jarak absolut dan membuat
+menormalkan per-citra pada data sensor - itu membuang jarak absolut dan membuat
 nilai piksel tidak sebanding antar-frame.
 
 ## Alur kerja
@@ -81,7 +81,7 @@ names:
   3: B4
 ```
 
-Folder depth **tidak** disebut di yaml — ia diberikan lewat `--depth-dir` dan
+Folder depth **tidak** disebut di yaml - ia diberikan lewat `--depth-dir` dan
 dicocokkan per nama berkas. Citra tanpa PNG depth tetap ikut dilatih dengan
 kanal nol (identik dengan mode RGB lapangan).
 
@@ -99,33 +99,33 @@ hasil = det.predict(frame_bgr, encode_metric_depth(depth_mm))  # Gemini
 #          "hitung": {"B1": n, ...}, "pakai_depth": bool}
 ```
 
-`Sawit4CH` juga menerima bobot 3-kanal lama — ia mendeteksi jumlah kanal dari
+`Sawit4CH` juga menerima bobot 3-kanal lama - ia mendeteksi jumlah kanal dari
 bobotnya dan menyusun masukan yang sesuai, jadi penggantian model tidak
 mengubah kode aplikasi.
 
 Ekspor ke ONNX/TensorRT bila diperlukan: `YOLO("best.pt").export(format="onnx")`
-— masukan menjadi tensor `(1, 4, H, W)`; komposisi kanal (`fourch.compose`)
+- masukan menjadi tensor `(1, 4, H, W)`; komposisi kanal (`fourch.compose`)
 tetap dilakukan aplikasi sebelum memanggil model.
 
 ## Detail teknis yang sudah diverifikasi
 
-- Ultralytics 8.4 membalik urutan kanal BGR→RGB **hanya untuk 3 kanal** — pada
+- Ultralytics 8.4 membalik urutan kanal BGR→RGB **hanya untuk 3 kanal** - pada
   4 kanal, urutan `[B,G,R,D]` konsisten antara jalur latih dan prediksi
   (diverifikasi di `engine/predictor.py` dan `data/augment.py`).
 - Transfer bobot bawaan ultralytics melewati conv pertama karena bentuknya
   beda (3→4 kanal). `train_4ch.py` mengisinya lewat callback: bobot RGB
-  pratlatih disalin **dalam urutan BGR**, kanal depth mulai dari nol — model
+  pratlatih disalin **dalam urutan BGR**, kanal depth mulai dari nol - model
   mulai persis dari perilaku RGB pratlatih.
 - Pemuat 4-kanal tidak menggandakan dataset di disk; kanal depth ditempel di
   memori saat pemuatan.
 
-## Peringatan jujur — pseudo-depth vs depth sensor
+## Peringatan jujur - pseudo-depth vs depth sensor
 
 Bobot yang dilatih dengan pseudo-depth DA3 (`--mode relative`) memakai
 kedalaman **relatif per-citra**; distribusinya berbeda dari inverse-depth
 metrik sensor. Jangan mencampur keduanya dalam satu bobot produksi: begitu
 data Gemini asli terkumpul, **latih ulang** (atau setel-halus) dengan
 `--mode gemini`. Perlu diketahui pula: eksperimen E-006 memalsukan hipotesis
-bahwa *pseudo*-depth memisahkan tandan dari latarnya — depth sensor asli
+bahwa *pseudo*-depth memisahkan tandan dari latarnya - depth sensor asli
 adalah pengukuran fisik independen yang belum diuji, dan pipeline ini yang
 membuatnya bisa diuji begitu datanya ada.

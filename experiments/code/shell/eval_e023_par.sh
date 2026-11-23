@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E-023 — 12 kontras berpasangan, DIJALANKAN PARALEL.
+# E-023 - 12 kontras berpasangan, DIJALANKAN PARALEL.
 #
 # Versi berurutan (eval_e023.sh) memakai mesin ini seperempatnya saja: tiap
 # kontras memanggil ProcessPoolExecutor dengan `min(32, cpu_count//4)` = 12
@@ -59,6 +59,6 @@ wait
 
 n=$(find "$OUT" -name 'paired_*_vs_rgb_seed*.json' | wc -l)
 echo
-echo "=== RINGKASAN $(date -Is) — $n/12 kontras ==="
+echo "=== RINGKASAN $(date -Is) - $n/12 kontras ==="
 [ "$n" -lt 12 ] && exit 1
 echo "12 kontras lengkap"

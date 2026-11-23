@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I-12 — Pelatihan berbasis ubin (tiling) untuk tandan kecil (E-008).
+"""I-12 - Pelatihan berbasis ubin (tiling) untuk tandan kecil (E-008).
 
 Masalah: B4 adalah kelas terburuk (AP50 0,354) dan kotaknya paling kecil. Pada
 `imgsz=640` dari sumber 960x1280, seluruh citra diperkecil ~2x, sehingga tandan

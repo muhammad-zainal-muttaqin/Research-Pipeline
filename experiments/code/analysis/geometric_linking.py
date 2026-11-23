@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I-6 — Penautan tandan lintas-sisi secara GEOMETRIS (E-007).
+"""I-6 - Penautan tandan lintas-sisi secara GEOMETRIS (E-007).
 
 Masalah yang diserang: bottleneck counting bukan penghitungnya, melainkan
 duplikasi lintas-sisi. Saat ini duplikasi ditangani secara statistik -- dibagi
@@ -277,7 +277,7 @@ def main() -> int:
 
     W = 74
     print("=" * W)
-    print(f"E-007 — PENAUTAN LINTAS-SISI ({len(trees)} pohon, split {args.split})")
+    print(f"E-007 - PENAUTAN LINTAS-SISI ({len(trees)} pohon, split {args.split})")
     print("=" * W)
     print(f"  {'metode':26s} {'Class±1':>9s} {'Tree±1':>8s} {'MAE':>8s} {'Bias':>8s}")
 

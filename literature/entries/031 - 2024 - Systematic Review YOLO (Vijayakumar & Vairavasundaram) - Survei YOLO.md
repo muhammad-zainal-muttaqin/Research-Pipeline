@@ -24,7 +24,7 @@ Susunan telaahnya bergerak dari fondasi ke arsitektur lalu ke terapan: metrik ki
 
 ## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-Deteksi objek adalah tugas menemukan posisi setiap objek pada citra — dinyatakan sebagai kotak pembatas (*bounding box*) — sekaligus menentukan kelas objeknya. Sebelum YOLO, detektor paling akurat bekerja dalam dua tahap: tahap pertama mengusulkan kandidat wilayah (*region proposal*), tahap kedua mengklasifikasikan wilayah tersebut. Keluarga R-CNN ([bab 012](012%20-%202014%20-%20R-CNN%20-%20Fondasi%20RGB.md)), Fast R-CNN ([bab 013](013%20-%202015%20-%20Fast%20R-CNN%20-%20Fondasi%20RGB.md)), dan Faster R-CNN ([bab 014](014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md)) mewakili garis ini. Abstrak survei ini menegaskan bahwa akurasi detektor dua tahap lebih baik daripada detektor satu tahap, yaitu detektor yang memprediksi kotak dan kelas langsung dari citra dalam satu kali evaluasi.
+Deteksi objek adalah tugas menemukan posisi setiap objek pada citra - dinyatakan sebagai kotak pembatas (*bounding box*) - sekaligus menentukan kelas objeknya. Sebelum YOLO, detektor paling akurat bekerja dalam dua tahap: tahap pertama mengusulkan kandidat wilayah (*region proposal*), tahap kedua mengklasifikasikan wilayah tersebut. Keluarga R-CNN ([bab 012](012%20-%202014%20-%20R-CNN%20-%20Fondasi%20RGB.md)), Fast R-CNN ([bab 013](013%20-%202015%20-%20Fast%20R-CNN%20-%20Fondasi%20RGB.md)), dan Faster R-CNN ([bab 014](014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md)) mewakili garis ini. Abstrak survei ini menegaskan bahwa akurasi detektor dua tahap lebih baik daripada detektor satu tahap, yaitu detektor yang memprediksi kotak dan kelas langsung dari citra dalam satu kali evaluasi.
 
 YOLO ([bab 001](001%20-%202016%20-%20You%20Only%20Look%20Once%20(YOLOv1)%20-%20Fondasi%20RGB.md)) mengubah peta tersebut pada 2015 dengan membuktikan detektor satu tahap dapat berjalan *real-time* (umumnya dipahami sebagai laju minimal 30 citra per detik) dengan akurasi yang tetap kompetitif. Setelahnya, iterasi YOLO muncul hampir setiap tahun: versi kedua pada 2017, ketiga pada 2018, dan seterusnya hingga YOLOv8 pada Januari 2023. Setiap versi hadir dengan arsitektur, resep pelatihan, dan laporan aplikasi sendiri, terpencar di banyak venue publikasi.
 
@@ -64,21 +64,21 @@ Struktur telaah survei (korpus: YOLO v1, 2015, s.d. YOLOv8, Jan 2023)
 
 Blok 1 sampai 3 membangun fondasi; blok 4 adalah inti survei; blok 5 menutup dengan peta terapan.
 
-### Blok 1 — Metrik Evaluasi Deteksi
+### Blok 1 - Metrik Evaluasi Deteksi
 
 Survei dimulai dari alat ukur, karena seluruh perbandingan antarversi YOLO bergantung padanya. Metrik dasarnya adalah IoU (*Intersection over Union*): rasio luas irisan terhadap luas gabungan antara kotak prediksi dan kotak kebenaran. Sebagai contoh, bila sebuah kotak prediksi dan kotak kebenaran beririsan seluas 60 satuan luas dan gabungan keduanya seluas 100 satuan, IoU-nya 0,6; prediksi lazim dihitung benar bila IoU-nya melampaui ambang 0,5 dan kelasnya tepat.
 
-Di atas definisi benar-salah itu dibangun dua ukuran. Presisi adalah proporsi prediksi yang benar di antara seluruh prediksi. *Recall* adalah proporsi objek yang berhasil ditemukan di antara seluruh objek yang ada. *Average Precision* (AP) merangkum keseimbangan keduanya pada satu kelas, dan mAP (*mean Average Precision*) merata-ratakan AP seluruh kelas — inilah metrik akurasi utama yang dipakai di seluruh literatur YOLO. Sisi kecepatan diukur dalam FPS (*frame* per detik), yaitu jumlah citra yang diproses per detik. Pasangan mAP dan FPS selalu dilaporkan berdampingan pada tiap versi YOLO, karena posisi sebuah versi hanya bermakna bila keduanya disebut bersama.
+Di atas definisi benar-salah itu dibangun dua ukuran. Presisi adalah proporsi prediksi yang benar di antara seluruh prediksi. *Recall* adalah proporsi objek yang berhasil ditemukan di antara seluruh objek yang ada. *Average Precision* (AP) merangkum keseimbangan keduanya pada satu kelas, dan mAP (*mean Average Precision*) merata-ratakan AP seluruh kelas - inilah metrik akurasi utama yang dipakai di seluruh literatur YOLO. Sisi kecepatan diukur dalam FPS (*frame* per detik), yaitu jumlah citra yang diproses per detik. Pasangan mAP dan FPS selalu dilaporkan berdampingan pada tiap versi YOLO, karena posisi sebuah versi hanya bermakna bila keduanya disebut bersama.
 
-### Blok 2 — Pasca-Pemrosesan
+### Blok 2 - Pasca-Pemrosesan
 
 Detektor satu tahap mengeluarkan banyak kandidat kotak per objek, sehingga keluaran mentahnya harus dirapikan sebelum dipakai. Survei membahas metode pasca-pemrosesan yang umum, yang utamanya adalah NMS (*Non-Maximum Suppression*). Prosedurnya: urutkan seluruh kotak berdasarkan skor keyakinan (*confidence*, estimasi jaringan bahwa kotak berisi objek), ambil yang tertinggi, lalu buang semua kotak lain yang IoU-nya terhadap kotak terpilih melampaui ambang; ulangi untuk sisa kotak. Sebagai contoh, bila tiga kotak menutupi objek yang sama dengan skor 0,9, 0,8, dan 0,7 serta saling tumpang tindih, hanya kotak 0,9 yang dipertahankan. Tanpa tahap ini, satu objek akan dilaporkan berkali-kali.
 
-### Blok 3 — Dataset dan Teknik Deteksi Umum
+### Blok 3 - Dataset dan Teknik Deteksi Umum
 
 Blok ketiga memetakan data yang menjadi bahan latih dan uji detektor, serta teknik deteksi yang paling banyak dipakai. Dua tolok ukur yang menjadi standar pada literatur yang ditelaah adalah PASCAL VOC (20 kelas objek umum) dan MS COCO (80 kelas, dengan proporsi objek kecil yang jauh lebih besar, sehingga lebih berat). Sisi teknik mencakup pembagian detektor dua tahap dan satu tahap yang telah diuraikan pada latar belakang, beserta varian rancangan seperti detektor berbasis *anchor box* (kotak acuan berbagai ukuran dan rasio yang dipasang pada setiap posisi peta fitur, yang oleh jaringan diubah suai menjadi kotak akhir) dan detektor *anchor-free* (yang memprediksi posisi objek langsung tanpa kotak acuan).
 
-### Blok 4 — Arsitektur Setiap Versi YOLO
+### Blok 4 - Arsitektur Setiap Versi YOLO
 
 Inti survei adalah telaah desain arsitektur tiap versi. Kosakata yang dipakai pada blok ini adalah pembagian detektor modern atas tiga bagian: *backbone* (jaringan pengekstrak fitur dari citra), *neck* (rangkaian penggabung fitur lintas resolusi), dan *head* (bagian yang mengeluarkan prediksi kotak dan kelas). Silsilah yang ditelaah, dari yang tertua hingga batas cakupan survei:
 
@@ -93,7 +93,7 @@ Inti survei adalah telaah desain arsitektur tiap versi. Kosakata yang dipakai pa
 - **YOLOv7 (2022):** struktur lapisan baru E-ELAN dan resep pelatihan yang menjadikannya detektor *real-time* tercepat sekaligus terakurat pada masanya ([bab 007](007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)).
 - **YOLOv8 (Januari 2023):** rilis Ultralytics berikutnya, *anchor-free*, menyatukan deteksi, segmentasi, dan klasifikasi dalam satu kerangka; versi terbaru dalam cakupan survei.
 
-### Blok 5 — Pemetaan Aplikasi
+### Blok 5 - Pemetaan Aplikasi
 
 Survei ditutup dengan membahas ragam versi YOLO melalui kontribusinya pada berbagai aplikasi; premis yang dinyatakan abstraknya adalah bahwa banyak aplikasi mengadopsi versi YOLO karena kecepatan inferensinya. Sebaran terapan semacam itu terdokumentasi luas dalam literatur; korpus tinjauan ini sendiri memuat survei khusus YOLO untuk manufaktur ([bab 027](027%20-%202023%20-%20Review%20YOLO%20Manufaktur%20(Hussain)%20-%20Survei%20YOLO.md)) dan untuk pertanian ([bab 029](029%20-%202024%20-%20Review%20YOLO%20Pertanian%20(Sapkota%20dkk.)%20-%20Survei%20YOLO.md)), yang menunjukkan dua domain tempat silsilah ini dipakai. Taksonomi domain persis yang dipakai makalah ini tidak dapat diverifikasi dari abstrak dan dicatat pada bagian Poin untuk Sitasi.
 
@@ -103,7 +103,7 @@ Sebagai artikel survei, makalah ini tidak melaporkan eksperimen deteksi baru; ha
 
 Pertama, pernyataan eksplisit abstraknya: akurasi deteksi detektor dua tahap lebih baik daripada detektor satu tahap, tetapi YOLO mencapai akurasi tinggi dan waktu inferensi tinggi sekaligus dengan rancangan satu tahap. Pernyataan ini merangkum alasan keberadaan seluruh silsilah yang ditelaah: tiap versi YOLO adalah usaha mempersempit selisih akurasi itu tanpa mengorbankan kecepatan.
 
-Kedua, besaran pertukaran tersebut dapat dilihat pada angka sumber primer yang menjadi objek survei. YOLOv1 mencapai 63,4% mAP pada 45 FPS di PASCAL VOC 2007, sementara Fast R-CNN pada saat yang sama mencapai 70,0% mAP pada sekitar 0,5 FPS. Interpretasinya: generasi pertama YOLO menukar sekitar 6,6 poin mAP dengan percepatan kurang lebih 90 kali lipat — pertukaran yang menjadikan deteksi *real-time* layak untuk aplikasi interaktif.
+Kedua, besaran pertukaran tersebut dapat dilihat pada angka sumber primer yang menjadi objek survei. YOLOv1 mencapai 63,4% mAP pada 45 FPS di PASCAL VOC 2007, sementara Fast R-CNN pada saat yang sama mencapai 70,0% mAP pada sekitar 0,5 FPS. Interpretasinya: generasi pertama YOLO menukar sekitar 6,6 poin mAP dengan percepatan kurang lebih 90 kali lipat - pertukaran yang menjadikan deteksi *real-time* layak untuk aplikasi interaktif.
 
 Ketiga, laju evolusi silsilahnya. Dari versi pertama pada 2015 hingga YOLOv8 pada Januari 2023 terdapat delapan rilis versi utama ditambah varian seperti PP-YOLO dan YOLOX dalam rentang delapan tahun, atau rata-rata lebih dari satu rilis berpengaruh per tahun. Konsekuensinya, survei atas silsilah ini cepat tertinggal dan berfungsi sebagai potret pada titik waktu tertentu, bukan peta final.
 
@@ -111,13 +111,13 @@ Keempat, skala telaahnya. Metadata penerbit mencatat 107 entri referensi, yang m
 
 ## Kelebihan dan Keterbatasan
 
-Kelebihan survei ini terletak pada tiga hal. Pertama, seluruh silsilah YOLO hingga YOLOv8 dihimpun dalam satu artikel jurnal yang telah melewati peninjauan sejawat. Kedua, telaah dimulai dari fondasi pengukuran — metrik, pasca-pemrosesan, dataset — sehingga pembaca yang belum mengenal deteksi objek dapat mengikuti bagian arsitektur. Ketiga, versi-versi dikaitkan dengan aplikasinya, bukan hanya dibandingkan di atas kertas.
+Kelebihan survei ini terletak pada tiga hal. Pertama, seluruh silsilah YOLO hingga YOLOv8 dihimpun dalam satu artikel jurnal yang telah melewati peninjauan sejawat. Kedua, telaah dimulai dari fondasi pengukuran - metrik, pasca-pemrosesan, dataset - sehingga pembaca yang belum mengenal deteksi objek dapat mengikuti bagian arsitektur. Ketiga, versi-versi dikaitkan dengan aplikasinya, bukan hanya dibandingkan di atas kertas.
 
 Keterbatasannya juga tiga. Pertama, dari sisi cakupan, telaah berhenti pada YOLOv8, sehingga YOLOv9 ([bab 008](008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)), YOLOv10 ([bab 009](009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)), dan YOLOv11 ([bab 010](010%20-%202024%20-%20YOLOv11%20(Overview)%20-%20Fondasi%20RGB.md)) berada di luar jangkauannya. Kedua, dari sisi metodologi, abstrak tidak menyebut protokol seleksi studi yang sistematis; secara konseptual, reprodusibilitas pemilihan literaturnya tidak dapat dinilai tanpa membaca teks lengkap, dan karakterisasinya sebagai tinjauan sistematis tidak didukung abstrak. Ketiga, dari sisi rekayasa, format survei memadatkan detail tiap versi, sehingga angka kinerja per versi tetap harus dirujuk ke naskah primer masing-masing sebelum dipakai sebagai dasar perbandingan.
 
 ## Kaitan dengan Bab Lain
 
-Bab ini berdiri di atas bab-bab klaster Fondasi RGB: setiap versi yang ditelaahnya — dari YOLOv1 ([bab 001](001%20-%202016%20-%20You%20Only%20Look%20Once%20(YOLOv1)%20-%20Fondasi%20RGB.md)) hingga YOLOv7 ([bab 007](007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)) — memiliki bab tersendiri dalam korpus ini yang memuat detail teknis lebih dalam. Posisinya dalam klaster Survei YOLO sejajar dengan telaah naratif lain: survei Terven dkk. ([bab 026](026%20-%202023%20-%20Review%20YOLO%20(Terven%20dkk.)%20-%20Survei%20YOLO.md)), survei perkembangan YOLO oleh Jiang dkk. ([bab 028](028%20-%202022%20-%20Review%20Perkembangan%20YOLO%20(Jiang%20dkk.)%20-%20Survei%20YOLO.md)), dan telaah dekade penuh YOLOv1–YOLOv12 oleh Sapkota dkk. ([bab 030](030%20-%202025%20-%20Tinjauan%20Dekade%20YOLO%20(Sapkota%20dkk.)%20-%20Survei%20YOLO.md)). Batas cakupannya di YOLOv8 beririsan dengan survei khusus YOLOv8 oleh Sohan dkk. ([bab 033](../withheld/033%20-%202024%20-%20Review%20YOLOv8%20(Sohan%20dkk.)%20-%20Survei%20YOLO.md) ⊘) dan diteruskan oleh tolok ukur evolusi YOLO dari Alif dan Hussain ([bab 032](032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20(Alif%20&%20Hussain)%20-%20Survei%20YOLO.md)) yang membawa telaah hingga generasi YOLO11 dan YOLOv12.
+Bab ini berdiri di atas bab-bab klaster Fondasi RGB: setiap versi yang ditelaahnya - dari YOLOv1 ([bab 001](001%20-%202016%20-%20You%20Only%20Look%20Once%20(YOLOv1)%20-%20Fondasi%20RGB.md)) hingga YOLOv7 ([bab 007](007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)) - memiliki bab tersendiri dalam korpus ini yang memuat detail teknis lebih dalam. Posisinya dalam klaster Survei YOLO sejajar dengan telaah naratif lain: survei Terven dkk. ([bab 026](026%20-%202023%20-%20Review%20YOLO%20(Terven%20dkk.)%20-%20Survei%20YOLO.md)), survei perkembangan YOLO oleh Jiang dkk. ([bab 028](028%20-%202022%20-%20Review%20Perkembangan%20YOLO%20(Jiang%20dkk.)%20-%20Survei%20YOLO.md)), dan telaah dekade penuh YOLOv1–YOLOv12 oleh Sapkota dkk. ([bab 030](030%20-%202025%20-%20Tinjauan%20Dekade%20YOLO%20(Sapkota%20dkk.)%20-%20Survei%20YOLO.md)). Batas cakupannya di YOLOv8 beririsan dengan survei khusus YOLOv8 oleh Sohan dkk. ([bab 033](../withheld/033%20-%202024%20-%20Review%20YOLOv8%20(Sohan%20dkk.)%20-%20Survei%20YOLO.md) ⊘) dan diteruskan oleh tolok ukur evolusi YOLO dari Alif dan Hussain ([bab 032](032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20(Alif%20&%20Hussain)%20-%20Survei%20YOLO.md)) yang membawa telaah hingga generasi YOLO11 dan YOLOv12.
 
 ## Poin untuk Sitasi
 

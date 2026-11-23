@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E-023 — evaluasi berpasangan 12 kontras: tiap lengan fusi vs baseline RGB.
+# E-023 - evaluasi berpasangan 12 kontras: tiap lengan fusi vs baseline RGB.
 #
 # Protokol tunggal pycocotools [E-025]. `hasil.json` milik trainer TIDAK dipakai
 # membandingkan antar lengan: pada E-022 ia membalik TANDA selisih (-0,00515 vs
@@ -9,7 +9,7 @@
 # independen, resample per citra membuat CI terlalu sempit.
 #
 # CPU, bukan GPU-bound: prediksi memakai GPU sebentar lalu 2000x bootstrap
-# berjalan di 32 proses. Karena itu kontras dijalankan BERURUTAN — menumpuknya
+# berjalan di 32 proses. Karena itu kontras dijalankan BERURUTAN - menumpuknya
 # hanya membuat mereka berebut core yang sama.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
@@ -37,7 +37,7 @@ for seed in 42 1337 2024; do
     keluaran="$OUT/paired_${lengan}_vs_rgb_seed${seed}.json"
     if [ -f "$keluaran" ]; then echo "[lewati] $keluaran sudah ada"; continue; fi
     [ -f "$arm/weights/best.pt" ] || { echo "[GAGAL] bobot $arm tidak ada" >&2; gagal=1; continue; }
-    echo "=== ${lengan} vs rgb, seed ${seed} — $(date -Is) ==="
+    echo "=== ${lengan} vs rgb, seed ${seed} - $(date -Is) ==="
     $PY eval/eval_e022_paired.py \
         --rgb "$rgb" --rgbd "$arm" \
         --modal-a rgb --modal-b "$(modal_dari "$lengan")" \

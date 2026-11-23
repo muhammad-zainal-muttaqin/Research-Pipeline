@@ -1,4 +1,4 @@
-# AUDIT-E022 — audit trainer & evaluator E-022 (2026-07-30)
+# AUDIT-E022 - audit trainer & evaluator E-022 (2026-07-30)
 
 > **Ruang lingkup:** dokumen ini adalah sumber koreksi E-022, bukan tempat
 > metrik final. Tabel seed-42 awal dapat dibaca dari Git:
@@ -13,17 +13,17 @@ membatalkan kesimpulan yang sudah dipublikasikan di
 
 Setiap temuan diverifikasi ulang secara independen, tidak diterima apa adanya.
 Satu temuan yang diajukan sebagai pemblokir justru **diturunkan lewat
-pengukuran**, bukan lewat argumen — menghindari rerun penuh yang tidak perlu.
+pengukuran**, bukan lewat argumen - menghindari rerun penuh yang tidak perlu.
 
 ---
 
-## Cacat #3 — kebocoran lengan kontrol "depth pohon LAIN"
+## Cacat #3 - kebocoran lengan kontrol "depth pohon LAIN"
 
 **Nyata, material, membatalkan satu kesimpulan.**
 
 Pemasangan donor depth dilakukan atas daftar citra global tanpa memperhatikan
 split. Akibatnya **192 dari 980 citra train memakai peta depth milik pohon di
-split TEST** — kontrol registrasi yang seharusnya bersih justru melihat data
+split TEST** - kontrol registrasi yang seharusnya bersih justru melihat data
 test selama backprop.
 
 Perbaikan: pemasangan donor dilakukan per split, dengan pergeseran indeks
@@ -36,20 +36,20 @@ Dampak terukur (YOLO26n seed42, test mAP50):
 |---|---:|---:|---:|
 | depth pohon LAIN | 0,3771 | 0,3301 | **−0,0470** |
 
-Angka 0,3771 adalah dasar klaim "registrasi tidak memberi apa pun" — dan angka
+Angka 0,3771 adalah dasar klaim "registrasi tidak memberi apa pun" - dan angka
 itu tercemar. Setelah bersih, kontrol tukar (0,3301) berada **di bawah** lengan
 depth (0,3501) pada seed42, yang arahnya justru pro-registrasi. **Klaim lama
 dicabut**; klaim baru belum boleh dibuat karena baru satu seed satu arsitektur.
 
 ---
 
-## Cacat #4 — RNG bersama pada lengan derau
+## Cacat #4 - RNG bersama pada lengan derau
 
 **Nyata, tetapi hipotesis dampaknya GUGUR.**
 
 Versi lama membuat satu `np.random.default_rng` bersama di luar hook lalu
 memanggilnya di dalam `imread`. Akibatnya kanal ke-4 diacak ulang **setiap epoch
-dan setiap pekerja dataloader** — lengan derau diam-diam mendapat augmentasi
+dan setiap pekerja dataloader** - lengan derau diam-diam mendapat augmentasi
 kuat, sementara lengan depth mendapat kanal yang tetap. Itu bukan kontrol
 setara.
 
@@ -67,26 +67,26 @@ artefak. **Hipotesis itu salah.** Setelah diperbaiki, derau **naik**:
 | YOLO26n derau | 0,3523 | 0,3576 | +0,0053 |
 | RT-DETR-L derau | 0,3552 | 0,3894 | **+0,0343** |
 
-Jadi temuan "kanal derau mengalahkan kanal depth" **bukan** artefak bug — ia
+Jadi temuan "kanal derau mengalahkan kanal depth" **bukan** artefak bug - ia
 bertahan dan diperkuat. Konsekuensinya untuk SR-015: klausa putusan "mekanisme
 depth terkonfirmasi pada model besar" kehilangan pijakan, karena pembanding
 derau-nya kini lebih kuat.
 
 ---
 
-## Cacat #1 — nilai padding letterbox pada kanal ke-4
+## Cacat #1 - nilai padding letterbox pada kanal ke-4
 
 **Nyata, diukur, TIDAK berdampak. Tidak perlu rerun.**
 
 `ultralytics` 8.4.103 `data/augment.py` `LetterBox.apply_image` cabang
 multispectral mengisi **seluruh** kanal dengan `padding_value` (114), termasuk
-kanal depth — padahal konvensi encoding kita adalah 0 = "tidak ada data".
+kanal depth - padahal konvensi encoding kita adalah 0 = "tidak ada data".
 Citra 1280×800 → 640×640 memberi skala 0,5, jadi 240 dari 640 baris
 (**37,5% tinggi citra**) berisi depth palsu bernilai 114.
 
 Temuan ini diajukan sebagai **pemblokir**. Alih-alih menerima atau menolaknya
 secara argumentatif, dampaknya **diukur**: checkpoint 4-kanal yang sudah ada
-dievaluasi dua kali pada split test — apa adanya, lalu dengan padding kanal
+dievaluasi dua kali pada split test - apa adanya, lalu dengan padding kanal
 ke-4 dipaksa 0 (hanya bingkai padding, area citra tidak disentuh).
 
 | | mAP50 | mAP50-95 |
@@ -102,7 +102,7 @@ Skrip: `analysis/diag_letterbox_pad.py`. Hasil:
 
 ---
 
-## Cacat #2 — seed RF-DETR di-hardcode
+## Cacat #2 - seed RF-DETR di-hardcode
 
 Seed di-hardcode 42 di dalam `model.train()` pada `train/train_rfdetr_4ch.py`,
 sehingga setiap "seed berbeda" pada matriks multi-seed akan memakai RNG yang
@@ -111,7 +111,7 @@ belum direplikasi multi-seed.
 
 ---
 
-## Cacat operasional — `rc=$?` yang selalu 0
+## Cacat operasional - `rc=$?` yang selalu 0
 
 Bukan cacat ilmiah, tetapi ia menyembunyikan tiga run gagal dan karena itu
 dicatat di sini.
@@ -124,7 +124,7 @@ echo "[$(date +%H:%M:%S)] SELESAI $nama rc=$?"     # SALAH
 ```
 
 Substitusi perintah `$(date)` **dieksekusi lebih dulu** dan me-reset `$?`,
-sehingga `$?` yang terbaca adalah status `date` — **selalu 0**. Run yang crash
+sehingga `$?` yang terbaca adalah status `date` - **selalu 0**. Run yang crash
 dilaporkan sukses dan antrean melanjut tanpa peringatan.
 
 Bukti:
@@ -136,7 +136,7 @@ $ false; rc=$?; echo "rc=$rc"          ->  rc=1     (benar)
 
 Perbaikan: tangkap `rc=$?` di baris terpisah **sebelum** substitusi perintah
 apa pun, lalu bandingkan juga jumlah baris `results.csv` terhadap jumlah epoch
-yang diharapkan — sehingga run yang mati di tengah tidak bisa lolos sebagai
+yang diharapkan - sehingga run yang mati di tengah tidak bisa lolos sebagai
 "selesai".
 
 Tiga run yang lolos gara-gara ini: `rtdetr-l_tukar_seed1337_fix` (mati epoch
@@ -146,18 +146,18 @@ terpotong 108 byte, tidak ada direktori run), `rtdetr-l_tukar_seed2024_fix`
 
 ---
 
-## Selisih evaluator — TERLACAK 2026-07-31, lihat [E-025](EKSPERIMEN.md)
+## Selisih evaluator - TERLACAK 2026-07-31, lihat [E-025](EKSPERIMEN.md)
 
 > **Status: selesai.** Celahnya **menskala dengan jumlah deteksi**, bukan
 > berasal dari pemilihan checkpoint, ambang confidence, `max_det`, `maxDets`,
-> maupun perbedaan daftar citra — keempat kandidat di bawah plus satu kandidat
+> maupun perbedaan daftar citra - keempat kandidat di bawah plus satu kandidat
 > tambahan sudah diuji dan digugurkan oleh pengukuran. Lengan RGB-D memancarkan
 > 2,44× lebih banyak deteksi, dan evaluator internal ultralytics menaikkan
 > lengan yang deteksinya jarang (+0,0133) jauh lebih besar daripada yang padat
 > (−0,0023); asimetri 0,0156 itu cukup untuk membalik tanda Δ.
 >
 > **Aturan yang mengikat:** `hasil.json` tidak boleh dipakai membandingkan antar
-> lengan — celahnya bukan offset tetap. pycocotools adalah protokol tunggal.
+> lengan - celahnya bukan offset tetap. pycocotools adalah protokol tunggal.
 > Rincian, angka, dan batas klaimnya ada di [E-025](EKSPERIMEN.md).
 
 Catatan asli saat temuan diajukan, dipertahankan sebagai rekam:
@@ -167,7 +167,7 @@ di sini karena ia memengaruhi arah kesimpulan.
 
 `hasil.json` per-run (jalur evaluasi internal trainer) dan
 `eval/eval_e022_paired.py` (pycocotools, protokol beku) berselisih sampai
-**0,028** — dan selisihnya **tidak simetris antar lengan**:
+**0,028** - dan selisihnya **tidak simetris antar lengan**:
 
 | seed | RGB pyc − hasil | RGB+D pyc − hasil |
 |---|---:|---:|

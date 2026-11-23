@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# E-023 (G4+G6) — fusi MENENGAH vs AKHIR vs AWAL, semua dari nol.
+# E-023 (G4+G6) - fusi MENENGAH vs AKHIR vs AWAL, semua dari nol.
 #
 # Rancangan E-032 (EKSPERIMEN.md): seluruh lengan dilatih TANPA bobot
-# pratlatih. Bukan karena lebih murah — justru 3x lebih mahal — melainkan karena
+# pratlatih. Bukan karena lebih murah - justru 3x lebih mahal - melainkan karena
 # arsitektur fusi dua cabang lahir dari YAML kustom dan tidak punya checkpoint
 # COCO yang cocok. Membandingkan fusi-dari-nol dengan lengan pratlatih akan
 # didominasi ada-tidaknya pralatihan, bukan titik fusi.
@@ -12,11 +12,11 @@
 #   awal   konkatenasi 4-kanal di masukan (replikasi E-022 tanpa pralatihan)
 #   mid    cabang depth ringan sampai P2/4, fusi sebelum P3
 #   late   dua backbone penuh, fusi pada P3/P4/P5
-#   derau  kontrol negatif: kanal ke-4 berisi derau. WAJIB — SR-015 §6: tanpa
+#   derau  kontrol negatif: kanal ke-4 berisi derau. WAJIB - SR-015 §6: tanpa
 #          kontrol ini kenaikan apa pun tidak dapat dibedakan dari efek kapasitas
 #
 # 150 epoch, bukan 60. Dari nol dengan hanya 980 citra latih, 60 epoch hampir
-# pasti underfit — dan hasil rendah akan salah dibaca sebagai "fusi gagal".
+# pasti underfit - dan hasil rendah akan salah dibaca sebagai "fusi gagal".
 #
 # 3 seed. E-027/E-029/E-031 semuanya menunjukkan satu seed membalik tanda
 # kesimpulan; satu seed di sini = mengulang kesalahan yang menjatuhkan E-022.

@@ -1,4 +1,4 @@
-# SR-016 — Konsistensi prediksi lintas-sisi: mengukur ambiguitas tanpa label manusia
+# SR-016 - Konsistensi prediksi lintas-sisi: mengukur ambiguitas tanpa label manusia
 
 **Ide:** pengganti `class_mismatch` yang dipalsukan E-001 · **Eksperimen:** E-024, E-026 · **Putusan: DIKONFIRMASI** (ukurannya bekerja) / **E-026 TIDAK KONKLUSIF** (denominator identitas berbeda) · 2026-07-31
 
@@ -8,7 +8,7 @@
 
 [SR-001](SR-001-ambiguitas-kematangan.md) mencoba mengukur plafon ambiguitas
 kematangan lewat flag `class_mismatch`, dan **dipalsukan**: nol ketidaksepakatan
-dari 7.328 bunch multi-sisi. Tafsir yang benar sudah dikunci di `CLAUDE.md` —
+dari 7.328 bunch multi-sisi. Tafsir yang benar sudah dikunci di `CLAUDE.md` -
 flag itu **pemeriksa integritas anotasi yang bersih**, bukan pengukur
 ambiguitas, dan angka nolnya tidak mendukung maupun membantah klaim ambiguitas
 B2/B3.
@@ -31,7 +31,7 @@ adalah satu tandan.
 Kekuatannya justru pada apa yang **tidak** dibutuhkannya: tidak ada label
 kebenaran kematangan yang dipakai, tidak ada asumsi tentang anotator. Kalau
 detektor memberi kelas berbeda pada objek fisik yang sama dilihat dari sudut
-berbeda, minimal satu di antaranya salah — dan itu terukur langsung.
+berbeda, minimal satu di antaranya salah - dan itu terukur langsung.
 
 Catatan asli menandai satu penghalang: **butuh detektor terlatih**. Sejak E-021
 dan matriks E-022, penghalang itu hilang.
@@ -40,7 +40,7 @@ dan matriks E-022, penghalang itu hilang.
 
 `analysis/cross_side_consistency.py`. Oracle-nya ternyata **tidak perlu
 dihitung**: `json/<tree>.json` sudah menyediakan `bunches[].appearances`, yaitu
-hasil transitive closure graf `_confirmedLinks` — satu entri = satu tandan
+hasil transitive closure graf `_confirmedLinks` - satu entri = satu tandan
 fisik, dengan kotak piksel per sisi.
 
 Prediksi dibuat lewat jalur evaluator E-022 yang sama supaya praproses dan
@@ -55,7 +55,7 @@ Dua ukuran dilaporkan, dan yang kedua bukan pelengkap:
 | `laju_terlewat` | fraksi kemunculan yang tidak terdeteksi sama sekali |
 
 `laju_terlewat` wajib dilaporkan terpisah karena tanpa itu **"konsisten karena
-tidak terdeteksi" akan tersamar sebagai "konsisten"** — detektor yang buta
+tidak terdeteksi" akan tersamar sebagai "konsisten"** - detektor yang buta
 sempurna akan mencetak inkonsistensi nol.
 
 ## 4. Bukti
@@ -107,7 +107,7 @@ jatuh persis di pasangan kelas yang kegagalannya fotometrik.
 
 - **B4 NOL terwakili di kedua lengan.** Tidak satu pun tandan B4 terdeteksi di
   ≥ 2 sisi. B4 adalah kelas yang kegagalannya **geometris** dan karenanya paling
-  mungkin dibantu depth — jadi untuk B4 hipotesis ini **belum diuji, bukan
+  mungkin dibantu depth - jadi untuk B4 hipotesis ini **belum diuji, bukan
   dipalsukan**. Ini batas terpenting SR ini.
 - **n = 82 dan 75.** CI selebar ±0,12 memang wajar; uji ini tidak berdaya
   mendeteksi efek kecil.
@@ -125,7 +125,7 @@ Dua konsekuensi yang sudah masuk rencana kerja:
 
 1. **Instrumen tambahan untuk G4/G6.** Bila fusi menengah atau akhir benar
    bekerja, laju inkonsisten harus **turun**. Bila mAP naik tetapi laju
-   inkonsisten datar, kenaikan itu patut dicurigai sebagai efek kapasitas —
+   inkonsisten datar, kenaikan itu patut dicurigai sebagai efek kapasitas -
    ukuran ini memberi pemeriksaan silang yang tidak dimiliki mAP.
 2. **Diulang di SawitMVC (G8).** Dataset itu punya 18.540 kotak dan 7.328 bunch
    multi-sisi, ~40× daya uji SawitMVC-Depth, dan kemungkinan besar menyelesaikan

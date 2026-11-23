@@ -4,7 +4,7 @@ Folder ini memisahkan hasil yang boleh dikutip dari riwayat, audit, dan
 pekerjaan yang belum menjadi klaim ilmiah. Baca halaman ini sebelum membuka
 log eksperimen yang panjang.
 
-> **Seri F dibuka dan ditutup 6 Agustus 2026 — [SERI-F.md](SERI-F.md).** Seri
+> **Seri F dibuka dan ditutup 6 Agustus 2026 - [SERI-F.md](SERI-F.md).** Seri
 > terpisah untuk perubahan **formulasi dan arsitektur** (K1 cabang frekuensi, K2
 > kepala ordinal, K3 lintas-sisi), dengan gerbang penyaring tanpa GPU di depan
 > tiap komponen. Hasilnya: F-002 dan F-005 lolos gerbang, F-003 gugur, F-007
@@ -30,7 +30,7 @@ deteksi belum sah. Rinciannya di [audit](AUDIT-E022.md).
 | Dasar angka E-021 | Keempat model pembanding dinilai dengan satu protokol `pycocotools`; lihat [METRICS.md](METRICS.md). |
 | Sasaran berikutnya | mAP50-95 0,30 masih kurang 0,023. |
 | Data depth sensor E-022 | Parsing kalibrasi dan reproyeksi depth ke RGB tervalidasi. Klaim bahwa depth menaikkan deteksi belum boleh dibuat. |
-| Varians split | **Terukur (E-031).** Lengan RGB berayun **0,0488** antar split — melampaui varians seed (0,0321) dan hampir 5× ambang H-022. **Setiap angka mAP wajib menyebut split.** |
+| Varians split | **Terukur (E-031).** Lengan RGB berayun **0,0488** antar split - melampaui varians seed (0,0321) dan hampir 5× ambang H-022. **Setiap angka mAP wajib menyebut split.** |
 | Matriks multi-seed YOLO26n | **Selesai (E-027).** Depth − RGB rerata **−0,0230**, dua dari tiga seed signifikan NEGATIF. Untuk YOLO26n depth **merugikan**, bukan netral. |
 | Protokol evaluasi | **Mengikat (E-025):** `hasil.json` tidak boleh dipakai membandingkan antar lengan; celahnya menskala dengan jumlah deteksi. pycocotools protokol tunggal. |
 | Ambiguitas lintas-sisi | Terukur tanpa label manusia: **0,2329 di SawitMVC** (511 tandan, E-028) dan 0,1951 di SawitMVC-Depth (82 tandan, E-024). E-026 **tidak konklusif** pada subset terukur karena denominator identitas RGB dan RGB-D tidak sama (82 vs 75); tidak ada klaim ekuivalensi. |

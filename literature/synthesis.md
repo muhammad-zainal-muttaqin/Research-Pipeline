@@ -44,22 +44,22 @@ dan tabel taksonomi.
 > **Catatan integritas:** Metadata bibliografi disusun dari hasil penelusuran
 > web dan pengetahuan atas karya-karya kanonik. Untuk publikasi formal,
 > disarankan verifikasi akhir nomor volume/halaman/DOI tiap entri melalui laman
-> penerbit — terutama untuk entri aplikasi yang lebih baru.
+> penerbit - terutama untuk entri aplikasi yang lebih baru.
 
 ---
 
 ## 3. Temuan Utama per Poros
 
-### Poros 1 — Evolusi YOLO
+### Poros 1 - Evolusi YOLO
 - YOLO berkembang dari perumusan **deteksi sebagai regresi tunggal** (v1, 2016)
   menuju desain **anchor-free** (YOLOX, 2021), **efisiensi industri** (v6, 2022),
   **trainable bag-of-freebies + E-ELAN** (v7, 2022), **PGI/GELAN** (v9, 2024),
   **bebas-NMS end-to-end** (v10, 2024), dan **modul atensi C3K2/C2PSA** (v11, 2024).
 - **Temuan:** tren jelas menuju penghapusan komponen manual (anchor, NMS) dan
-  penyisipan mekanisme atensi — YOLO makin menyerupai detektor end-to-end
+  penyisipan mekanisme atensi - YOLO makin menyerupai detektor end-to-end
   bergaya transformer sambil mempertahankan kecepatan waktu-nyata.
 
-### Poros 2 — Deteksi Objek Berbasis RGB
+### Poros 2 - Deteksi Objek Berbasis RGB
 - Ekosistem RGB matang: dua-tahap (Faster R-CNN), satu-tahap (SSD, RetinaNet),
   anchor-free (FCOS, CenterNet), dan **transformer** (DETR, Deformable DETR,
   ViT, Swin).
@@ -67,7 +67,7 @@ dan tabel taksonomi.
   dan DETR menjadi pembanding/backbone standar yang juga merembes ke pipeline
   RGB-D.
 
-### Poros 3 — Fusi RGB+Depth
+### Poros 3 - Fusi RGB+Depth
 - Strategi fusi terbagi tiga: **awal (input-level)**, **menengah
   (feature-level)**, **akhir (decision-level)**.
 - **Temuan kuat & berulang:** **fusi tingkat-fitur menengah dengan atensi
@@ -75,15 +75,15 @@ dan tabel taksonomi.
   SA-Gate, CIR-Net, dan studi Ophoff dkk.). Kualitas & penyelarasan peta
   kedalaman adalah faktor penentu keuntungan fusi.
 
-### Poros 4 — Integrasi YOLO+RGB-D
+### Poros 4 - Integrasi YOLO+RGB-D
 - Dua pola integrasi dominan:
-  1. **Perluasan kanal masukan** — menambahkan kanal depth ke RGB (mis.
+  1. **Perluasan kanal masukan** - menambahkan kanal depth ke RGB (mis.
      *Expandable YOLO* → kotak 3D).
-  2. **Deteksi-lalu-proyeksi** — YOLO mendeteksi 2D, hasilnya diproyeksikan ke
+  2. **Deteksi-lalu-proyeksi** - YOLO mendeteksi 2D, hasilnya diproyeksikan ke
      peta depth teraligned untuk lokalisasi 3D (navigasi robot, pengukuran
      jarak, penggenggaman, panen buah).
 - **Temuan:** penambahan depth **meningkatkan ketahanan terhadap oklusi** dan
-  **memungkinkan estimasi posisi 3D** yang wajib untuk aksi robotik — dengan
+  **memungkinkan estimasi posisi 3D** yang wajib untuk aksi robotik - dengan
   YOLO tetap menjadi tahap deteksi 2D pilihan karena rasio kecepatan/akurasi.
 
 ---
@@ -127,7 +127,7 @@ dan tabel taksonomi.
    keseimbangan latensi–akurasi; penalaran geometri 3D umumnya menjadi tahap
    sesudahnya.
 4. **Estimasi kedalaman fondasi (Depth Anything, MiDaS)** membuka peluang
-   "pseudo-depth" murah — YOLO+RGB-D tanpa sensor depth khusus.
+   "pseudo-depth" murah - YOLO+RGB-D tanpa sensor depth khusus.
 5. **Pelajaran dari RGB-T** (ketidakseimbangan & penyelarasan lemah modalitas)
    langsung relevan untuk fusi RGB-D.
 

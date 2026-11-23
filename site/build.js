@@ -1248,7 +1248,7 @@ function RUNTIME() {
     var dot = doc.createElement('span'); dot.className = 'cd';
     theme.appendChild(dot);
     theme.appendChild(doc.createTextNode(e.theme));
-    var yr = doc.createElement('td'); yr.className = 'c-year'; yr.textContent = e.special ? '—' : e.year;
+    var yr = doc.createElement('td'); yr.className = 'c-year'; yr.textContent = e.special ? '-' : e.year;
     var min = doc.createElement('td'); min.className = 'c-min'; min.textContent = readMin(e.words) + ' mnt';
     tr.appendChild(num); tr.appendChild(title); tr.appendChild(theme); tr.appendChild(yr); tr.appendChild(min);
     return tr;
@@ -1402,7 +1402,7 @@ function RUNTIME() {
       if (m && /docs\/literature\/withheld\//i.test(dec)) {
         var sp = doc.createElement('span');
         sp.className = 'entry-withheld';
-        sp.title = 'Entri ditahan — PDF sumber tak tersedia; di luar korpus 182';
+        sp.title = 'Entri ditahan - PDF sumber tak tersedia; di luar korpus 182';
         sp.textContent = a.textContent;
         a.parentNode.replaceChild(sp, a);
         return;
@@ -1541,7 +1541,7 @@ function RUNTIME() {
     if (e.src) {
       var det = doc.createElement('details'); det.className = 'srcfull';
       var sm = doc.createElement('summary');
-      sm.textContent = 'Buka teks sumber lengkap — ekstraksi PDF, baris per baris';
+      sm.textContent = 'Buka teks sumber lengkap - ekstraksi PDF, baris per baris';
       var pre = doc.createElement('pre'); pre.className = 'srctext';
       pre.textContent = e.src;
       det.appendChild(sm); det.appendChild(pre);
@@ -1550,7 +1550,7 @@ function RUNTIME() {
     if (e.srcLazy) {
       var detSrc = doc.createElement('details'); detSrc.className = 'srcfull';
       var smSrc = doc.createElement('summary');
-      smSrc.textContent = 'Buka teks sumber lengkap — ekstraksi PDF, baris per baris';
+      smSrc.textContent = 'Buka teks sumber lengkap - ekstraksi PDF, baris per baris';
       if (e.srcFull != null && e.srcFull !== '') {
         var preSrc = doc.createElement('pre'); preSrc.className = 'srctext';
         preSrc.textContent = e.srcFull;

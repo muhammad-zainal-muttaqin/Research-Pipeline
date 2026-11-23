@@ -139,7 +139,7 @@ def plot_confusion(cm, name):
     ax.set_xticks(range(5)); ax.set_yticks(range(5))
     ax.set_xticklabels(lab); ax.set_yticklabels(lab)
     ax.set_xlabel("Prediksi"); ax.set_ylabel("Ground truth")
-    ax.set_title(f"Confusion @IoU0.5 conf0.25 — {name} (TEST)")
+    ax.set_title(f"Confusion @IoU0.5 conf0.25 - {name} (TEST)")
     for i in range(5):
         for j in range(5):
             ax.text(j, i, cm[i, j], ha="center", va="center",

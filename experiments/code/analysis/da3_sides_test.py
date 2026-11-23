@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-005 — DA3 multi-view pada 4/8 sisi foto asli SawitMVC.
+"""E-005 - DA3 multi-view pada 4/8 sisi foto asli SawitMVC.
 
 Ini pertanyaan yang sebenarnya. E-004 membuktikan DA3 andal pada video orbit,
 tetapi video punya baseline antar-frame kecil. Foto dataset diambil dari 4 posisi
@@ -167,7 +167,7 @@ def main() -> int:
 
     W = 74
     print("\n" + "=" * W)
-    print(f"E-005 — DA3 PADA {args.sides} SISI FOTO ASLI ({len(rows)} pohon)")
+    print(f"E-005 - DA3 PADA {args.sides} SISI FOTO ASLI ({len(rows)} pohon)")
     print("=" * W)
     print(f"  langkah sudut diharapkan          : {exp_step:.0f} derajat")
     print(f"  RMSE sudut  : rata2 {rmse.mean():.1f}  median {np.median(rmse):.1f}  "

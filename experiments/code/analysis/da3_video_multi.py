@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-004 — DA3 multi-view pada BANYAK video, dengan rotasi diperbaiki.
+"""E-004 - DA3 multi-view pada BANYAK video, dengan rotasi diperbaiki.
 
 Menuntaskan tiga keterbatasan E-003:
   1. n=1 video            -> jalankan pada banyak video

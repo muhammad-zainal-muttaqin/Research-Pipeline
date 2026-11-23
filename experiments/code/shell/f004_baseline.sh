@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# F-004 — Baseline RF-DETR-L 3 seed pada SawitMVC (jalur RGB).
+# F-004 - Baseline RF-DETR-L 3 seed pada SawitMVC (jalur RGB).
 #
 # Resep dikunci PERSIS ke training_config.json E-021 (resolusi 1280, batch 8,
 # grad-accum 2, workers 8, epochs 60, early stopping patience 8 min-delta 0,001,

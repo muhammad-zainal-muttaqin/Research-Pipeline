@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# eval_g2.sh — evaluasi matriks multi-seed G2, protokol tunggal pycocotools.
+# eval_g2.sh - evaluasi matriks multi-seed G2, protokol tunggal pycocotools.
 #
 # Terikat aturan yang ditetapkan E-025: `hasil.json` TIDAK BOLEH dipakai
 # membandingkan antar lengan, karena celah evaluatornya menskala dengan jumlah
@@ -33,11 +33,11 @@ banding() {                # arch seed modal_a modal_b label
   local keluaran="$OUT/paired_${arch}_${label}_seed${seed}.json"
 
   if [ ! -d "$ra" ] || [ ! -d "$rb" ]; then
-    echo "[lewati] $arch $label seed$seed — run belum ada"
+    echo "[lewati] $arch $label seed$seed - run belum ada"
     return 0
   fi
   if [ -s "$keluaran" ]; then
-    echo "[lewati] $arch $label seed$seed — hasil sudah ada"
+    echo "[lewati] $arch $label seed$seed - hasil sudah ada"
     return 0
   fi
 

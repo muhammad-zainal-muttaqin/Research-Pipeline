@@ -1,4 +1,4 @@
-# SR-008 — Kanal tekstur sebagai modalitas keempat
+# SR-008 - Kanal tekstur sebagai modalitas keempat
 
 **Ide I-20 / I-21** · **Eksperimen:** E-011 (+ E-012 menyusul)
 **Putusan: DIKONFIRMASI (tekstur) / DIPALSUKAN (penajam kontras)** · 2026-07-21
@@ -16,7 +16,7 @@ modalitas sekaligus**.
 | Warna / luminans | ΔE 11,55, **di bawah** kendali acak 12,92 | SR-007 |
 | Kepadatan (bertumpuk) | IoU maks 0,029, **terendah** dari semua kelas | SR-007 |
 
-Kalau ketiganya buntu, tidak ada arsitektur fusi yang akan menolong — masalahnya
+Kalau ketiganya buntu, tidak ada arsitektur fusi yang akan menolong - masalahnya
 bukan cara menggabungkan informasi, melainkan tidak adanya informasi untuk
 digabungkan.
 
@@ -27,7 +27,7 @@ Tandan B4 berduri dan berkerut.
 ## 2. Ide
 
 Kalau tekstur adalah satu-satunya sinyal yang tersisa, maka transformasi yang
-menonjolkan tekstur seharusnya menaikkan keterpisahan B4 — dan transformasi
+menonjolkan tekstur seharusnya menaikkan keterpisahan B4 - dan transformasi
 yang hanya menaikkan kontras warna seharusnya tidak.
 
 Dua hipotesis diadu, karena keduanya sama-sama masuk akal secara intuitif:
@@ -38,7 +38,7 @@ Dua hipotesis diadu, karena keduanya sama-sama masuk akal secara intuitif:
 | "B4 kurang terlihat teksturnya" | gradien Sobel, Laplacian | naik |
 
 Diuji **sebelum** melatih apa pun, mengikuti disiplin yang sama seperti E-006
-dan E-010 — mengukur dulu, membakar GPU kemudian.
+dan E-010 - mengukur dulu, membakar GPU kemudian.
 
 **Yang akan memalsukan:** tidak ada praproses yang menaikkan AUC B4 lebih dari
 0,02 di atas acuan.
@@ -47,7 +47,7 @@ dan E-010 — mengukur dulu, membakar GPU kemudian.
 
 `experiments/code/analysis/contrast_boost_test.py`, 250 citra uji, lima peta skalar.
 Metrik: AUC pemisahan piksel isi-kotak vs cincin sekeliling, per kelas, dengan
-**kendali kotak acak dihitung ulang untuk tiap praproses** — karena tiap
+**kendali kotak acak dihitung ulang untuk tiap praproses** - karena tiap
 transformasi mengubah statistik citra secara keseluruhan, sehingga
 membandingkan AUC mentah antar-praproses akan menyesatkan.
 
@@ -65,12 +65,12 @@ Perbaikan Laplacian atas acuan: **+0,0544 AUC**.
 
 ## 5. Putusan
 
-**Hipotesis "kurang kontras" — DIPALSUKAN.** CLAHE (−0,0080) dan unsharp
+**Hipotesis "kurang kontras" - DIPALSUKAN.** CLAHE (−0,0080) dan unsharp
 (−0,0066) tidak menolong, bahkan sedikit **memperburuk** dibanding acuan
 (−0,0086 → keduanya tetap negatif). Ini dugaan yang paling intuitif, dan
 ternyata salah.
 
-**Hipotesis "kurang terlihat teksturnya" — DIKONFIRMASI.** Kanal frekuensi
+**Hipotesis "kurang terlihat teksturnya" - DIKONFIRMASI.** Kanal frekuensi
 tinggi murni menaikkan keterpisahan B4 secara nyata: Sobel +0,0367, Laplacian
 +0,0458.
 
@@ -86,14 +86,14 @@ dalam tekstur.**
 ### Batas klaim
 
 AUC 0,6153 tetap jauh dari sempurna. Ini menunjukkan tekstur membawa sinyal
-yang **nyata tetapi sederhana** — cukup untuk membenarkan pengujian arsitektur,
+yang **nyata tetapi sederhana** - cukup untuk membenarkan pengujian arsitektur,
 belum cukup untuk menjanjikan lompatan AP50. Pengujian sesungguhnya adalah
 E-012, dan hasilnya bisa saja datar meski diagnosis ini benar: sinyal yang ada
 di piksel belum tentu dapat dimanfaatkan detektor.
 
 ## 6. Dampak
 
-**I-21 — kanal keempat berisi tekstur, bukan kedalaman.**
+**I-21 - kanal keempat berisi tekstur, bukan kedalaman.**
 
 Ini lebih beralasan daripada RGB+D pada setiap titik pembandingnya:
 
@@ -101,7 +101,7 @@ Ini lebih beralasan daripada RGB+D pada setiap titik pembandingnya:
 |---|---|---|
 | Dasar bukti | E-006 **memalsukan** pemisahan tandan | E-011 **mengonfirmasi** (+0,0458) |
 | Efek pada B4 | AUC 0,602 (terendah antar-kelas) | AUC 0,6153 (**tertinggi** antar-kelas) |
-| Biaya disk | 765 MB peta kedalaman | **nol** — dihitung saat pemuatan |
+| Biaya disk | 765 MB peta kedalaman | **nol** - dihitung saat pemuatan |
 | Biaya prapemrosesan | DA3 pada 3.992 citra (~10 menit GPU) | Laplacian, milidetik per citra |
 | Ketergantungan | model fondasi eksternal | hanya OpenCV |
 

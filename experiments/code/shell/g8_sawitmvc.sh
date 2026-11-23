@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# G8 — ulangi ukuran inkonsistensi lintas-sisi di SawitMVC (daya uji ~40x).
+# G8 - ulangi ukuran inkonsistensi lintas-sisi di SawitMVC (daya uji ~40x).
 #
 # E-026 menandai dua batas yang keduanya soal DAYA UJI, bukan teori: hanya 82
 # tandan terukur, dan B4 NOL terwakili karena tidak pernah terdeteksi di >= 2
-# sisi — padahal B4 kelas paling geometris dan yang paling mungkin dibantu depth.
+# sisi - padahal B4 kelas paling geometris dan yang paling mungkin dibantu depth.
 #
 # SawitMVC jauh lebih besar: 18.540 kotak vs 2.299, 953 pohon vs 352, 4-8 sisi
 # per pohon vs 4, dan 7.328 bunch multi-sisi vs 182. Skema JSON kedua dataset

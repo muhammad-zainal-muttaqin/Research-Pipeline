@@ -3,7 +3,7 @@
 mAP50-95 merata-ratakan AP pada ambang IoU 0,50 sampai 0,95. Untuk mendapat
 angka tinggi, sebagian besar deteksi harus cocok dengan kotak GT pada IoU >0,8.
 Kalau kotak anotasi sendiri digambar longgar atau tidak konsisten, tidak ada
-model yang bisa mencapainya — plafonnya ada pada labelnya, bukan pada modelnya.
+model yang bisa mencapainya - plafonnya ada pada labelnya, bukan pada modelnya.
 
 Yang diukur: untuk tiap kotak GT, IoU tertinggi dengan deteksi mana pun (kelas
 diabaikan, ambang keyakinan rendah). Ini plafon lokalisasi empiris detektor

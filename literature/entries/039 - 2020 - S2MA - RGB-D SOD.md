@@ -74,7 +74,7 @@ Di atas enkoder dipasang DenseASPP: beberapa konvolusi berdilatasi paralel untuk
 
 ### Dekoder dan Modul Fusi Residual
 
-Dekoder kedalaman memakai modul F: fitur *skip* dan fitur dekoder sebelumnya disambungkan lalu dilewatkan ke dua konvolusi 3×3. Dekoder RGB memakai modul R (*residual fusion*): setelah konvolusi pertama, fitur hasil konvolusi pertama milik modul kedalaman yang sejajar turut disambungkan, lalu konvolusi kedua mempelajari sinyal fusi residual — petunjuk kedalaman masuk sebagai koreksi tambahan di setiap tingkat resolusi. Setiap aliran diakhiri konvolusi berkanal satu dan fungsi sigmoid (pemetaan ke rentang 0–1); saat pengujian hanya keluaran aliran RGB yang dipakai.
+Dekoder kedalaman memakai modul F: fitur *skip* dan fitur dekoder sebelumnya disambungkan lalu dilewatkan ke dua konvolusi 3×3. Dekoder RGB memakai modul R (*residual fusion*): setelah konvolusi pertama, fitur hasil konvolusi pertama milik modul kedalaman yang sejajar turut disambungkan, lalu konvolusi kedua mempelajari sinyal fusi residual - petunjuk kedalaman masuk sebagai koreksi tambahan di setiap tingkat resolusi. Setiap aliran diakhiri konvolusi berkanal satu dan fungsi sigmoid (pemetaan ke rentang 0–1); saat pengujian hanya keluaran aliran RGB yang dipakai.
 
 ### Pelatihan
 
@@ -86,7 +86,7 @@ Evaluasi memakai tujuh tolok ukur: NJUD (1.985 citra), NLPR (1.000 citra Kinect)
 
 Dibandingkan 11 metode terdahulu dengan DMRA sebagai pesaing terkuat, S2MA memperoleh S-measure terbaik pada lima dataset: NJUD 0,894 lawan 0,886; NLPR 0,915 lawan 0,899; RGBD135 0,941 lawan 0,900 (selisih 4,1 poin persentase, margin terbesar); SSD 0,868 lawan 0,857; dan DUT-RGBD 0,903 lawan 0,889. Pada dua dataset lain S2MA di posisi kedua: LFSD 0,837 lawan 0,847, dan STERE 0,890 lawan 0,886 pada S-measure tetapi tertinggal tipis pada tiga metrik lain. Keunggulan S2MA paling konsisten pada kedalaman hasil sensor; pada kedalaman estimasi manfaatnya menyusut.
 
-Studi ablasi pada NJUD memerinci sumbangan komponen (S-measure / MAE): UNet dasar hanya-RGB 0,865 / 0,072; ditambah DenseASPP 0,877 / 0,057; ditambah modul Non-local biasa tetap 0,877 / 0,057 — atensi satu modalitas tidak menambah apa pun; diganti SMA 0,890 / 0,058; ditambah atensi seleksi MAE turun ke 0,056; dan modul fusi residual menutup konfigurasi penuh pada 0,894 / 0,053. Pada RGBD135 urutan yang sama naik dari 0,875 ke 0,941. Keuntungan dengan demikian datang dari fusi atensi lintas modalitas, bukan dari modul atensi itu sendiri. Visualisasi bobot seleksi memperkuat hal ini: ω_d kecil pada piksel jauh yang kedalamannya kasar, besar pada piksel dekat, dan sekitar 0,5 di dalam objek menonjol. Kecepatan pengujian 0,107 detik per citra (sekitar 9,3 citra per detik).
+Studi ablasi pada NJUD memerinci sumbangan komponen (S-measure / MAE): UNet dasar hanya-RGB 0,865 / 0,072; ditambah DenseASPP 0,877 / 0,057; ditambah modul Non-local biasa tetap 0,877 / 0,057 - atensi satu modalitas tidak menambah apa pun; diganti SMA 0,890 / 0,058; ditambah atensi seleksi MAE turun ke 0,056; dan modul fusi residual menutup konfigurasi penuh pada 0,894 / 0,053. Pada RGBD135 urutan yang sama naik dari 0,875 ke 0,941. Keuntungan dengan demikian datang dari fusi atensi lintas modalitas, bukan dari modul atensi itu sendiri. Visualisasi bobot seleksi memperkuat hal ini: ω_d kecil pada piksel jauh yang kedalamannya kasar, besar pada piksel dekat, dan sekitar 0,5 di dalam objek menonjol. Kecepatan pengujian 0,107 detik per citra (sekitar 9,3 citra per detik).
 
 ## Kelebihan dan Keterbatasan
 

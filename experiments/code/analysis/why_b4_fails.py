@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E-010 — Kenapa B4 gagal? Diagnosis penyebab, bukan tebakan. (ide I-11)
+"""E-010 - Kenapa B4 gagal? Diagnosis penyebab, bukan tebakan. (ide I-11)
 
 E-009 menunjukkan ukuran hanya sebagian penjelasan (B4 median 46x46 px, 81%
 masih "sedang"). Uji ini mengukur tiga tersangka lain secara langsung pada
@@ -129,7 +129,7 @@ def main() -> int:
 
     W = 78
     print("=" * W)
-    print(f"E-010 — DIAGNOSIS KEGAGALAN B4 ({len(names)} citra uji)")
+    print(f"E-010 - DIAGNOSIS KEGAGALAN B4 ({len(names)} citra uji)")
     print("=" * W)
     print("\n1. KONTRAS FOTOMETRIK (kotak vs cincin sekeliling)")
     print(f"  {'kelas':6s} {'dLuminans':>10s} {'dWarna':>9s} {'deltaE':>8s} "

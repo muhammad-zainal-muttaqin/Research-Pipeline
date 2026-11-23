@@ -1,4 +1,4 @@
-"""Pengklasifikasi kematangan v2 — dua koreksi yang berasal dari hasil v1.
+"""Pengklasifikasi kematangan v2 - dua koreksi yang berasal dari hasil v1.
 
 v1 runtuh ke kelas mayoritas: B3 mengisi 52% potongan latih (7.333/14.040), dan
 model membayar lebih murah dengan menebak B3 (recall B3 0,95 vs B2 0,23).
@@ -6,9 +6,9 @@ Untuk mAP hal ini merugikan: AP dihitung per kelas dari PERINGKAT skor, dan
 peluang kelas minoritas yang tergencet prior membuat peringkatnya kacau.
 
 Koreksi:
-  1. PENCUPLIKAN BERIMBANG (WeightedRandomSampler) — tiap kelas muncul sama
+  1. PENCUPLIKAN BERIMBANG (WeightedRandomSampler) - tiap kelas muncul sama
      sering per epoch, sehingga model belajar batas antar kelas, bukan prior.
-  2. POTONGAN RESOLUSI MASTER (opsional --root crops_raw) — pada SawitMVC
+  2. POTONGAN RESOLUSI MASTER (opsional --root crops_raw) - pada SawitMVC
      potongan 224 px adalah hasil pembesaran; pada master 3024x4032 ia berisi
      detail permukaan buah yang sebenarnya.
 

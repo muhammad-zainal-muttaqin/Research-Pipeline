@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rezim pengukuran seri F — bootstrap tingkat POHON, persentil + BCa.
+"""Rezim pengukuran seri F - bootstrap tingkat POHON, persentil + BCa.
 
 ## Kenapa bukan `eval_extras.py`
 
