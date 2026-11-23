@@ -43,12 +43,12 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan pada tahap kelayakan abstrak | 132 |
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
-| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 98 |
-| Dinilai dari teks lengkap (915 Scopus dan 5 metode lain) | 920 |
-| Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 16, E8 2) | 32 |
-| Total masuk peta (883 Scopus dan 5 metode lain) | 888 |
+| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 96 |
+| Dinilai dari teks lengkap (917 Scopus dan 5 metode lain) | 922 |
+| Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 17, E8 2) | 33 |
+| Total masuk peta (884 Scopus dan 5 metode lain) | 889 |
 
-Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, dan 110 PDF baru pada 23 November 2026): korpus dibatasi pada kajian yang PDF-nya
+Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, dan 112 PDF baru pada 23 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
 Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
 eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
@@ -76,7 +76,7 @@ Kode yang sama dipakai pada tahap teks lengkap.
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 247 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 153 |
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 147 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 35 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 |
 | R | Tinjauan terdahulu | 112 |
 | T | Metode yang dapat dipindahkan dari luar pertanian, termasuk model deteksi, segmentasi, dan estimasi kedalaman umum yang menjadi dasar pipeline | 86 |

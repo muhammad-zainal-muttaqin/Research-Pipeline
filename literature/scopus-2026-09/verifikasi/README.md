@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (920), dan 888 di antaranya masuk peta.
+lengkapnya (922), dan 889 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
@@ -41,6 +41,7 @@ sawit dan Husin dkk. 2021 dikeluarkan, dengan persetujuan peninjau. Butir yang m
 | PDF tambahan berikutnya (23 November 2026) | 36 laporan dari daftar PDF yang belum ada | 34 masuk: Vasconcelos dkk. 2024 dan Denarda dkk. 2024 pindah dari C2 ke C1, Li dkk. 2022 pindah dari C5 ke C1 (buah yang sama dari dua kamera stereo); Bazame dkk. 2022 dikeluarkan karena buah dicitrakan di corong mesin panen, Achraf dkk. 2024 karena buah tidak dicacah; lokasi 6 kajian sawit diisi dari teks lengkap; peta 853 kajian, C1 243, sawit 131; disetujui peninjau |
 | PDF tambahan ketiga (23 November 2026) | 28 laporan dari daftar PDF yang belum ada | 25 masuk: Chandra dkk. 2025 pindah dari C2 ke C1 (pelacakan buah apel dari video drone); Pragatheesh dkk. 2025 dikeluarkan karena yang dicacah pohon sawit, Kiran dkk. 2025 dan Prabhu dkk. 2025 karena tanpa hasil hitung; lokasi 11 kajian sawit diisi dari teks lengkap; peta 878 kajian, C1 244, sawit 147; disetujui peninjau |
 | PDF tambahan keempat (23 November 2026) | 11 laporan dari daftar PDF yang belum ada | 10 masuk: Wu dkk. 2025 pindah dari C2 ke C1 (kubus 3D buah ditautkan antarbingkai), Zhang dkk. 2024 dari C4 ke C1 (pelacakan tomat per kematangan), Wang dkk. 2024 dari C5 ke C1 (awan titik satu buah dari banyak sudut); Yi dkk. 2021 dikeluarkan karena tanpa hasil hitung; peta 888 kajian, C1 247; disetujui peninjau |
+| PDF tambahan kelima (23 November 2026) | 2 laporan dari daftar PDF yang belum ada | Cheng dkk. 2021 pindah dari C2 ke C4 (buah merah dan hijau dicacah per citra); Chauhan dan Singh 2022 dikeluarkan karena hanya klasifikasi piksel yang dievaluasi; peta 889 kajian, C4 36; disetujui peninjau |
 
 
 ## Langkah berikutnya

@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 888 kajian korpus `main6` yang PDF-nya tersedia, dari 888 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -9,11 +9,11 @@ Katalog ini memuat 888 kajian korpus `main6` yang PDF-nya tersedia, dari 888 kaj
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 247 | 247 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 153 | 153 |
 | C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 35 | 35 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
 | R | Tinjauan terdahulu | 112 | 112 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 888 | 888 |
+| | **Jumlah** | 889 | 889 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (247)
 
@@ -577,7 +577,7 @@ Katalog ini memuat 888 kajian korpus `main6` yang PDF-nya tersedia, dari 888 kaj
 | 2012 | Hudzari R.M. | Simulation and modeling application in agricultural mechanization | Modelling and Simulation in Engineering | [PDF](pdf/hudzari2012simulation.pdf) | [DOI](https://doi.org/10.1155/2012/381239) |
 | 2012 | Mohamad F. | Exploiting suitable color model for ripeness identification | Proceedings of the 2012 International Conference on Image Processing Computer Vision and Pattern Recognition Ipcv 2012 | [PDF](pdf/mohamad2012exploiting.pdf) |  |
 
-## C4: Atribut kelas disertai pencacahan dari citra tunggal (35)
+## C4: Atribut kelas disertai pencacahan dari citra tunggal (36)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -612,6 +612,7 @@ Katalog ini memuat 888 kajian korpus `main6` yang PDF-nya tersedia, dari 888 kaj
 | 2022 | Liu Z. | A benchmark for multi-class object counting and size estimation using deep convolutional neural networks | Engineering Applications of Artificial Intelligence | [PDF](pdf/liu2022benchmark.pdf) | [DOI](https://doi.org/10.1016/j.engappai.2022.105449) |
 | 2022 | Lu S. | Canopy-attention-YOLOv4-based immature/mature apple fruit detection on dense-foliage tree architectures for early crop load estimation | Computers and Electronics in Agriculture | [PDF](pdf/lu2022canopy.pdf) | [DOI](https://doi.org/10.1016/j.compag.2022.106696) |
 | 2022 | Wang X. | Online recognition and yield estimation of tomato in plant factory based on YOLOv3 | Scientific Reports | [PDF](pdf/wang2022online.pdf) | [DOI](https://doi.org/10.1038/s41598-022-12732-1) |
+| 2021 | Cheng W. | Method of greenhouse tomato fruit identification and yield estimation based on improved YOLOv3 | Journal of Chinese Agricultural Mechanization | [PDF](pdf/cheng2021method.pdf) | [DOI](https://doi.org/10.13733/j.jcam.issn.2095-5553.2021.04.25) |
 | 2021 | Rahim U.F. | Highly Accurate Tomato Maturity Recognition: Combining Deep Instance Segmentation, Data Synthesis and Color Analysis | ACM International Conference Proceeding Series | [PDF](pdf/rahim2021highly.pdf) | [DOI](https://doi.org/10.1145/3508259.3508262) |
 | 2020 | Ni X. | Deep learning image segmentation and extraction of blueberry fruit traits associated with harvestability and yield | Horticulture Research | [PDF](pdf/ni2020deep.pdf) | [DOI](https://doi.org/10.1038/s41438-020-0323-3) |
 | 2017 | Lal S. | Identification and counting of mature apple fruit based on BP feed forward neural network | Proceedings of 2017 3rd IEEE International Conference on Sensing Signal Processing and Security Icsss 2017 | [PDF](pdf/lal2017identification.pdf) | [DOI](https://doi.org/10.1109/ssps.2017.8071621) |

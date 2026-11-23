@@ -8,15 +8,15 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,578
 - Dinilai kelayakannya dari judul dan abstrak 1,145 (dengan abstrak 891; judul dan sumber saja 254)
 - Dikeluarkan di tahap kelayakan abstrak 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
-- Laporan dicari teks lengkapnya 1013; tidak diperoleh 98 (C1 1, C2 41, C3 23, C4 8, C5 14, R 10, T 1)
+- Laporan dicari teks lengkapnya 1013; tidak diperoleh 96 (C1 1, C2 39, C3 23, C4 8, C5 14, R 10, T 1)
 - PDF ada, menunggu penilaian teks lengkap 0 (C1 0, C2 0, C3 0, C4 0, C5 0, R 0, T 0)
-- Dinilai dari teks lengkap 915; dikeluarkan 32: E1 2, E2 10, E3 2, E5 16, E8 2
-- Masuk dari Scopus 883: C1 246, C2 151, C3 147, C4 35, C5 107, R 111, T 86
+- Dinilai dari teks lengkap 917; dikeluarkan 33: E1 2, E2 10, E3 2, E5 17, E8 2
+- Masuk dari Scopus 884: C1 246, C2 151, C3 147, C4 36, C5 107, R 111, T 86
 - Metode lain 5, teks lengkap diperoleh 5: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
-- Total kajian masuk 888
-- Kajian per tahun: 2012: 8, 2013: 12, 2014: 12, 2015: 15, 2016: 20, 2017: 25, 2018: 28, 2019: 36, 2020: 64, 2021: 68, 2022: 78, 2023: 107, 2024: 138, 2025: 164, 2026: 112, 2027: 1
+- Total kajian masuk 889
+- Kajian per tahun: 2012: 8, 2013: 12, 2014: 12, 2015: 15, 2016: 20, 2017: 25, 2018: 28, 2019: 36, 2020: 64, 2021: 69, 2022: 78, 2023: 107, 2024: 138, 2025: 164, 2026: 112, 2027: 1
 - Multi-pengamatan per tahun: 2012: 2, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 3, 2018: 4, 2019: 9, 2020: 16, 2021: 19, 2022: 21, 2023: 30, 2024: 42, 2025: 57, 2026: 34
-- Dengan abstrak 717 dari 888; PDF teks lengkap 888 (teks terekstrak 888); multi-pengamatan dengan PDF 247 dari 247
+- Dengan abstrak 717 dari 889; PDF teks lengkap 889 (teks terekstrak 889); multi-pengamatan dengan PDF 247 dari 247
 - Peta istilah: 43 istilah, 299 tautan; istilah identitas 24-35 kajian; detection 540; counting 380
 
 ## Seksi 3: kajian multi-pengamatan
@@ -54,7 +54,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 6: pencacahan per kelas pada citra tunggal
 
-- Kajian 35; tanaman: tomato 10, blueberry 5, apple 5, (tanaman tidak disebut) 4, coffee 3, strawberry 2
+- Kajian 36; tanaman: tomato 11, blueberry 5, apple 5, (tanaman tidak disebut) 4, coffee 3, strawberry 2
 - Atribut kelas kematangan: 30
 
 ## Seksi 7: kedalaman dan sensor lain
