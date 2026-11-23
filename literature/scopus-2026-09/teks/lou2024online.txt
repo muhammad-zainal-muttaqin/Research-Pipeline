@@ -1,0 +1,2126 @@
+ 
+ 
+无规则扰动状态下柑橘果实在线目标检测与快速定位
+娄欢欢 ，李光林※ ，付兴兰 ，李　丽 ，王　旭 ，黄伟东 ，付泰戈
+（西南大学工程技术学院，重庆 400715）
+摘　要：柑橘采摘机器人连续采摘过程中因各种因素会引起其他待采柑橘无规则扰动，扰动状态下的柑橘无法在线快速
+准确检测与定位，影响机器人采摘效率。针对此问题，该研究提出一种基于改进YOLOv5s+DeepSORT 算法的扰动柑橘
+在线目标检测与快速定位方法。首先在YOLOv5 骨干网络中融入卷积注意力机制（convolutional block attention module,
+CBAM），提升模型对复杂目标的检测能力；用SIoU（scalable intersection over union）损失函数增强预测框与标定框之
+间的方向匹配，提升回归收敛速度。其次在DeepSORT 算法中改进目标重识别网络（re-identification, ReID），增强网
+络特征提取能力，提升目标跟踪准确度与精度；在算法中融入Count 计数机制，实时反馈每个扰动柑橘跟踪帧数，并改
+进算法实现对预测坐标值进行实时更新，提升预测准确率。最后结合深度相机排除背景柑橘影响并限制每次跟踪目标数
+目为3 个，提升扰动柑橘预测定位速度。试验结果表明，与原算法相比，改进YOLOv5s 算法的准确度、平均检测精度
+分别提升3.9、1.1 个百分点，检测速率69.3 帧/s。改进DeepSORT 算法的跟踪准确度、跟踪精度分别提升9.2、5.4 个百
+分点，ID（identity）切换次数减少32 次。当预测定位时间为3 s 时，定位平均准确度为81.9%，在试验室进行模拟试验，
+将盆栽柑橘果实沿不同方位随机摆动，摆幅约10 cm，单个柑橘平均抓取时间为12.8 s，比未使用改进算法缩短5.6 s，
+效率提升30.4 %。该研究可为扰动状态下的柑橘快速采摘提供技术支持。
+关键词：扰动柑橘；预测定位；在线目标检测；目标跟踪；YOLOv5；DeepSORT
+doi：10.11975/j.issn.1002-6819.202404120
+中图分类号：S225；TP242；TP391.41　　　　文献标志码：A　　　　文章编号：1002-6819(2024)-18-0155-12
+娄欢欢，李光林，付兴兰，等. 无规则扰动状态下柑橘果实在线目标检测与快速定位[J]. 农业工程学报，2024，40(18)：
+155-166. doi: 10.11975/j.issn.1002-6819.202404120　　http://www.tcsae.org
+LOU  Huanhuan,  LI  Guanglin,  FU  Xinglan,  et  al.  Online  target  detection  and  fast  localisation  of  citrus  fruits  in  irregularly
+disturbed state[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2024, 40(18): 155-
+166. (in Chinese with English abstract)　　doi: 10.11975/j.issn.1002-6819.202404120　　http://www.tcsae.org
+ 
+0　引　言
+中国是世界上最大的柑橘种植和消费国之一，柑橘
+产量受需求影响持续增加[1]。目前，中国柑橘采摘以人
+工采摘为主，存在采摘劳动力不足、效率低等问题[2]。
+随着科技发展，机器人采摘柑橘是重要的发展方向之
+一[3-4]。然而，现有的柑橘采摘机器人连续采摘过程中，
+由于受外界风力、机器人运动以及枝条承载重量变化等
+因素影响会引起柑橘的无规则扰动。在扰动状态下，柑
+橘的检测和定位十分困难，目前采用的方法多为等待扰
+动柑橘静止后再进行下一轮识别与采摘，这不仅影响了
+机器采摘效率，也限制了柑橘采摘机器人的应用与发展。
+因此，为了提高柑橘采摘机器人连续采摘的效率，研究
+柑橘在扰动状态下的在线目标检测与快速定位具有重要
+意义。
+国内外学者对扰动状态下的水果目标检测与定位做
+了大量研究，熊俊涛等[5] 假设柑橘为微扰动，利用
+ANSYS 进行动力学分析并结合图像处理研究微扰动柑橘
+的运动规律，确定扰动柑橘的有效采摘点。XIONG 等[6]
+对被干扰的动态荔枝簇进行研究，使用带有两个相机的
+视觉系统来获取动态荔枝簇的图像，对于静态或轻微扰
+动，采用双目视觉立体匹配计算采摘点。LIU 等[7] 利用
+ORB-SLAM3(ORB-simultaneous localization and mapping)
+算法估计相机在动态条件下的姿态并采用YOLOv5 识别
+RGB 图像中的苹果，平均定位误差为21.1 mm，其中
+90% 的误差小于30 mm。叶敏等[8] 针对荔枝采摘机器人
+的扰动视觉定位误差，提出一种动态定位误差分析方法，
+并采用统计方法进行了定量分析与评价。MEHTA 等[9]
+开发了一种基于图像的视觉伺服控制器，用于柑橘目标
+存在未知运动的情况下将末端执行器调节到目标上。上
+述研究对扰动状态下水果的检测与定位虽具有一定的效
+果，但实际采摘环境下柑橘是无规则扰动，运动状态复
+杂，且随着采摘智能化发展，对柑橘检测与定位的实时
+性要求更高，上述方法的速度与精度不能达到机器人在
+线实时需求，无法满足采摘智能化的生产需要。
+近年来，采用机器视觉检测与跟踪目标的运动轨迹，
+预测目标的未知运动已广泛应用于汽车的自动驾驶、机
+器人等领域[10-11]，基于机器视觉和深度学习的目标检测
+与跟踪算法成为研究热点，相对于传统的目标检测与跟
+踪算法，基于深度学习的方法具有精度高、速度快、鲁
+  
+收稿日期：2024-04-17　　修订日期： 2024-06-06
+基金项目：重庆市科委产业化重点专项（cstc2018jszx-cyzdX0051）
+作者简介：娄欢欢，研究方向为深度学习、机器视觉。
+Email：1821978260@qq.com
+※通信作者：李光林，教授，博士生导师，研究方向为传感器与智能检测、
+农业智能装备。Email：liguanglin@swu.edu.cn
+ 
+第 40 卷 　 第 18 期
+农 业 工 程 学 报　
+Vol.40　No.18
+2024 年 　　 9 月
+Transactions of the Chinese Society of Agricultural Engineering
+Sept. 2024
+155
+
+棒性好等特点[12-14]。常见的目标检测算法有 YOLO 系
+列[15]、Fast-RCNN 系列[16]、SSD[17] 等。其中，YOLO 系
+列具有检测精度高、实时检测性能好等特点，更适合用
+于动态目标检测[18]。常见的目标跟踪算法有DeepSORT[19]、
+SiamRPN[20] 系列、Bytetrack[21] 等。其中，DeepSORT 算
+法可以提取目标外观特征对目标进行重识别，拥有更好
+的跟踪性能，能同时跟踪多个同类型目标并保持较少的
+ID 切换[22]。因此，本文拟采用改进的YOLOv5s+
+DeepSORT 算法，以YOLOv5s 作目标检测器、DeepSORT
+作目标跟踪器，用于对扰动状态下的柑橘进行在线目标
+检测与定位。
+ 
+1　材料与方法
+通过在线检测与跟踪扰动柑橘的运动，基于其运动
+轨迹对柑橘的停留位置预测定位。首先在YOLOv5s 骨
+干网络中加入CBAM[23] 注意力机制，改善对复杂目标的
+检测能力；并采用关注方向信息的SIoU[24] 边界框回归
+损失函数替换原有的CIoU[25] 损失函数，提升回归收敛
+速度；其次在DeepSORT 算法中，改进ReID 特征提取
+网络，提升模型检测精度与准确度，同时融入Count 计
+数机制反馈每个跟踪目标的跟踪帧数，确定最优目标，
+实时更新扰动柑橘预测位置，提升算法预测定位的准确
+度。同时，结合深度相机排除距离较远的柑橘，且限制
+每次跟踪的目标不超过3 个，降低背景柑橘的影响，提
+升跟踪速度。最后，对上述改进模型进行逐一的试验验
+证，评估模型的性能与效果，以期提升采摘机器人连续
+采摘时的采摘效率。
+ 
+1.1　扰动柑橘的定位方法
+在果园环境下，通过人工模拟机器人采摘时柑橘的
+扰动，综合考虑果园环境下的各种复杂因素，如风力影
+响、机械臂碰撞、枝条承载重力变化等，经过多次反复
+试验，对扰动状态下柑橘的运动轨迹进行跟踪，绘制扰
+动轨迹如图1 所示，其中图1a 是对视频中编号为20 号
+的柑橘进行跟踪，图1b 是跟踪轨迹在坐标系中的运动轨
+迹示意。
+ 
+ 
+a. 扰动柑橘跟踪
+a. Disturbed citrus tracking
+b. 运动轨迹示意
+b. Schematic diagram of
+motion trajectory
+300
+400
+500
+X
+Y
+600
+700
+800
+900
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+1 900
+20
+65
+注：X、Y 轴坐标单位为像素，下同。
+Note: X, Y axis coordinates in pixels. The same below
+图1　复杂扰动状态下柑橘的运动轨迹示意
+Fig.1    Schematic diagram motion trajectory of citrus under
+complex disturbed state
+ 
+从跟踪轨迹可以看出，柑橘在复杂扰动条件下引起
+的扰动几乎没有规律，采用建立数学或物理模型的方法
+研究具有较大难度。本文的在线目标检测与快速定位方
+法主要分为目标检测、目标跟踪、快速定位三部分，其
+流程如图2 所示。
+ 
+ 
+骨干
+网络
+颈部
+卡尔曼滤
+波预测
+匈牙利匹
+配算法
+卡尔曼滤
+波更新
+轨迹1
+轨迹2
+轨迹3
+轨迹n
+最优
+轨迹
+位置
+预测
+准确度
+评估
+...
+改进YOLOv5s目标检测算法
+定位与评估
+改进DeepSORT目标跟踪算法
+检测1
+检测2
+检测3
+图2　扰动柑橘检测与定位流程
+Fig.2    Disturbance citrus detection and localization framework
+ 
+1) 在线目标检测：改进具有高精度和良好实时检测
+性能的YOLOv5s 算法进行目标检测，提升在自然环境
+下的检测性能。
+2) 目标跟踪：优化具有深度学习特征提取网络的
+DeepSORT 多目标跟踪算法，提升对扰动柑橘的跟踪性
+能，主要由卡尔曼滤波算法[26]、匈牙利匹配算法[27] 以
+及ReID 网络组成。
+3) 快速定位：结合扰动柑橘的扰动范围随时间逐渐
+减小，且扰动逐渐趋于范围内中心点的特点，无论柑橘
+受到哪种形式的复杂扰动，通过扰动柑橘的实时运动轨
+迹可对其静止时位置做出预测。具体如下：对扰动柑橘
+进行跟踪和绘制轨迹的同时，通过计数每个扰动柑橘的
+跟踪帧数，以其中跟踪到帧总数最多的一个目标作为最
+优跟踪目标，对其已有轨迹取上、下、左、右4 个顶点
+值，通过4 个顶点值计算出一个中心点坐标，即为此时
+刻预测扰动柑橘的XY 轴坐标，因扰动柑橘运动范围随
+时间逐渐减小，因此对各时刻运动轨迹的4 个顶点值进
+行实时更新，可以更精确预测定位XY 坐标。同理，Z 轴
+坐标通过双目相机获取，在扰动柑橘距离双目相机的最
+近点与最远点中，实时取中间点作为Z 轴坐标。
+ 
+1.2　数据集制作
+使用手机和相机分别在晴天、阴天的不同时间段内，
+以不同角度采集柑橘树上果实图片共721 张。为了增加
+柑橘目标检测的泛化能力，从网络上获取柑橘图片30 张，
+并从视频数据集中截取图片220 张，数据集图片共
+971 张，按8:2 划分训练集与验证集。为了对柑橘进行有
+效检测与跟踪，将数据集分为有遮挡和无遮挡两类，其
+中无遮挡的标记为“orange”、有遮挡的标记为“branch”，
+通过Labelimg 工具进行标注保存。在数据集训练过程中，
+采用数据增强的方式对训练集数据进行扩充，分别对图
+片进行缩放、裁剪、翻转、Mosaic 处理等。
+视频数据集采用手机和深度相机在固定位置进行拍
+摄，位于扰动柑橘正前方约30～60 cm。采用人工随机
+采摘模拟柑橘的复杂扰动，共录制柑橘从扰动状态到完
+　 156
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+全静止的视频21 个，保存为MP4 格式。随机选择7 个
+视频作为DeepSORT 跟踪算法的特征提取网络的训练集，
+3 个作为测试集，采用DarkLabel 2.4 标注软件进行标注
+并保存。剩余11 个视频作为预测定位准确率评估数据集。
+ 
+2　算法改进
+ 
+2.1　YOLOv5 检测算法改进
+YOLO 系列算法是目前主流的目标检测算法，其中，
+YOLOv5 模型具有参数量少、精度高、速度快、鲁棒性好
+等优点，大量研究以其为基础将模型广泛应用于实际采
+摘场景中，且其在与DeepSort 算法结合时具有稳定的检测
+性能[28-31]。因此，本文选用改进YOLOv5s 作为基础目标
+检测模型。该模型主要由以下几部分构成：输入（Input）、
+骨干网络（Backbone）、颈部（Neck）和输出（Output）。
+ 
+2.1.1　改进YOLOv5s 网络模型
+YOLOv5s 应用于自然环境下柑橘检测时，受光照影
+响较大，且在扰动状态下对柑橘实时检测会产生运动模
+糊，算法检测的精度和鲁棒性不足[32-34]。因此，本文对
+YOLOv5s 模型进行如下改进：在YOLOv5s 的骨干网络
+中使用融合CBAM 注意力机制的CBAMC3 模块取代原
+有的C3 模块，使网络模型更加关注于重要的局部特征
+信息，在保证实时检测的基础上，提高柑橘检测精度，
+改善小目标和遮挡目标的检测效果。同时，考虑到边界
+框回归之间的向量角度，使用关注方向信息的SIoU 损失
+函数作为边界框损失函数，重新定义惩罚指标，提升模
+型回归收敛速度，改进模型如图3 所示。
+ 
+ 
+Focus CBS CBAMC 3×3
+SPPF
+CBS CBAMC 3×6
+CBS CBAMC 3×9
+CBS CBAMC 3×3
+CBS
+Upsample
+Concat
+CBS
+Upsample
+Concat
+C3×3 
+C3×3 
+C3×3 
+C3×3 
+CBS
+Concat
+CBS
+Concat
+Conv
+Conv
+Conv
+80×80×256
+40×40×512
+20×20×1 024
+输入Input
+Backbone
+Neck
+输出
+Output
+Focus =
+=
+=
+=
+=
+Slice
+Slice
+Slice
+Slice
+Concat
+CBS
+CBS
+Conv
+BN
+SiLU
+SPPF
+CBS
+Concat
+CBS
+MaxPool
+MaxPool
+MaxPool
+C3×n
+CBS BottleNeck×n
+CBS
+CBS
+BottleNeck 
+CBS CBS
+Concat
+注：Focus 为切片操作，将通道数扩展4 倍；Slice 为切片后的特征图；Concat 为特征融合；CBS 为卷积模块，进行卷积操作并进行批归一化处理，由
+Conv 卷积、BN 批归一化和SiLU 激活函数组成；C3 为残差卷积模块，其中BottleNeck×n 表示进行n 次残差操作；CBAMC3 为改进的C3 模块；SPPF 为空
+间金字塔池化模块，对不同尺度的特征图进行池化操作，MaxPool 为最大池化；Upsample 为上采样。
+Note: Focus is the slicing operation, which expands the number of channels by 4 times; Slice is the feature map after slicing; Concat is the feature fusion; CBS is the
+convolution module, which carries out the convolution operation and batch normalisation, and consists of the Conv convolution, the BN batch normalisation and the
+SiLU activation function; C3 is the residual convolution module, in which BottleNeck×n means to carry out the residual n times operations; CBAMC3 is the improved
+C3 module; SPPF is the spatial pyramid pooling module, which performs pooling operations on feature maps at different scales, with MaxPool being the maximum
+pooling; and Upsample is the upsampling.
+图3　改进的YOLOv5s 网络模型
+Fig.3    Improved YOLOv5s network model
+  
+2.1.2　CBAMC3 模块
+CBAM 注意力机制是一个简单有效的前馈卷积神经
+网络注意力模块，由通道注意力模块(channel attention
+module，CAM) 和空间注意力模块(spatial  attention
+module，SAM) 组成。CBAM 注意力机制将通道和空间
+两个维度融合，使模块关注重要特征而抑制不必要的特
+征，提高卷积神经网络(convolutional neural network，
+CNN) 的表征能力，有效改善柑橘小目标和遮挡目标难
+以检测的问题。CBAM 结构如图4 所示。
+通道注意力模块将输入特征F(h×w×c) 分别经过宽
+度和高度的全局最大池化和全局平均池化得到两个
+1×1×c 的特征图，再将两个特征图送入共享多层感知机
+Mc (F)
+(multilayer perceptron,MLP)，输出进行相加操作并经过
+Sigmoid 激活函数，最终生成通道注意力特征
+。计
+算如式(1) 所示：
+Mc (F) = σ(MLP(MaxPool(F))+MLP(AvgPool(F)))
+（1）
+Mc (F)
+F′
+式中σ 为Sigmoid 激活函数。最后，将
+与输入特
+征图做乘法生成空间注意力模块的输入特征
+，计算如
+式（2）所示：
+F′ = Mc (F)⊗F
+（2）
+空间注意力模块先沿着通道轴做全局最大池化与全
+局平均池化操作得到2 个h×w×1 的特征图，再将这2 个
+第 18 期
+娄欢欢等：无规则扰动状态下柑橘果实在线目标检测与快速定位
+157 　
+
+Ms (F′)
+特征图做特征融合并经过7×7 的卷积操作，最后经过
+Sigmoid 函数生成空间注意力特征
+。计算如式（3）
+所示：
+Ms
+(F’) = σ(f 7×7 ([AugPool(F′);MaxPool(F′)]))
+（3）
+式中f 为对特征图做7×7 的卷积操作。
+ 
+ 
+Channel attention
+module
+Spatial attention
+module
+F
+F
+MaxPool
+AvgPool
+Shared MLP
+Channel
+attention
+Mc
+F′
+MaxPool
+AvgPool
+×
+×
++
+Conv
+layer
+Spatial
+attention
+Ms
+Refined feature
+F′
+F′′
+F′
+F
+′′
+注：F 为通道注意力模块的输入特征、
+为空间注意力模块的输入特征、
+为输出特征。
+Note:  F  is  the  input  feature  of  the  channel  attention  module,  F'  is  the  input
+feature of the spatial attention module, and F'' is the output feature.
+图4　CBAM 注意力机制
+Fig.4    CBAM attention mechanism
+ 
+F′′
+与输入特征做乘法生成
+，计算如式(4) 所示：
+F′′ = Ms (F′)⊗F′
+（4）
+C3 模块是YOLOv5 模型骨干网络中的最重要组成
+模块之一，结合了多个卷积核进行卷积操作，由3 个卷
+积模块(CBS)、1 个残差网络模块(BottleNeck) 组成，另
+有1 个特征融合(Concat) 操作，其主要作用是增加模型
+的感受野并减少计算参数量，从而提高模型性能与效率。
+在C3 模块第3 个卷积模块后加入CBAM 注意力机
+制构成CBAMC3 模块，如图5a 所示。使用CBAMC3
+模块替换骨干网络中所有C3 模块，可以有效增加网络
+的特征提取能力，提升检测性能。其中，BottleNeck 模
+块和CBS 模块结构如图5b、5c 所示。
+ 
+ 
+a. CBAMC3模块
+a. CBAMC3 module
+b. BottleNeck模块
+b. BottleNeck module
+c. CBS模块
+c. CBS module
+=
+N×BottleNect
+…
+Concat
+CBS
+CBAM 
+attention
+CBS
+CBS
+Input feature
+=
+w×h×c
+w×h×c/2
+w×h×c/2
+w×h×c
+w×h×c
+w×h×c
+BottleNect
+CBS
+CBS
+w×h×c/2
+w×h×c/2 w×h×c/2
++
+=
+CBS
+SiLU
+BN
+Conv
+w×h×c/2
+注：w、h 和c 分别表示特征图的宽、高和通道数，N 表示有N 个
+BottleNeck 模块。
+Note: w、h and c denote the width, height and number of channels of the feature
+map, respectively. N denotes that there are N BottleNeck modules.
+图5　CBAMC3 结构
+Fig.5    CBAMC3 structure
+ 
+2.1.3　损失函数改进
+边界框损失函数是计算预测框与标定框之间误差的
+函数，使检测的目标定位更加接近真实值。为加快柑橘
+目标检测模型的回归速度以及提高模型检测准确率，对
+边界框损失函数进行优化。在原YOLOv5s 模型中，边
+界框损失函数采用CIoU 损失函数计算，但CIoU 只考虑
+预测框与标定框中心点之间的距离、宽高比以及重叠部
+分面积，未考虑预测框与标定框之间的方向不匹配，导
+致回归收敛速度慢。
+Λ
+∆
+Ω
+针对以上问题，本文采用SIoU 损失函数作为边界框
+损失函数，进一步考虑预测框与标定框之间的向量角度，
+重新定义了相关的损失函数，包含4 个部分：角度损失
+、距离损失、形状损失
+以及SIoU 损失。公式如下：
+角度损失：
+Λ = 1−2sin2 (
+arcsin
+( ch
+σ
+′
+)
+−π
+4
+)
+（5）
+ch
+σ
+′
+式中
+为预测框与标定框中心点的高度差，
+为预测框
+与标定框中心点的距离。
+Λ
+∆
+根据角度损失，距离损失公式如下：
+∆=
+∑
+t=x,y
+(
+1−e−(2−Λ)ρt)
+（6）
+ρt表示ρx或ρy
+ρx =
+(bgt
+cx −bcx
+Cw
+)2
+ρy =
+(bgt
+cy −bcy
+Ch
+)2
+Cw
+Ch
+bgt
+cx
+bgt
+cy
+bcx
+bcy
+式中
+，其中
+, 
+，
+和
+分别是预测框与标定框最小外接矩形的宽和高，
+和
+分别是标定框中心横坐标与纵坐标，
+和
+分别
+是预测框中心横坐标与纵坐标。
+Ω
+形状损失
+如下：
+Ω=
+∑
+t=w,h
+(1−e−ωt)θ
+（7）
+ωt
+ωw ωh
+ωw =
+|w−wgt|
+max(w,wgt)
+ωh =
+|h−hgt|
+max(h,hgt)
+wgt
+hgt
+θ
+式中
+表示
+，其中
+，
+，w 和h 分别为预测框的宽与高，
+和
+分
+别为标定框的宽与高，表示对形状损失的关注度，其数
+值为1。
+IoU 损失如下：
+IoU =
+B∩BGT
+|B∪BGT|
+（8）
+B∩BGT
+B∪BGT
+式(8) 表示预测框与标定框之间的交并比，其中
+表示两框之间的交集，
+表示两框之间的并集。
+因此，SIoU 损失函数的定义如下：
+LSIoU = 1−IoU+ ∆+Ω
+2
+（9）
+ 
+2.2　DeepSORT 跟踪算法改进
+DeepSORT 算法采用了卡尔曼滤波算法与匈牙利匹
+配算法作为基础，具有ReID 特征提取网络以及采用级
+联匹配策略，同时考虑了目标的运动特征与外观特征。
+由于柑橘果实外观极为相似，在使用DeepSORT 算法跟
+踪扰动柑橘时，原始的ReID 网络结构简单，特征提取
+效果并不理想，跟踪过程中仍会导致大量的ID 切换。因
+　 158
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+此本文对原始的ReID 网络进行改进，增强ReID 网络的
+特征提取能力，减少跟踪过程中的ID 切换。同时，在算
+法每次进行卡尔曼滤波更新后，融入Count 计数器累加
+跟踪的帧数值，在跟踪后进行最优轨迹判断。改进的
+DeepSORT 算法及其结构如图6 所示。
+ 
+ 
+改进
+YOLOv5检测
+级联匹配
+轨迹
+卡尔曼滤波
+预测
+最优轨迹
+IOU匹配
+是否新轨迹?
+是否小于
+最大寿命?
+最大Count?
+匹配轨迹
+未匹配检测
+新轨迹
+卡尔曼滤波
+更新
+Count+1
+位置预测
+未确定态
+确定态
+新轨迹连续关联3次
+后为确定态
+否
+是
+是
+未匹配轨迹
+未匹配检测
+匹配轨迹
+未匹配轨迹
+图6　改进的DeepSORT 算法与位置预测结构
+Fig.6    Improved DeepSORT algorithm and localization structure
+ 
+2.2.1　ReID 网络改进
+DeepSORT 算法原始的ReID 网络由2 个卷积层、1
+个最大池化层和6 个残差网络模块组成，输出为128 维
+向量表示目标的外观特征，并将特征投影到单位超球面
+上。针对柑橘果实具有极高相似性导致ID 大量切换的问
+题，结合柑橘形状近似圆的特点，改进算法的图片输入
+尺寸为64×64(宽×高)，提升柑橘重识别准确率；同时，
+加深ReID 网络模型深度，采用具有更好性能的特征提
+取网络提取特征，该网络在ZQPei[35] 提出的ReID 网络
+上进行改进，其结构如表1 所示。
+ 
+ 
+表 1    改进的ReID 网络结构
+Table 1    Improved ReID network structure
+名称
+Name
+大小/步长
+Size/stride
+输出大小
+Output size
+Input
+−
+3×64×64
+Conv
+3×3 / 1
+64×64×64
+MaxPool
+3×3 / 2
+64×32×32
+BasicBlock1 × 2
+3×3 / 1
+64×32×32
+BasicBlock2 × 2
+3×3 / −
+128×16×16
+BasicBlock2 × 2
+3×3 / −
+256×8×8
+BasicBlock2 × 2
+3×3 / −
+512×4×4
+AvgPool
+4×4 / 1
+512×1×1
+Dense
+256
+ 
+改进的特征提取网络结构主要包括1 个卷积层
+(Conv)、1 个最大池化层(MaxPool)、8 个残差模块
+(BasicBlock) 以及1 个平均池化层(AvgPool)，经过全链
+接层(Dense) 后输出为256 维向量表示目标的外观特征。
+ 
+2.2.2　融入Count 计数机制
+进行柑橘采摘时，相机检测范围内常存在多个柑橘，
+且在扰动状态下柑橘位置时刻发生变化，在定位时，难
+以确定对哪一个柑橘进行定位准确率最高。针对此问题，
+本文在整个DeepSORT 算法的基础上，融入Count 计数
+机制，在每次卡尔曼滤波更新后生成新轨迹点时实现计
+数+1，用于统计每个跟踪目标的被跟踪的帧数。在跟踪
+时，通过Count 的值，可以得到每个目标当前在时间段
+内跟踪的总帧数，最后比较Count 值的大小可以确定一
+个最优跟踪目标。其中，最大Count 值表示跟踪到目标
+的轨迹最完整，对此目标预测会得到最好的预测结果。
+ 
+2.3　实时更新预测坐标值
+准确的定位是对目标精准采摘的关键，柑橘在受到
+外界因素产生扰动时，扰动幅度会随时间逐渐减小，直
+至幅度为0 时保持静止状态。在复合扰动状态下，分别
+绘制在时间为1、2、3、4、5、7、10 s 时以及柑橘最终
+停留位置时运动轨迹示意图，如图7 所示。
+ 
+ 
+i. 不同时间内预测柑橘位置
+i. Predicting citrus locations at different times
+t=1 s
+t=2 s
+t=3 s
+t=4 s
+t=5 s
+t=7 s
+t=10 s
+最终Final
+350
+300
+400 450
+X
+500 550
+Y
+1 650
+1 625
+1 600
+1 675
+1 700
+1 725
+1 750
+1 775
+1 800
+a. 1 s
+b. 2 s
+c. 3 s
+d. 4 s
+e. 5 s
+f. 7 s
+g. 10 s
+h. 最终停留位置
+h. Final resting place
+300
+200
+400 500
+X
+Y
+600 700
+300
+200
+400 500
+X
+600 700
+300
+200
+400 500
+X
+600 700
+300
+200
+400 500
+X
+600 700
+300
+200
+400 500
+X
+600 700
+300
+200
+400 500
+X
+600 700
+300
+200
+400 500
+X
+600 700
+300
+200
+400 500
+X
+600 700
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+(461.0, 1 683.5)
+(427.5,1 756.8)
+(474.8, 1 745.8)
+(462.8, 1 752.0)
+(444.0, 1 746.5)
+(453.8, 1 745.8)
+(477.8, 1 736.5)
+(471.2, 1 729.9)
+图7　不同时刻预测中心点位置值变化
+Fig.7    Changes in predicted center point position values at
+different times
+ 
+图7i 表示不同时间内柑橘预测位置分布，可以看出，
+1 s 时柑橘扰动范围较大，3 s 时扰动范围基本趋于稳定，
+当大于3 s 时其预测定位点与最终停留位置只有微小差
+距。即时间t 值越大，轨迹更新范围越小，其位置预测
+第 18 期
+娄欢欢等：无规则扰动状态下柑橘果实在线目标检测与快速定位
+159 　
+
+的坐标值越接近最终停留位置的坐标值。因此，在算法
+中，采用对每个坐标值实时进行最大值最小值比较，对
+XY 平面中运动轨迹的4 个顶点坐标值进行实时更新，确
+保输出XY 定位坐标是当前时刻最新的坐标值，即此刻
+是轨迹范围最小时的运动轨迹。同理，对双目相机测定
+的Z 轴坐标值进行实时更新，提升扰动柑橘预测停留位
+置的三维坐标定位精度。
+ 
+2.4　结合深度相机优化跟踪目标
+果园环境复杂，在采摘时存在多个柑橘目标，距离
+较远的目标在采摘过程中通常被视为背景目标，背景目
+标的存在会影响跟踪算法的跟踪速度。在采摘过程中，
+根据采摘机器人的采摘距离，限制深度相机到扰动柑橘
+的距离在某个区间内，可以排除背景目标的干扰，减少
+算法运行时的计算量，从而提升算法整体定位速度。同
+时，在限定的这个区间内仍可能存在多个被检测到的目
+标，若对这些目标都进行跟踪，跟踪速度可能受到影响。
+随机选取3 个视频，对不同数目的扰动柑橘进行跟
+踪，分别在柑橘数目为1、2、3、4、5、7、10 个以及不
+限制柑橘数目时进行测试，同时对不同跟踪数目下的速
+度取平均值，统计结果如表2 所示。
+ 
+ 
+表 2    不同柑橘跟踪数目对跟踪速度影响
+Table 2    The effect of different citrus tracking numbers on tracking
+speed
+数目
+Number
+1
+2
+3
+4
+5
+7
+10
+不限制
+Unlimited
+帧率
+FPS/(帧·s−1)
+37.4
+35.1
+31.4
+29.1
+18.4
+16.4
+15.4
+11.2
+ 
+由表2 可以看出，在跟踪柑橘时，不同数目的柑橘
+的跟踪速度具有一定的差异。由于需要保证跟踪算法的
+实时跟踪性能，本文中，限制柑橘目标跟踪数为3 个，
+此时的跟踪速度比不限制柑橘数目时的跟踪速度提升
+20.2 帧/s。因此，通过深度相机优化跟踪目标，保证跟
+踪精度的同时，确保跟踪的实时性。
+ 
+3　试验与评估
+ 
+3.1　评估指标
+ 
+3.1.1　改进YOLOv5s 算法评估指标
+采用准确率(Precision，P)、召回率(Recall，R)、平
+均检测精度均值(mean average precision，mAP)、检测速
+率和模型权重大小作为改进的YOLOv5s 目标检测算法
+的评估指标。其中P、R、mAP 的计算如式（10）～（13）
+所示：
+P =
+TP
+TP + FP
+×100%
+（10）
+R =
+TP
+TP + FN
+×100%
+（11）
+AP =
+w 1
+0PdR
+（12）
+mAP = 1
+N
+N
+∑
+i=1
+AP (i)
+（13）
+TP
+FP
+FN
+AP
+其中
+表示被正确地检测为正样本的数量；
+表示被错
+误地检测为正样本的数量；
+表示漏检的正样本数量；
+式（12）中的
+表示P-R 曲线的面积；N 表示检测类别
+数，本文中分为两类，故N=2。
+ 
+3.1.2　改进DeepSORT 算法评估指标
+DeepSORT 算法的性能评估采用TrackEval 工具，主
+要的评估指标有：跟踪准确度MOTA(multi-object
+tracking accuracy)、跟踪精度MOTP(multi-object tracking
+precision)、目标ID 切换次数IDSW(identity switches) 以
+及跟踪速率。
+MOTA 是除去跟踪过程中所有漏检、误检以及错误
+匹配后的正确匹配占比，数值越大表明跟踪性能越好，
+计算式如（14）所示。
+MOTA = 1−
+∑
+t (FNt + FPt + IDS Wt)
+∑
+tGTt
+（14）
+t
+GTt
+t
+FNt
+t
+FPt
+t
+IDS Wt
+其中为帧索引值；
+为第帧真实标定框数量；
+为
+第帧未跟踪到的目标数量；
+为第帧错误跟踪目标的
+数量；
+为第t 帧ID 跳变的次数。
+MOTP 主要衡量标定框与预测框之间的位置误差，
+其计算式如（15）所示。
+MOTP =
+∑
+t,i dt,i
+∑
+t ct
+（15）
+ct
+dt,i
+其中为第t 帧中匹配成功的数目；
+为第t 帧检测框与
+真实框的距离。
+IDSW 表示跟踪过程中目标ID 切换的次数，其数值
+越小越好。
+ 
+3.1.3　扰动柑橘停留位置预测评估指标
+采摘机器人进行柑橘采摘过程中，机械臂末端执行
+器通常适合采摘不同尺寸的柑橘，采摘中等或较小尺寸
+柑橘时，末端执行器有较大部分剩余空间。如图8a 所示，
+末端执行器手爪上下、左右边缘与柑橘之间存在一定的
+间隙，手爪向内运动将柑橘置于果柄可剪切位置，由剪
+刀进行剪切，柑橘上下左右的间隙为剩余空间。因此，
+图像中的定位坐标（像素坐标系）与末端执行器坐标（末
+端执行器坐标系）具有一定的偏差，仍可对柑橘进行采
+摘。利用末端执行器在一定的定位误差范围内可以进行
+正常采摘的特点，将扰动柑橘在像素坐标下预测定位坐
+标与末端执行器坐标系联系起来，建立基于误差范围内
+的准确度评估指标。如图8b、8c 所示。
+柑橘与末端执行器的横向尺寸最大允许误差为
+(N+M) mm，纵向尺寸最大允许误差为(X+Y) mm，根据
+末端执行器坐标系向像素坐标系的变换，可以得到图像
+中指标圆的半径为R，圆的半径R 计算公式为
+R = (N + M + X +Y)
+4
+×∅
+（16）
+∅
+其中 
+表示从末端执行器坐标系转换为像素坐标系的坐
+标变换参数，其值根据深度相机与机器人的手眼标定获
+取。将指标圆均分为100 份，从1% 至100% 作为评估
+准确度指标，如图9 所示。
+　 160
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+ 
+a. 末端执行器模型
+a. Model of end-
+effector
+b. 横向误差范围
+b . Horizontal
+error range
+c. 纵向误差范围
+c. Longitudinal
+error range
+Nmm
+Mmm
+Xmm
+Ymm
+图8　末端执行器与误差范围
+Fig.8    End-effector and error range
+ 
+ 
+ 
+100%
+1%
+50%
+注：准确度数值由圆心向外逐渐减少。
+Note: Accuracy value decreases gradually from the centre of the circle outwards.
+图9　准确度指标圆示意图
+Fig.9    Schematic diagram of accuracy indicator circle
+ 
+若预测坐标在圆外侧，此时两坐标中心点之间的欧
+式距离d＞R，则定位预测失败，如图10a 所示，图例中
+“Orange”表示柑橘真实停留位置，“Predicted”表示
+柑橘的预测位置；当预测坐标与实际停留坐标完全重合
+时准确率p 为100%；当d<R 时，此时预测准确率数值
+依次由圆心向外减小，直至圆的边缘为1%，如图10b 所
+示，其准确率计算公式为
+p = d
+R ×100%
+（17）
+ 
+ 
+a. d＞R, 预测失败
+a. d＞R, prediction failed
+200 300 400 500 600 700
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+X
+200 300 400 500 600 700
+X
+Y
+1 500
+1 550
+1 600
+1 650
+1 700
+1 750
+1 800
+1 850
+Y
+Orange
+Predicted
+Orange
+Predicted
+b. d＜R, 计算准确度
+b. d＜R, calculation accuracy 
+图10　预测定位示意图
+Fig.10    Schematic diagram of predicted positioning
+ 
+ 
+3.2　性能评估及分析
+本文中数据集的训练采用的试验平台为远程服务器，
+Linux 操作系统，显卡型号为Tesla V100-PCIE，运行内
+存为32 GB，Python 版本为3.7，基于Pytorch 框架，
+torch 版本1.13。
+机器人型号为AUBO-i10 轻型 6 自由度协作机器人，
+有效负载10 kg，工作范围为半径1 350 mm 的球体空间
+区域。双目相机型号为ZED 2i，并排输出分辨率2×
+(1 280×720)，深度范围0.3～20.0 m。
+ 
+3.2.1　改进YOLOv5s 性能评估
+YOLOv5s 模型输入图片尺寸为640×640 像素，优化
+器采用随机梯度下降法SGD(stochastic gradient descent)，
+批量大小（batch_size）为32，进程（works）为8，学
+习率为0.01，训练次数800 次。
+为了验证CBAM 注意力机制的有效性，分别在
+YOLOv5s 主干网络中同一位置中加入不同的注意力机制
+进行对比试验，对比组分别有YOLOv5s、YOLOv5s+
+CA、YOLOv5s+SENet、YOLOv5s+SimAM、YOLOv5s+
+CBAM，试验结果如表3 所示。
+ 
+ 
+表 3    不同注意力机制性能对比结果
+Table 3    Performance comparison results of different attention
+mechanisms
+模型
+Model
+准确率
+Precision
+/%
+召回率
+Recall
+/%
+平均检测精度均值
+Mean average precision
+mAP/%
+帧率
+Frame per second
+FPS/(帧·s−1)
+YOLOv5s
+92.6
+87.1
+92.2
+69.4
++CA
+93.7
+85.1
+91.7
+68.1
++SENet
+92.9
+88.6
+92.5
+66.9
++SimAM
+93.4
+84.9
+92.3
+68.3
++CBAM
+95.0
+88.9
+93.4
+68.7
+ 
+由表3 可以看出，与YOLOv5s、YOLOv5s+CA、
+YOLOv5s+SENet、YOLOv5s+SimAM 相比、YOLOv5s+
+CBAM 的准确率分别提高2.4、1.3、2.1、1.6 个百分点，
+召回率分别提高1.8、3.8、0.3、4.0 个百分点，平均检测
+精度分别提高1.2、1.7、0.9、1.1 个百分点。因此，在模
+型检测帧率没有明显差异的情况下，YOLOv5s+CBAM
+模型均比其他对比组注意力机制模型表现优异，验证了
+YOLOv5s+CBAM 的具有较好的性能。
+同时，为了验证SIoU 损失函数对模型性能的提升，
+在YOLOv5s 模型中使用不同的损失函数进行对比试验。
+试验包括CIoU、DIoU、EIoU、GIoU、SIoU 共5 组损失
+函数，试验结果如表4 所示。
+ 
+ 
+表 4    不同损失函数性能对比
+Table 4    Performance comparison of different loss functions
+模型
+Model
+准确率
+Precision/%
+召回率
+Recall/%
+平均检测精度均值
+Mean average precision
+mAP/%
+帧率
+Frame per second
+FPS(帧·s−1)
+CIoU
+92.6
+87.1
+92.2
+69.4
+DIoU
+94.1
+85.3
+91.8
+68.9
+EIoU
+95.1
+84.7
+91.6
+70.4
+GIoU
+95.6
+84.6
+91.6
+69.9
+SIoU
+93.3
+87.0
+92.3
+71.3
+ 
+由表4 可以看出，与CIoU、DIoU、EIoU、GIoU 损
+失函数相比，SIoU 损失函数的mAP 分别提升0.1、0.5、
+0.7、0.7 个百分点，FPS 分别提升1.9、2.4、0.9、1.4 帧/s。
+在模型准确率和召回率没有较大差异的情况下，SIoU 损
+失函数的mAP 和检测帧率优于其他损失函数模型。因此，
+SIoU 损失函数可以有效提升模型的检测速率，同时提升
+检测性能。
+为了验证改进的YOLOv5s 的有效性，设计了消融
+试验，对加入的CBAM 注意力机制和SIoU 损失函数进
+行性能验证，试验结果如表5 所示。
+第 18 期
+娄欢欢等：无规则扰动状态下柑橘果实在线目标检测与快速定位
+161 　
+
+ 
+表 5    改进的YOLOv5s 消融试验性能对比
+Table 5    Comparison of the performance of the improved YOLOv5s ablation experiments
+序号
+Index
+YOLOv5s
+SIOU
+CBAMC3
+准确率
+Precision/%
+召回率
+Recall/%
+平均检测精度均值
+Mean average precision
+mAP /%
+帧率
+Frame per second
+FPS/(帧·s−1)
+模型大小
+Model size
+/MB
+1
+√
+92.6
+87.1
+92.2
+69.4
+14.2
+2
+√
+√
+93.3
+87.0
+92.3
+71.3
+14.1
+3
+√
+√
+95.0
+88.9
+93.4
+68.7
+14.3
+4
+√
+√
+√
+96.5
+88.7
+93.3
+69.3
+14.2
+ 
+表5 试验结果表明，改进的YOLOv5s 在原YOLOv5s
+的基础上，准确率提升3.9 个百分点、 召回率提升1.6
+个百分点、平均检测精度均值提升1.1 个百分点，检测
+速率和模型权重大小没有明显变化。
+使用上述模型对不同数量柑橘以及不同复杂背景的
+柑橘图片进行检测，检测效果如图11 所示，统计漏检和
+误检数量如表6 所示。
+ 
+ 
+检测 1
+Detections 1
+检测 2
+Detections 2
+检测 3
+Detections 3
+a. 原始图片
+a. Original
+images
+b. YOLOv5s c. YOLOv5s
++SIoU
+d. YOLOv5s
++CBAMC3
+e. 改进
+YOLOv5s
+e. Improved
+YOLOv5s
+图11　YOLOv5s 及其改进模型检测效果对比
+Fig.11    Comparison of detection performance between YOLOv5s
+and its improved model
+ 
+表 6    YOLOv5s 及其改进模型漏检与误检统计
+Table 6    Missed and false detection statistics for YOLOv5s and its
+improved models
+检测
+Detection
+漏检
+与误检
+Missed and
+false detections
+YOLOv5s YOLOv5s+
+SIOU
+YOLOv5s+
+CBAMC3
+改进YOLOv5s
+Improved
+YOLOv5s
+1
+漏检
+6
+1
+1
+0
+误检
+3
+3
+1
+1
+2
+漏检
+11
+4
+1
+1
+误检
+4
+3
+4
+2
+3
+漏检
+0
+0
+0
+0
+误检
+2
+1
+1
+1
+ 
+结合图11 与表6 统计结果可以看出：改进的
+YOLOv5s 模型的漏检和误检数量均少于其他模型，该模
+型在检测柑橘小目标和遮挡目标时具有更好的检测效果，
+总体检测性能优于其他3 个模型。
+ 
+3.2.2　改进DeepSORT 性能评估
+将7 个视频训练数据集分别用原始DeepSORT 网络
+模型和改进DeepSORT 网络模型进行训练，训练次数
+300 轮并得到相应的权重文件。为了验证改进ReID 网络
+跟踪性能，统一采用改进的YOLOv5s 作为目标检测器，
+分别将网络模型用于3 个视频评估数据集，并取均值得
+到结果如表7 所示。
+ 
+ 
+表 7    DeepSORT 中采用不同的ReID 网络性能评估试验
+Table 7    Performance evaluation experiments using different ReID networks in DeepSORT
+模型
+Model
+视频
+Video
+跟踪
+准确度
+MOTA/%
+跟踪精度
+MOTP/%
+ID 切换次数
+IDSW
+/次
+FPS/(帧·s−1)
+原始 ReID 网络
+Original
+ReID network
+1
+60.4
+81.4
+67
+34.3
+2
+57.0
+74.7
+89
+33.5
+3
+60.7
+79.3
+78
+33.7
+均值
+Means
+/
+59.4
+78.5
+78
+33.8
+改进ReID 网络
+Improved ReID network
+1
+70.3
+88.4
+39
+32.1
+2
+66.4
+78.6
+58
+30.1
+3
+69.1
+84.9
+42
+30.9
+均值
+Means
+/
+68.6
+83.9
+46
+31.0
+ 
+由表7 可以看出，改进ReID 网络的帧率虽降低2.8
+帧/s，但跟踪准确度与跟踪精度分别提升9.2、5.4 个百
+分点，ID 切换次数减少32 次，验证了改进的ReID 网络
+具有更好的跟踪性能。
+表8 为改进的YOLOv5s+DeepSORT 算法与其他主
+流的跟踪算法的试验对比。每组采用3 个相同的视频进
+行跟踪试验，并取每组各个评估指标的平均值。
+ 
+表 8    主流跟踪算法性能对比试验
+Table 8    Performance comparison test of different tracking
+algorithms
+模型
+Model
+跟踪
+准确度
+MOTA/%
+跟踪
+精度
+MOTP/%
+ID 切换次数
+IDSW/次
+帧率
+FPS
+/(帧·s−1)
+YOLOv5s+SORT
+40.2
+48.0
+127
+46.3
+YOLOv7s+DeepSORT
+56.2
+68.1
+79
+38.1
+YOLOv8s+Bot-SORT
+67.1
+78.2
+72
+32.1
+Byte-Tracker
+62.3
+77.1
+65
+34.6
+本文
+70.4
+82.1
+62
+31.3
+　 162
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+表8 的对比试验结果表明：本文算法的跟踪准确
+度与YOLOv5s+SORT、YOLOv7+DeepSORT、YOLOv8+
+Bot-SORT、Byte-Tracker 相比分别提升30.2、14.2、3.3、
+8.1 个百分点；跟踪精度分别提升34.1、14.0、3.9、5.0
+个百分点；ID 切换次数分别减少65、17、10、3 次；本文
+算法的检测速率是试验组中最低的，为31.3 帧/s。综上，
+试验表明本文算法具有最佳跟踪性能，帧率虽然低于其
+他算法，但仍可满足帧率大于30 帧/s 的实时跟踪需求。
+为了验证本文中所采用的检测算法与跟踪算法改进
+前后的有效性，采用逐次加入变量的方法对该算法进行
+对比试验，选取3 个相同的视频分别输入模型进行试验
+评估，得到试验结果如表9 所示。
+ 
+ 
+表 9    算法改进前后对比试验
+Table 9    Comparison test before and after algorithm improvement
+序号
+Index
+YOLOv5s
+改进YOLOv5s
+Improved YOLOv5s
+DeepSORT
+改进DeepSORT
+Improved DeepSORT
+MOTA/%
+MOTP/%
+IDSW/%
+FPS/
+(帧·s−1)
+1
+√
+√
+53.1
+67.2
+81
+34.2
+2
+√
+√
+65.2
+66.8
+74
+32.3
+3
+√
+√
+66.7
+72.0
+78
+34.7
+4
+√
+√
+70.4
+82.1
+62
+31.3
+ 
+从表9 中的试验结果可以看出，改进YOLOv5s+改
+进DeepSORT 算法的各项评估指标均高于改进前，检测
+速率有所下降，但也能达到实时检测的效果，说明了改
+进后的算法性能具有明显的提升。
+ 
+3.2.3　扰动柑橘定位准确度评估
+随机测量100 个柑橘的横向及纵向直径，得到横向
+平均直径为67.4 mm，纵向平均直径69.2 mm，采用横向
+与纵向尺寸均为100 mm 的末端执行器，计算得到位置
+预测评估指标圆的半径R=87 像素。随机选取5 个视频
+作为不同时间内预测定位准确度评估对象，预测时间分
+别为1、3、5、7、10 s，计算得到不同时间内预测准确
+度结果如表10 所示，对每个时间内的准确度取平均值，
+结果如表11 所示。
+ 
+ 
+表 10    不同时刻定位准确度评估
+Table 10    Assessment of positioning precision in
+different time periods
+序号
+Index
+时间
+Time/s
+准确度
+Precision/%
+视频 1
+Video 1
+1
+0
+2
+42.1
+3
+78.4
+5
+80.3
+7
+81.2
+10
+96.6
+视频 2
+Video 2
+1
+12.1
+2
+54.2
+3
+80.4
+5
+83.2
+7
+84.3
+10
+96.2
+视频 3
+Video 3
+1
+43.2
+2
+67.9
+3
+86.7
+5
+87.4
+7
+88.4
+10
+97.9
+视频 4
+Video 4
+1
+0
+2
+33.7
+3
+76.2
+5
+77.8
+7
+84.6
+10
+90.1
+视频 5
+Video 5
+1
+51.2
+2
+67.2
+3
+87.9
+5
+89.8
+7
+93.1
+10
+93.9
+从表10 以及表11 可以看出，对于不同的视频，当
+时间1、2、3、5、7、10 s 时，5 个视频预测定位的平均
+准确率分别为21.3%、53.0%、81.9%、83.7%、86.1%、
+94.9%。当时间为3 s 时，扰动柑橘位置预测效果如图12
+所示，其中绿色线条是柑橘的运动轨迹，红色圆圈表示
+预测准确度评估圆。
+ 
+ 
+表 11    5 个视频在不同时刻定位的平均准确度评估
+Table 11    Mean precision assessment of positioning of
+5 Video at different times
+时间Time/s
+1
+2
+3
+5
+7
+10
+平均准确度
+Means precision/%
+21.3
+53.0
+81.9
+83.7
+86.1
+94.9
+ 
+ 
+ 
+a. 对10号柑橘预测定位
+a. Predicted positioning
+for Citrus 10
+b. 对2号柑橘预测定位
+b. Predicted positioning
+for Citrus 2
+图12　扰动柑橘位置预测效果
+Fig.12    Predicted effects of disturbed citrus locations
+ 
+其中图12a 中对编号为10 号和2 号的柑橘进行轨迹
+绘制，经过Count 计数器累加跟踪帧数后，10 号柑橘
+Count 值大于2 号柑橘，因此对10 号柑橘进行预测定位，
+计算得到柑橘定位的准确率为83.1%。同理，在图12b
+中分别对编号为2 和5 的柑橘进行跟踪，对2 号柑橘进
+行预测定位，预测准确率为88.3%。
+ 
+3.2.4　扰动柑橘预测定位对抓取效率评估
+为了验证本文提出的快速定位方法在采摘过程中应
+用的有效性，在试验室采用盆栽柑橘进行模拟抓取试验，
+试验场景如图13 所示。分别模拟实际采摘过程中柑橘可
+能出现的各种扰动状态，将柑橘沿不同方位随机摆动(如
+上下摆动、左右摆动、前后摆动等，摆幅约为10 cm)，
+如图14 所示。扰动柑橘不仅需要满足实时快速定位，同
+时还具有较高的定位准确率，结合前文选择时间为3 s
+作为扰动柑橘最佳定位时间，通过对抓取时间进行统计，
+第 18 期
+娄欢欢等：无规则扰动状态下柑橘果实在线目标检测与快速定位
+163 　
+
+比较对扰动状态下的柑橘预测定位时间为3 s 和未预测
+定位两种情况下的抓取时间。并取每个柑橘抓取的平均
+时间得到结果如表12 所示。
+ 
+1. 控制箱 2. 电脑端 3. 机器人 4. 深度相机 5. 末端执行器 6. 柑橘
+1. Control box 2. Computer 3. Robot 4. Depth camera 5. End-effector 6. Orange
+图13　室内模拟抓取试验
+Fig.13    Indoor simulated gripping test
+ 
+由表12 可以看出，柑橘在无预测定位下的平均抓取
+时间为18.4 s，在时间为3 s 时预测定位下的平均抓取时
+间为12.8 s，时间缩短5.6 s，平均抓取效率提升30.4%，
+验证了采用本文中的定位方法对扰动柑橘采摘效率提升
+的有效性。
+ 
+a. 扰动柑橘摆动示意图
+a. Schematic of disturbed
+citrus oscillations
+b. 不同方位随机摆动
+b. Random oscillations
+at different positions
+静止位置
+Stationary
+position
+摆幅10 cm
+Swing approx10 cm
+a
+b
+c
+d
+e
+X
+Z
+Y
+O
+O
+释放位置
+Release
+position
+注：图b 中的a、b、c、d 和e 分别表示随机上下摆动、左斜45°摆动、前
+后摆动、右斜45°摆动和左右摆动。
+Note: a, b, c, d, and e in Fig. b indicate random up-and-down oscillations, left-
+oblique  45°  oscillations,  back-and-forth  oscillations,  right-oblique  45°
+oscillations, and left-right oscillations, respectively.
+图14　模拟扰动柑橘摆动示意图
+Fig.14    Schematic of simulated disturbance for citrus oscillations
+ 
+ 
+表 12    使用定位算法与未使用定位算法对扰动柑橘抓取效率影响对比试验
+Table 12    Comparison test of picking without predicted positioning and with predicted positioning time 3 s
+(s)
+试验编号
+Test No.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+均值
+Means
+未预测定位
+Unpredicted positioning
+16.2
+19.8
+21.2
+17.3
+18.6
+17.4
+16.2
+18.4
+21.2
+17.6
+18.4
+3 s 预测定位
+3 s predicted positioning
+12.4
+11.9
+13.4
+12.7
+12.3
+13.0
+12.5
+12.1
+13.8
+14.1
+12.8
+ 
+ 
+4　结　论
+1) 扰动状态下柑橘在线目标检测与快速定位对机械
+化自动采摘有着重要的意义，本文采用机器视觉和深度
+学习的方法具有时间短、准确度高的特点，为扰动状态
+下的柑橘检测与快速定位提供一种新的途径。同时，该
+方法可为其他扰动状态下水果快速定位提供参考。
+2) 在YOLOv5s 骨干网络的C3 模块中加入CBAM
+注意力机制，并使用SIoU 损失函数得到改进的YOLOv5s
+检测算法，改善了对柑橘小目标和遮挡目标的检测性能，
+提升了检测速度。改进的YOLOv5s 算法准确率、召回
+率、平均检测精度均值比改进前分别提升了3.9、1.6、
+1.1 个百分点，平均检测速率69.3 帧/s。
+3) 改进DeepSORT 中的ReID 网络，更适用于柑橘
+目标的特征提取，同时采用Count 计数机制反馈柑橘跟
+踪帧数以选择最优目标进行位置预测。改进DeepSORT
+算法的跟踪精确度，跟踪准确度值分别提升了9.2、5.4
+个百分点，ID 切换次数减少了32 次。
+4) 对扰动柑橘的运动轨迹预测时，采用对XY 平面
+运动轨迹的上、下、左、右四个顶点值和Z 轴深度坐标
+实时更新的方法，可以更加精确对柑橘进行定位。并结
+合深度相机排除背景柑橘的干扰，同时限制每一次跟踪
+柑橘数为3 个，跟踪速度比不限制柑橘跟踪数时提升
+20.2 帧/s，有效提升了扰动柑橘的定位速度。
+5) 对扰动柑橘定位，当时间分别为1、2、3、5、7
+和10 s 时，扰动柑橘定位的平均准确率分别为21.3%，
+53.0 %，81.9 %、83.7 %、86.1 %、94.9 %。实验室采用
+盆栽柑橘进行模拟抓取试验，且将柑橘预测定位时间定
+为3 s 时，每个柑橘平均抓取时间为12.8 s，比无预测定
+位情况下其时间缩短5.6 s，平均采摘效率提升30.4 %。
+[ 参    考    文    献]
+ 
+ 毛海欧，祁春节. 新冠肺炎疫情对中国柑橘贸易的影响研
+究[J]. 中国果树，2023(8)：131-135.
+MAO  Haiou,  QI  Chunjie.  A  study  on  the  impact  of  the  new
+nrown  pneumonia  epidemic  on  China's  citrus  trade[J].  China
+Fruits, 2023(8): 131-135. (in Chinese with English abstract)
+[1]
+ 鲍秀兰，马志涛，马萧杰，等. 丘陵果园自然环境下柑橘
+采摘机器人设计与试验[J/OL]. 农业机械学报：1-13. [2024-
+03-24].
+ http://dx.
+ doi.org/10.6041/j.issn.1000-1298.2024.
+04.012
+BAO  Xiulan,  MA  Zhitao,  MA  Xiaojie.  et  al.  Design  and
+Experiment of Citrus Picking Robot in Hilly Orchard Natural
+Environment[J/OL].  Transactions  of  the  Chinese  Society  for
+Agricultural
+ Machinery:
+ 1-13[2024-03-24].
+ http://dx.
+doi.org/10.6041/j.issn.1000-1298.2024.04.012 (in Chinese with
+English abstract)
+[2]
+ 赵春江，范贝贝，李瑾，等. 农业机器人技术进展、挑战
+与趋势[J]. 智慧农业（中英文），2023，5(4)：1-15.
+ZHAO Chunjiang, FAN Beibei, LI Jin, et al. Agricultural robots:
+Technology
+ progress,
+ challenges
+ and
+ trends[J]. 
+Smart
+Agriculture, 2023, 5(4): 1-15. (in Chinese with English abstract)
+[3]
+ SHARMA  V,  TRIPATHI  A  K,  MITTAL  H.  Technological
+[4]
+　 164
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+revolutions  in  smart  farming:  Current  trends,  challenges  &
+future directions[J]. Computers and Electronics in Agriculture,
+2022, 201: 107217.
+ 熊俊涛，邹湘军，彭红星，等. 扰动柑橘采摘的实时识别
+与采摘点确定技术[J]. 农业机械学报，2014，45(8)：38-43.
+XIONG Juntao, ZHOU Xiangjun, PENG Hongxing, et al. Real-
+time identification and picking point localization of disturbance
+ditrus  picking[J].  Transactions  of  the  Chinese  Society  for
+Agricultural Machinery, 2014, 45(8): 38-43. (in Chinese with
+English abstract)
+[5]
+ XIONG J T, HE Z L, et al. Visual positioning technology of
+picking robots for dynamic litchi clusters with disturbance[J].
+Computers and Electronics in Agriculture, 2018, 151: 226-237.
+[6]
+ LIU T H, KANG H W, et al, ORB-Livox: A real-time dynamic
+system  for  fruit  detection  and  localization[J].  Computers  and
+Electronics in Agriculture, 2023, 209, 107834.
+[7]
+ 叶敏，邹湘军，罗陆锋，等. 荔枝采摘机器人双目视觉的
+动态定位误差分析[J]. 农业工程学报，2016，32(5)：50-56.
+YE Min, ZHOU Xiangjun, LOU Lufeng, et al. Error analysis
+of dynamic localization tests based on binocular stereo vision
+on litchi harvesting manipulator[J]. Transactions of the Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2016, 32(5): 50-56. (in Chinese with English abstract)
+[8]
+ MEHTA  S  S,  MACKUNIS  W,  BURKS  T  F.  Robust  visual
+servo control in the presence of fruit motion for robotic citrus
+harvesting[J]. Computers and Electronics in Agriculture, 2016,
+123: 362-375.
+[9]
+ MOZAFFARI S, Al-JARRAH O Y, DIANATI M, et al. Deep
+learning-based  vehicle  behavior  prediction  for  autonomous
+driving  applications:  A  review[J].  IEEE  Transactions  on
+Intelligent Transportation Systems, 2020, 23(1): 33-47.
+[10]
+ 邓亚平，李迎江. YOLO 算法及其在自动驾驶场景中目标
+检测研究综述[J/OL].  计算机应用，1-12.  [2024-03-
+21].https://link.cnki.net/urlid/51.1307.TP.20230904.1321.006.
+DENG Yaping, LI Yingjiang. Review of YOLO algorithm and
+its  application  to  object  detection  in  autonomous  driving
+scenesp[J/OL]. Journal of ComputerApplications , 1-12[2024-
+03-21].  https://link.cnki.net/urlid/51.1307.TP.20230904.1321.
+006.(in Chinese with English abstract)
+[11]
+ ZHAO  Z  Q,  ZHENG  P,  XU  S,  et  al.  Object  detection  with
+deep  learning:  A  review[J].  IEEE  Transactions  on  Neural
+Networks and Learning Systems, 2019, 30(11): 3212-3232.
+[12]
+ TANG  Y,  CHEN  M,  WANG  C,  et  al.  Recognition  and
+localization  methods  for  vision-based  fruit  picking  robots:  A
+review[J]. Frontiers in Plant Science, 2020, 11: 520170.
+[13]
+ 李兴旭，陈雯柏，王一群，等. 基于级联视觉检测的樱桃
+番茄自动采收系统设计与试验[J]. 农业工程学报，2023，
+39(1)：136-145.
+LI Xingxu, CHEN Wenbai, WANG Yiqun, et al. Design and
+experiment  of  an  automatic  cherry  tomato  harvesting  system
+based  on  cascade  vision  detection[J].  Transactions  of  the
+Chinese Society of Agricultural Engineering (Transactions of
+the  CSAE),  2023,  39(1):  136-145.  (in  Chinese  with  English
+abstract)
+[14]
+ REDMON J , DIVVALA S , GIRSHICK R, et al. You Only
+Look Once: Unified, Real-Time Object Detection[C]//Computer
+Vision & Pattern Recognition. IEEE, 2016.
+[15]
+ GIRSHICK R, Fast R-CNN. In Proceedings of the 2015 IEEE
+International
+ Conference
+ on
+ Computer
+ Vision
+ (ICCV
+'15)[C]//Computer Society, IEEE, 2015: 1440–1448.
+[16]
+ LIU  W,  ANGUELOV  D,  ERHAN  D,  et  al.  Ssd:  Single  shot
+multibox  detector[C]//Computer  Vision–ECCV  2016:  14th
+European Conference, Amsterdam, The Netherlands, 2016: 21-
+37.
+[17]
+ ZHANG  Y,  ZHANG  M,  LV  X  L.  A  review  of  research  on
+small  target  detection  based  on  deep  learning[J].  Computer
+Engineering and Applications, 2022, 1684(1): 1-18.
+[18]
+ WOJKE  N,  BEWLEY  A,  PAULUS  D.  Simple  online  and
+realtime tracking with a deep association metric[C]//2017 IEEE
+International  Conference  on  Image  Processing  (ICIP).  IEEE,
+2017: 3645-3649.
+[19]
+ LI B, YAN J, WU W, et al. High performance visual tracking
+with  siamese  region  proposal  network[C]//Proceedings  of  the
+IEEE Conference on Computer Vision and Pattern Recognition.
+2018: 8971-8980.
+[20]
+ ZHANG Y, SUN P, JIANG Y, et al. Bytetrack: Multi-object
+tracking  by  associating  every  detection  box[C]//European
+Conference on Computer Vision, Switzerland, 2022: 1-21.
+[21]
+ DU Y, ZHAO Z, SONG Y, et al. Strongsort: Make deepsort
+great  again[J].  IEEE  Transactions  on  Multimedia,  2023,25:
+8725-8737
+[22]
+ WOO S, PARK J, LEE J Y, et al. Cbam: Convolutional block
+attention module[C]//Proceedings of the European Conference
+on Computer Vision (ECCV). Munich, Germany, 2018: 3-19.
+[23]
+ GEVORGYAN  Z.  SIoU  loss:  More  powerful  learning  for
+bounding  box  regression[EB/OL].  arXiv  preprint  arXiv:
+2205.12740,  2022.[2024-05-21]https://doi.org/10.48550/arXiv.
+2205.12740
+[24]
+ ZHENG Z, WANG P, LIU W, et al. Distance-IoU loss: Faster
+and better learning for bounding box regression[C]//Proceedings
+of  the  AAAI  Conference  on  Artificial  Intelligence.  2020,
+34(7): 12993-13000.
+[25]
+ WELCH G F. Kalman Filter[M]. Computer Vision. Springer,
+Cham. (2020-12-15). https://doi.org/10.1007/978-3-030-03243-
+2_716-1
+[26]
+ KUHN  H  W.  The  Hungarian  method  for  the  assignment
+problem[J]. Naval research logistics quarterly, 1955, 2(1‐2):
+83-97.
+[27]
+ JIANG P, ERGU D, LIU F, et al. A review of yolo algorithm
+developments[J]. Procedia Computer Science, 2022, 199: 1066-
+1073.
+[28]
+ 范天浩，顾寄南，王文波，等. 基于改进YOLOv5s 的轻量化
+金银花识别方法[J]. 农业工程学报，2023，39(11)：192-200.
+FAN  Tianhao,  GU  Jinan,  WANG  Wenbo,  et  al.  Lightweight
+honeysuckle
+ recognition
+ method
+ based
+ on
+ improved
+YOLOv5s[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2023,
+39(11): 192-200. (in Chinese with English abstract)
+[29]
+ 范万鹏，刘孟楠，马婕，等. 利用改进的YOLOv5s 检测莲
+蓬成熟期[J]. 农业工程学报，2023，39（18）：183-191.
+FAN Wanpeng, LIU Mengnan, MA Jie, et al. Detecting lotus
+seedpod maturation using improved YOLOv5s[J]. Transactions
+of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+ Engineering
+(Transactions  of  the  CSAE).  2023,  39(18):  183-191.  (in
+[30]
+第 18 期
+娄欢欢等：无规则扰动状态下柑橘果实在线目标检测与快速定位
+165 　
+
+Chinese with English abstract)
+ 彭炫，周建平，许燕，等. 改进YOLOv5 识别复杂环境下
+棉花顶芽[J]. 农业工程学报，2023，39(16)：191-197.
+PENG Xuan, ZHOU Jianping, XU Yan, et al. Cotton top bud
+recognition  method  based  on  YOLOv5-CPP  in  complex
+environment[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2023,
+39(16): 191-197. (in Chinese with English abstract)
+[31]
+ 帖军，赵捷，郑禄，等. 改进YOLOv5 模型在自然环境下
+柑橘识别的应用[J/OL]. 中国农业科技导报：1-10. [2024-05-
+14].https://www.nkdb.net/CN/10.13304/j.nykjdb.2022.0994.
+TIE  Jun,  ZHAO  Jie,  ZHENG  Lu,  et  al.  Application  of
+Improved  YOLOv5  Model  in  Citrus  Recognition  in  Natural
+Environment[J/OL].  Journal  of  Agricultural  Science  and
+Technology.  2024:  1-10.  https://www.nkdb.net/CN/10.13304/
+j.nykjdb.2022.0994.
+[32]
+ 孙月平，孙杰，袁必康，等. 基于改进YOLOv5s 的轻量化
+蟹塘障碍物检测与定位方法[J]. 农业工程学报，2023，
+39(23)：152-163.
+SUN  Yueping,  SUN  Jie,  YUAN  Bikang,  et  al.  Lightweight
+crab  pond  obstacle  detection  and  location  method  based  on
+improved YOLOv5s[J]. Transactions of the Chinese Society of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2023,
+39(23): 152-163. (in Chinese with English abstract)
+[33]
+ RAHAT  S  M  S,  Al  PITOM  M  H,  MAHZABUN  M,  et  al.
+Lemon  Fruit  Detection  and  Instance  Segmentation  in  an
+Orchard Environment Using Mask R-CNN and YOLOv5[M]//
+New York. Computer Vision and Image Analysis for Industry
+4.0,Broken  Sound  Parkway  NW,  Suite  300,  Boca  Raton,  FL
+33487-2742: CRC Press, 2023: 28-40.
+[34]
+ ZQPei,  The  modified  wide  residual  network  implementation
+[Z].[2023-10-03] https://github.com/ZQPei/deep_sort_pytorch.
+[35]
+ 
+Online target detection and fast localisation of citrus fruits in
+irregularly disturbed state
+LOU Huanhuan , LI Guanglin※ , FU Xinglan , LI Li , WANG Xu , HUANG Weidong , FU Taige
+(College of Engineering and Technology, Southwest University, Chongqing 400715, China)
+Abstract: Picking  robots  have  been  widely  used  for  citrus  harvesting  in  recent  years.  However,  the  rest  citrus  during
+continuous picking can be irregularly disturbed by the wind, robot force, and the load weight of bearing branches under the
+natural environment. The citrus in the disturbed state cannot be rapidly and accurately detected, and then localized online,
+leading to the low efficiency of automatic robotic picking. In this study, online target detection and rapid localization were
+proposed  using  improved  YOLOv5s+DeepSORT.  The  position  of  citrus  at  rest  was  predicted  using  the  motion-tracking
+trajectory of disturbed citrus within a short period of time. The coordinates of the citrus were then obtained rapidly. Firstly, the
+CBAM (Convolutional Block Attention Module) attention mechanism was added to the YOLOv5s network, in order to detect
+the small and occluded targets. The SIoU loss function was used to enhance the direction matching between the prediction and
+the calibration frame, in order to improve the convergence speed of regression. Secondly, the target re-identification network
+was improved in the DeepSORT more suitable for the feature extraction of citrus targets. The feature extraction of the network
+was enhanced to improve the tracking performance on the disturbed citrus; The Count counter was used to accumulate the
+number  of  tracking  frames  in  each  citrus  for  an  optimal  target.  Since  the  disturbance  of  the  rest  citrus  was  progressively
+propagated over time, the localization prediction and picking were only for targets with optimal tracking trajectories at a time.
+The real-time updating was realized in real time. Finally, the values of the depth camera were combined within the critical
+distance range, excluding the influence of background citrus on the detection speed. The number of tracking targets each time
+was limited to effectively improve the tracking speed of disturbed citrus. The experimental results show that the P (precision)
+and mAP (average detection accuracy) of improved YOLOv5s were improved by 3.9 and 1.1 percentage points, respectively,
+with  a  detection  rate  of  69.3  frames  per  second.  The  MOTA  (Multi-Object  Tracking  Accuracy)  and  MOTP  (Multi-Object
+Tracking Precision) of the improved DeepSORT were improved by 9.2 and 5.4 percentage points, respectively, whereas, the
+average number of ID (identity) switching times of targets was reduced by 32 times. Grasping experiments were conducted in
+the laboratory, in which the citrus was randomly swung along different orientations with an amplitude of about 10 cm. When
+the predicted localization time was 1, 2, 3, 5, 7, and 10 s, the average precision values of disturbed citrus localization were
+21.3%,  53.0%,  81.9%,  83.7%,  86.1%,  and  94.9%,  respectively.  The  citrus  picking  test  was  conducted  with  the  citrus
+localization time of 3 s. The average grabbing time for each citrus was 12.8 s, which was 5.6 s shorter than that without the
+optimization.  The  efficiency  was  improved  by  30.4%.  This  finding  can  provide  technical  support  and  references  for  citrus
+picking in disturbed states.
+Keywords: disturbed citrus; predictive localisation; online target detection; target tracking; YOLOv5; DeepSORT
+　 166
+农业工程学报（http://www.tcsae.org）
+2024 年
