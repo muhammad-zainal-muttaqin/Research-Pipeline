@@ -1,0 +1,885 @@
+ 
+ SE-SMOTE: Latent-Space Oversampling for Long-
+Tailed Oil Palm Fruit Classification
+Lucky Santoso  
+Departement of Informatics 
+Institut Teknologi Sepuluh Nopember 
+Surabaya, Indonesia 
+5025221050@student.its.ac.id 
+Imam Mustafa Kamal 
+Departement of Informatics 
+Institut Teknologi Sepuluh Nopember 
+Surabaya, Indonesia 
+imamkamal@its.ac.id 
+Dini Adni Navastara 
+Departement of Informatics 
+Institut Teknologi Sepuluh Nopember 
+Surabaya, Indonesia 
+dini_navastara@its.ac.id 
+Misbakhul Munir Irfan Subakti  
+Departement of Informatics 
+Institut Teknologi Sepuluh Nopember 
+Surabaya, Indonesia 
+irfan@its.ac.id  
+ 
+Abstract—Class imbalance is a major challenge in agricultural 
+imaging, 
+often 
+leading 
+classifiers 
+to 
+misclassify 
+underrepresented but critical categories such as unripe or 
+overripe fruit, potentially affecting yield estimation and harvest 
+timing. Existing latent-space oversampling methods, such as 
+Deep 
+Synthetic 
+Minority 
+Oversampling 
+Technique 
+(DeepSMOTE), tend to degrade in performance when class 
+embeddings overlap in the latent space, producing noisy and 
+unreliable synthetic samples. We introduce SuperEncoder-
+SMOTE (SE-SMOTE), a two-stage framework that first learns 
+a highly separable, class-discriminative latent space via a 
+supervised encoder, and then applies Synthetic Minority 
+Oversampling Technique (SMOTE) to generate high-quality 
+minority samples. We validate our method on a novel long-tailed 
+benchmark dataset for five-class oil palm fruit grading. At an 
+extreme imbalance ratio of 100, SE-SMOTE achieves a macro-
+averaged F1-score of 0.621, outperforming Expansive Over-
+Sampling (EOS) (0.594) and DeepSMOTE (0.275) with relative 
+improvements of 4.5% and 125.8%, respectively, thereby 
+demonstrating 
+superior 
+robustness 
+under 
+severe 
+class 
+imbalance. These results highlight the importance of feature 
+space engineering as a prerequisite for effective latent-space 
+oversampling, offering a promising direction for tackling severe 
+class imbalance in agricultural and other domain-specific 
+imaging tasks. The SE-SMOTE code is publicly available at 
+https://github.com/luckysantoso/se-smote. 
+ 
+Keywords—class 
+imbalance, 
+latent-space 
+oversampling, 
+supervised encoder, agricultural imaging, SMOTE. 
+I. INTRODUCTION  
+High-quality data are the foundation of reliable machine 
+learning models, yet agricultural image repositories are often 
+high-dimensional, noisy, and strongly skewed toward 
+majority classes. This problem is especially pronounced in the 
+context of oil-palm fresh fruit bunch (FFB) grading. In 
+practical harvesting operations, workers are primarily trained 
+to collect bunches at the partially ripe stage to maximize oil 
+yield. As a result, this class overwhelmingly dominates any 
+collected dataset. In contrast, fully ripe bunches are usually 
+the least represented, as they are deliberately left on the tree to 
+create a time buffer and reduce the risk of overripening or 
+decay if processing at the mill is delayed [1]. Although this 
+harvesting practice is economically justified, it produces a 
+severe class imbalance that causes convolutional neural 
+networks (CNNs) to overpredict the majority class. This bias 
+leads to misclassification of minority classes, suboptimal 
+harvest scheduling, and ultimately financial losses for 
+producers [2]. 
+To address the challenge of learning from such skewed, 
+high-dimensional data, one common strategy is to first 
+transform the raw images into a more compact and 
+discriminative 
+feature 
+representation. 
+Classical 
+dimensionality-reduction techniques such as principal 
+component analysis (PCA) and linear discriminant analysis 
+(LDA) mitigate the “curse of dimensionality”, but their linear 
+projections cannot disentangle the complex color-texture cues 
+[3][4] that separate immature from decayed fruit. While 
+autoencoders (AEs) offer superior non-linear embeddings, a 
+vanilla encoder tends to produce arbitrary latent codes that 
+lack class separability [5]. Variational autoencoders (VAEs)  
+attempt to regularize the latent space, but this constraint does 
+not guarantee class separation and often results in overlapping 
+latent clusters that blur inter-class margins, a problem that 
+persists in imbalanced data contexts [6][7]. Thus, even 
+advanced unsupervised methods for representation learning 
+fail to produce a latent space that is inherently structured for 
+clean classification or subsequent oversampling. 
+Building on these latent representations, recent work has 
+explored oversampling directly in the feature space. A 
+prominent example is the Deep Synthetic Minority 
+Oversampling 
+Technique 
+(DeepSMOTE) 
+[8], 
+which 
+integrates an encoder and decoder architecture with the 
+SMOTE methodology. However, a critical weakness persists: 
+because the underlying latent space is not guaranteed to be 
+separable; synthetic vectors generated between overlapping 
+clusters can leak into neighboring classes and amplify label 
+noise. In response, our work introduces a paradigm that 
+prioritizes engineering the latent space itself before 
+oversampling. At the core of our approach is the super-
+encoder (SE) [9]. A specialized autoencoder architecture 
+equipped with an important additional separator head. Unlike 
+traditional autoencoders, it is trained with a cooperative loss 
+function to explicitly learn a class-disentangled latent 
+manifold. This process results in a structured latent space 
+where different classes form distinct, well-separated clusters, 
+directly mitigating the risk of generating overlapping samples.  
+Based on this solid foundation, we propose SuperEncoder-
+SMOTE (SE-SMOTE), a two-stage framework that combines 
+a discriminative latent space structure with class-based 
+oversampling. In this workflow, the pre-trained SE first 
+transforms the imbalanced data into a class-disentangled 
+latent space, after which SMOTE is safely applied by 
+interpolating only between the nearest neighbors of the same 
+class. The main contributions of this research include the 
+introduction of this pipeline and the provision of the first long-
+tail benchmark for five-class oil palm fruit maturity 
+2025 15th International Conference on Information & Communication Technology and System (ICTS)
+979-8-3315-6699-9/25/$31.00 ©2025 IEEE
+2025 15th International Conference on Information & Communication Technology and System (ICTS) | 979-8-3315-6699-9/25/$31.00 ©2025 IEEE | DOI: 10.1109/ICTS67612.2025.11369614
+Authorized licensed use limited to: UNIVERSIDADE DE SAO PAULO. Downloaded on August 13,2026 at 22:33:00 UTC from IEEE Xplore.  Restrictions apply. 
+
+classification. Our experiments demonstrate that this latent 
+space-aware method achieves a significant improvement in 
+macro-averaged F1-score, and our ablation analysis reveals 
+that the separator branch is crucial in preventing the overlap 
+of synthetic samples, which is a common failure mode in 
+previous latent-space oversampling methods. 
+The rest of this paper is organized as follows. Section II 
+reviews related work, Section III introduces the proposed 
+framework, Section IV presents experimental results, and 
+Section V concludes by discussing limitations and future 
+directions. 
+II. RELATED WORK 
+Research on oil palm fruit classification and methods for 
+addressing dataset imbalance provides the foundation for this 
+study. 
+A. Vision-Based Oil Palm Fruit Classification 
+Vision-based classification of fresh fruit bunch (FFB) 
+maturity in oil palm has been extensively investigated, with 
+many studies reporting high accuracy. Early research 
+primarily relied on handcrafted color and texture descriptors 
+combined with conventional classifiers such as Naïve Bayes, 
+Support Vector Machines (SVM), and Artificial Neural 
+Networks (ANN) [10]. More recent work has shifted toward 
+deep 
+learning 
+approaches. 
+For 
+example, 
+a 
+custom 
+convolutional neural network (CNN) has been deployed on 
+mobile devices to enable on-site classification [11], DenseNet 
+has been applied for improved feature extraction, and the 
+YOLO architecture has been optimized for real-time fruit 
+detection [12]. 
+Despite these promising results, overall accuracy is a 
+misleading metric for oil palm harvesting datasets that are 
+naturally imbalanced [13][14]. With one maturity stage 
+typically dominating, models tend to bias toward majority 
+classes while neglecting rare but critical stages. This 
+imbalance frames FFB grading as a unique challenge that 
+requires balancing strategies beyond standard classification. It 
+also necessitates evaluation metrics that better reflect 
+performance across all classes, such as the macro-averaged F1 
+score, along with dedicated strategies to mitigate skewed data 
+distributions. 
+B. Approaches to Handling Imbalanced Data 
+Imbalanced learning strategies are generally categorized 
+into three groups: data-level approaches, which manipulate 
+the distribution of training samples; algorithm-level 
+approaches, which modify the learning algorithm or loss 
+function; and hybrid approaches, which combine both to 
+leverage their complementary strengths. These strategies have 
+been widely explored in computer vision tasks and 
+increasingly applied to agricultural imagery, where minority 
+classes are often underrepresented. 
+At the data level, resampling seeks to rebalance class 
+priors 
+through 
+undersampling 
+or 
+oversampling. 
+Undersampling reduces bias but discards valuable data and 
+weakens generalization, while oversampling generates new 
+minority examples with SMOTE as a representative method 
+that synthesizes minority samples by interpolating each 
+instance with its k nearest minority neighbors to increase 
+local minority density [15]. Classical pixel-based methods 
+such as SMOTE [16] often yield unrealistic images and 
+ignore spatial structure. To address this, oversampling has 
+shifted into latent spaces, where embeddings preserve 
+semantic context. VAEs synthesize samples from learned 
+distributions [7], and GAN variants like GAMO [17] enhance 
+minority representation through class conditioning or 
+adversarial 
+boundary 
+refinement. 
+More 
+recently, 
+DeepSMOTE integrates SMOTE interpolation into an 
+encoder–decoder framework with a penalty-augmented loss, 
+producing high-quality synthetic images without requiring a 
+discriminator [8]. 
+At the algorithm level, imbalance is addressed by 
+modifying the training objective to emphasize minority 
+classes during optimization. A widely used method is focal 
+loss, which reshapes the standard cross entropy loss to down-
+weight well-classified samples and concentrate training on 
+hard, misclassified instances; this makes it particularly 
+effective for object detection tasks where background pixels 
+dominate foreground objects [18]. Another approach is the 
+class balanced loss [19], which adjusts the loss contribution 
+of each class according to the effective number of samples, 
+thereby compensating for skewed distributions without 
+discarding data. More recently, the label distribution aware 
+margin (LDAM) loss introduces class-dependent margins, 
+assigning larger margins to minority classes to encourage 
+better separation from majority classes and reduce decision 
+boundary bias [20]. Collectively, these methods demonstrate 
+how tailoring the loss function can substantially improve 
+classifier robustness under class imbalance, especially when 
+resampling alone is insufficient. 
+At the hybrid level, methods integrate resampling with 
+tailored training objectives for stronger imbalance mitigation. 
+Expansive Over-Sampling (EOS) exemplifies this by 
+combining embedding-space augmentation with classifier 
+fine-tuning, effectively narrowing the minority class 
+generalization gap while remaining computationally efficient 
+[21]. 
+C. Supervised Latent Representation Learning 
+Supervised latent representation learning seeks to 
+overcome the limitations of unsupervised autoencoders, 
+GAN-based generators, and linear projections, which often 
+yield entangled or weakly discriminative embeddings that fail 
+to capture subtle class boundaries in agricultural imagery. The 
+super-encoder addresses this by coupling an encoder with a 
+separator head that enforces label-based separation, while a 
+decoder ensures reconstructability. A cooperative loss 
+balances both objectives, producing compact, disentangled 
+latent codes that are suitable for classification and sample 
+generation [9]. In parallel, supervised contrastive learning 
+extends contrastive learning into the fully supervised setting, 
+pulling embeddings of the same class closer while pushing 
+apart those of different classes, thereby improving inter-class 
+margin separation and yielding stronger robustness compared 
+to cross-entropy loss [22]. Together, these approaches 
+demonstrate how supervision in the latent space enhances 
+discriminability and reliability for downstream synthesis 
+under imbalanced settings. 
+III. METHODOLOGY 
+The method we propose, SuperEncoder-SMOTE (SE-
+SMOTE), is a hybrid framework designed to address class 
+imbalance by first creating an optimally structured feature 
+space before performing oversampling. This approach 
+ensures that the generated synthetic samples have high 
+validity and quality. 
+2025 15th International Conference on Information & Communication Technology and System (ICTS)
+Authorized licensed use limited to: UNIVERSIDADE DE SAO PAULO. Downloaded on August 13,2026 at 22:33:00 UTC from IEEE Xplore.  Restrictions apply. 
+
+A. General Architecture 
+The general architecture of SE-SMOTE, as illustrated in 
+Fig. 1, consists of two main sequential stages followed by a 
+final classification process. The first stage is Separable 
+Feature Learning, where a super-encoder [9] model is trained 
+to map input images into a latent space with clear class 
+separability. The second stage is deep oversampling, where 
+the trained Encoder from the first stage is used to transform 
+the entire dataset, which is then balanced using the SMOTE 
+algorithm. Finally, this balanced feature dataset is used to 
+train a final classifier. 
+ 
+ 
+(a) Stage 1 
+ 
+ 
+(b) Stage 2 
+Fig 1.  SE-SMOTE networks. (a) Stage 1: The Super-Encoder is 
+trained to learn a separable feature representation. (b) Stage 2: Deep 
+oversampling is performed in the latent space using the trained 
+encoder to balance the dataset before training the classifier. 
+B. Architectural Components 
+The SE-SMOTE framework is built on three main 
+architectural components, each of which plays a crucial role 
+in the workflow. At the core of our method is the super-
+encoder [9], a generative model designed not only to 
+reconstruct the input but also to organize its latent space. This 
+component consists of three parts: the Encoder ( 𝐸), a 
+convolutional network that compresses the input image 𝑥 
+into a low-dimensional vector representation 𝑧 through a 
+series of convolutional blocks; the Decoder ( 𝐷), a 
+deconvolutional network that reconstructs the image 𝑥′ from 
+the latent vector 𝑧; and the Separator (𝑆), a classification 
+branch implemented as a multi-layer perceptron (MLP). The 
+Separator is connected to the latent vector 𝑧 and serves as an 
+auxiliary task to enforce class separation during training. 
+After the structured latent space is formed by the super-
+encoder, the workflow continues with the SMOTE algorithm 
+applied directly to the latent space. This mechanism works by 
+selecting a latent vector from the minority class, 𝑧௜, and its 
+nearest neighbor, 𝑧௝, to generate a new synthetic sample, 
+𝑧௡௘௪, through linear interpolation as formulated in equation 
+(1): 
+𝑧௡௘௪= 𝑧௜+ 𝜆൫𝑧௝−𝑧௜൯                             (1) 
+where 𝜆 is a random number in the range [0, 1]. This process 
+is repeated until the class distribution becomes balanced. The 
+final component in the pipeline is the classifier, a downstream 
+classification model that is completely separate from the 
+feature generation process. Its purpose is to take the clean and 
+balanced feature dataset generated by SE-SMOTE and use it 
+to perform the final prediction task. In this study, we used 
+various traditional classification models, including support 
+vector machine (SVM), k-nearest neighbors (KNN), Random 
+Forest, XGBoost, and logistic regression. These models are 
+chosen because they represent well-established, effective, 
+and popular algorithms that have been extensively validated 
+across diverse domains. By using them, we aim to 
+demonstrate that the high-quality, class-separable features 
+generated by SE-SMOTE can enhance performance even 
+with relatively simple and traditional classifiers. 
+C. Training and Generation Pipeline 
+The training and generation process of SE-SMOTE 
+follows a well-defined workflow. The first stage focuses on 
+training the super-encoder with an imbalanced dataset, which 
+is optimized using a combined loss function that intelligently 
+balances two competing objectives: ensuring the quality of 
+the latent representation and enforcing class separability.  The 
+first objective is achieved through the Reconstruction Loss 
+(𝐿௥௘௖). As formulated in equation (2), this loss calculates the 
+mean squared error (MSE) between the input image x and its 
+reconstruction 𝐷(𝐸(𝑥)) , forcing the encoder 𝐸 to retain 
+essential visual information. 
+𝐿௥௘௖= ฮ𝑥−𝐷൫𝐸(𝑥)൯ฮ
+ଶ                         (2) 
+The second objective, which is at the core of our 
+innovation, is achieved through the Separability Loss (𝐿௦௘௣). 
+This loss, shown in equation (3), uses categorical cross-
+entropy to measure the difference between the true one-hot 
+encoded label 𝑦 and the class probability distribution 
+predicted by the Separator 𝑆 from the latent vector 𝐸(𝑥). 
+Minimizing this loss actively encourages the latent 
+representations of different classes to form distinct, well-
+separated clusters. 
+ 𝐿௦௘௣ = − ∑𝑦log ቀ𝑆൫𝐸(𝑥)൯ቁ              (3) 
+These two functions are then combined into a total loss 
+function, 𝐿ௌா, using adjustable hyperparameters 𝛼 and 𝛽 to 
+balance the trade-off between reconstruction quality and class 
+separation, as shown in Equation (4): 
+𝐿ௌா= 𝛼𝐿௥௘௖+ 𝛽𝐿௦௘௣                           (4) 
+ 
+In this study, the values of 𝛼 and 𝛽 were determined 
+empirically through a series of trial-and-error experiments. 
+Different configurations were tested to observe their impact 
+on the trade-off between accurate image reconstruction and 
+effective class separability in the latent space. The final 
+values were selected based on the settings that consistently 
+produce well-reconstructed outputs while maintaining clear 
+inter-class separation. 
+2025 15th International Conference on Information & Communication Technology and System (ICTS)
+Authorized licensed use limited to: UNIVERSIDADE DE SAO PAULO. Downloaded on August 13,2026 at 22:33:00 UTC from IEEE Xplore.  Restrictions apply. 
+
+After training convergence, the Decoder ( 𝐷) and 
+Separator (𝑆) components are discarded. Only the trained 
+Encoder (𝐸) is retained. The entire image dataset is then 
+passed through this encoder to generate a latent feature 
+dataset. It is on this feature dataset that the SMOTE algorithm 
+is applied to balance the class distribution. This balanced and 
+high-quality feature dataset is then ready to be used for 
+training the final classifier. The entire workflow of the 
+proposed SE-SMOTE method is summarized in pseudocode 
+in Algorithm 1. 
+ 
+IV. EXPERIMENTS 
+The experiments were conducted on a dataset of oil palm 
+fruit images collected from a plantation in Kalimantan, 
+Indonesia [14]. Each image was resized to 64×64 pixels and 
+normalized to improve generalization. In addition, we applied 
+a simple augmentation consisting of random horizontal 
+flipping. The dataset comprises five distinct ripeness classes: 
+Immature, Partially Ripe, Fully Ripe, Over Ripe, and 
+Decayed, as illustrated in Fig. 2. 
+ 
+ 
+Fig 2. Example images for each of the five oil palm fruit ripeness 
+classes. 
+To rigorously test robustness against imbalance, we 
+organized the dataset into multiple scenarios with Imbalance 
+Ratio (IR) of 10, 30, 50, 70, and 100, where IR denotes the 
+ratio of samples in the majority to the minority class. The 
+sample distribution is detailed in Table I. For all experiments, 
+the data were split into 80% training and 20% testing using 
+stratified partitioning, repeated under different random seeds 
+for robustness.  
+We compared SE-SMOTE against several baselines: 
+training directly on the imbalanced data, SMOTE, VAE-
+SMOTE, DeepSMOTE, and EOS. After feature generation 
+and oversampling, the resulting balanced datasets were 
+evaluated using five widely used classifiers: K-Nearest 
+Neighbors (KNN), Support Vector Machine (SVM), Logistic 
+Regression, XGBoost, and Random Forest. To ensure 
+fairness, all classifiers were used with default parameters 
+from the scikit-learn library. 
+ 
+TABLE I. Sample Distribution for Each Imbalance Ratio (IR) 
+Scenario 
+Class
+IR = 10
+IR = 30
+IR = 50
+IR = 70
+IR = 100
+Partially Ripe
+1405
+1405
+1405
+1405
+1405
+Immature
+758
+600
+528
+485
+444
+Over Ripe
+444
+256
+198
+167
+140
+Decayed
+249
+109
+74
+58
+44
+Fully Ripe
+140
+46
+28
+20
+14
+Total
+2996
+2416
+2233
+2135
+2047
+ 
+The performance of all methods was evaluated using the 
+macro-averaged F1-score. This metric was chosen for its 
+superior ability to measure performance on imbalanced 
+datasets. Unlike accuracy, which can provide a misleading 
+picture by focusing only on the majority class, the F1-score 
+calculates the harmonic mean of precision and recall. This 
+provides a more balanced assessment of the model's ability to 
+classify samples from both majority and minority classes. 
+The use of macro average specifically ensures that each class 
+is given equal weight in the final score calculation, allowing 
+for accurate measurement of performance improvements in 
+critical minority classes. 
+The results in Table II show that SE-SMOTE consistently 
+delivers substantial gains over traditional and generative 
+baselines. DeepSMOTE, whose unsupervised encoder 
+produces entangled latent spaces that limit oversampling 
+effectiveness, achieves only 0.382 at IR = 10 and 0.275 at IR 
+= 100. In contrast, SE-SMOTE more than doubles these 
+scores, reaching 0.852 and 0.621, respectively. Against 
+Expansive Oversampling (EOS), SE-SMOTE demonstrates 
+competitive behavior: it slightly outperforms EOS at IR = 10, 
+performs marginally worse at IR = 30–70, and regains 
+superiority under the extreme imbalance of IR = 100 with a 
+macro-averaged F1-score of 0.621 compared to 0.594. EOS 
+remains a strong competitor because, like SE-SMOTE, it 
+leverages supervised learning to enforce class separability. 
+Overall, these results highlight a nuanced trade-off: EOS 
+offers stability in mid-range imbalance, while SE-SMOTE 
+provides broader robustness by combining supervised latent-
+space structuring with oversampling, enabling it to surpass 
+both unsupervised generative methods and EOS in the most 
+challenging conditions. 
+To evaluate the robustness of each method under 
+progressively severe class imbalance, Fig. 3 illustrates 
+performance trends as a function of the imbalance ratio (IR). 
+As expected, the performance of all methods declines as IR 
+increases; however, the drop in SE-SMOTE is noticeably less 
+pronounced than in VAE-SMOTE and DeepSMOTE. This 
+result highlights the effectiveness of the super-encoder in 
+producing well-separated latent spaces, which in turn 
+2025 15th International Conference on Information & Communication Technology and System (ICTS)
+Authorized licensed use limited to: UNIVERSIDADE DE SAO PAULO. Downloaded on August 13,2026 at 22:33:00 UTC from IEEE Xplore.  Restrictions apply. 
+
+preserves classification performance and ensures greater 
+stability under extreme imbalance scenarios. 
+ 
+Fig 3. Performance comparison across different Imbalance Ratio 
+(IR) levels. 
+The 
+t-SNE 
+visualizations 
+in 
+Fig. 
+4 
+(before 
+oversampling) and Fig. 5 (after oversampling) illustrate how 
+representation 
+quality 
+determines 
+oversampling 
+effectiveness. Fig. 4 shows that pixel features and 
+unsupervised embeddings (VAE, AE) produce heavily 
+entangled clusters with poor separability, while CNN-
+pretrained embeddings improve structure but still lack 
+explicit label guidance. In contrast, the supervised Super-
+Encoder forms compact and well-separated clusters even 
+before oversampling, highlighting the strength of supervised 
+latent representation learning. Fig. 5 further reveals the 
+impact during oversampling: pixel-based SMOTE generates 
+noisy distributions, while VAE-SMOTE and DeepSMOTE 
+often generate synthetic samples in ambiguous regions due to 
+weakly structured embeddings. CNN-EOS achieves better 
+stability by combining pretrained CNN features with 
+supervised objectives, and SE-SMOTE, by jointly employing 
+supervised encoding and latent-space oversampling, further 
+reduces overlap. Although both CNN-EOS and SE-SMOTE 
+still exhibit minor cluster overlap, their supervised 
+mechanisms ensure that synthetic samples remain mostly 
+within class boundaries, thereby reinforcing decision margins 
+more effectively than prior methods. This confirms that SE-
+SMOTE’s two-stage design, first enforcing separability in the 
+latent space, then applying class-safe oversampling, produces 
+more valid and reliable synthetic distributions for 
+downstream classification. 
+ 
+ 
+Fig 4. Comparison of latent space representations visualized using t-SNE for (a) Baseline, (b) VAE, (c) AE, (d) CNN Pretrained, and (e) SE, 
+with methods compared including DeepSMOTE, CNN-Pretrained, and SE. 
+ 
+Fig 5. Comparison of latent space representations visualized using t-SNE for (a) SMOTE, (b) VAE-SMOTE, (c) DeepSMOTE, 
+(d) CNN-EOS, and (e) SE-SMOTE. 
+ 
+TABLE II. Comparison of Macro-Averaged F1-Score Performance 
+Scenario 
+Generative Method 
+Model Classifier 
+KNN 
+SVM 
+Logistic Regression 
+XGBoost 
+Random Forest 
+IR = 10 
+SMOTE 
+0.304 ± 0.015
+0.484 ± 0.034
+0.423 ± 0.020
+0.440 ± 0.033
+0.393 ± 0.031
+DeepSMOTE
+0.382 ± 0.018
+0.382 ± 0.018
+0.382 ± 0.018
+0.382 ± 0.018
+0.382 ± 0.018
+VAE-SMOTE
+0.413 ± 0.013
+0.528 ± 0.036
+0.470 ± 0.023
+0.505 ± 0.036
+0.501 ± 0.028
+EOS
+0.805 ± 0.024
+0.816 ± 0.026
+0.810 ± 0.031
+0.815 ± 0.027
+0.813 ± 0.026
+SE-SMOTE (Ours)
+0.854 ± 0.003
+0.863 ± 0.038
+0.833 ± 0.009
+0.850 ± 0.037
+0.859 ± 0.039
+IR = 30 
+SMOTE
+0.269 ± 0.042
+0.269 ± 0.042
+0.269 ± 0.042
+0.269 ± 0.042
+0.269 ± 0.042
+DeepSMOTE
+0.303 ± 0.050
+0.303 ± 0.050
+0.303 ± 0.050
+0.303 ± 0.050
+0.303 ± 0.050
+VAE-SMOTE
+0.348 ± 0.046
+0.348 ± 0.046
+0.348 ± 0.046
+0.348 ± 0.046
+0.348 ± 0.046
+EOS
+0.733 ± 0.039
+0.737 ± 0.037
+0.741 ± 0.041
+0.755 ± 0.039
+0.747 ± 0.035
+SE-SMOTE (Ours)
+0.706 ± 0.052
+0.732 ± 0.025
+0.671 ± 0.050
+0.671 ± 0.015
+0.697 ± 0.033
+IR = 50 
+SMOTE
+0.204 ± 0.082
+0.204 ± 0.082
+0.204 ± 0.082
+0.204 ± 0.082
+0.204 ± 0.082
+DeepSMOTE
+0.315 ± 0.095
+0.315 ± 0.095
+0.315 ± 0.095
+0.315 ± 0.095
+0.315 ± 0.095
+VAE-SMOTE 
+0.342 ± 0.110 
+0.342 ± 0.110 
+0.342 ± 0.110 
+0.342 ± 0.110 
+0.342 ± 0.110 
+EOS 
+0.662 ± 0.065 
+0.680 ± 0.051 
+0.674 ± 0.048 
+0.678 ± 0.060 
+0.680 ± 0.052 
+SE-SMOTE (Ours)
+0.638 ± 0.156
+0.666 ± 0.133
+0.619 ± 0.108
+0.663 ± 0.09
+0.651 ± 0.136
+IR = 70 
+SMOTE
+0.208 ± 0.041
+0.208 ± 0.041
+0.208 ± 0.041
+0.208 ± 0.041
+0.208 ± 0.041
+DeepSMOTE
+0.273 ± 0.052
+0.273 ± 0.052
+0.273 ± 0.052
+0.273 ± 0.052
+0.273 ± 0.052
+VAE-SMOTE
+0.261 ± 0.019
+0.332 ± 0.041
+0.341 ± 0.056
+0.323 ± 0.045
+0.303 ± 0.027
+EOS
+0.647 ± 0.058
+0.665 ± 0.044 
+0.661 ± 0.032 
+0.670 ± 0.032 
+0.657 ± 0.035 
+SE-SMOTE (Ours)
+0.673 ± 0.009 
+0.623 ± 0.022
+0.638 ± 0.060
+0.633 ± 0.074
+0.629 ± 0.018
+2025 15th International Conference on Information & Communication Technology and System (ICTS)
+Authorized licensed use limited to: UNIVERSIDADE DE SAO PAULO. Downloaded on August 13,2026 at 22:33:00 UTC from IEEE Xplore.  Restrictions apply. 
+
+I R = 100 
+SMOTE
+0.185 ± 0.048
+0.185 ± 0.048
+0.185 ± 0.048
+0.185 ± 0.048
+0.185 ± 0.048
+DeepSMOTE
+0.275 ± 0.041
+0.275 ± 0.041
+0.275 ± 0.041
+0.275 ± 0.041
+0.275 ± 0.041
+VAE-SMOTE
+0.308 ± 0.056
+0.308 ± 0.056
+0.308 ± 0.056
+0.308 ± 0.056
+0.308 ± 0.056
+EOS
+0.591 ± 0.058
+0.607 ± 0.030
+0.577 ± 0.05
+0.592 ± 0.018
+0.604 ± 0.035
+SE-SMOTE (Ours)
+0.621 ± 0.033
+0.620 ± 0.024
+0.610 ± 0.014
+0.624 ± 0.047
+0.630 ± 0.036
+V. CONCLUSION 
+This study addressed the challenge of long-tailed class 
+imbalance 
+in 
+agricultural 
+image 
+classification 
+by 
+introducing SE-SMOTE, a novel two-stage oversampling 
+framework that first constructs a well-separated, class-
+discriminative latent space via a super-encoder before 
+synthesizing minority samples. Extensive experiments 
+validated our hypothesis that feature-space engineering is 
+critical for producing high-quality synthetic instances, with 
+SE-SMOTE consistently outperforming baseline methods 
+across varying imbalance factors and demonstrating 
+notable robustness under extreme data skew. Quantitative 
+gains were reinforced by qualitative analyses, which 
+confirmed the super-encoder’s ability to yield structured 
+and separable latent representations. This work advances 
+latent-space oversampling by establishing feature-space 
+engineering as a foundational step for effective sample 
+generation. While results on the oil palm fruit grading task, 
+a domain heavily dependent on subtle color and texture 
+cues, are promising, validation is currently limited to a 
+single agricultural imaging dataset. Future research should 
+examine the generalizability of SE-SMOTE to diverse 
+modalities such as medical imaging and structured tabular 
+data, integrate advanced SMOTE variants, explore 
+adaptive 
+latent-space 
+regularization, 
+and 
+assess 
+computational trade-offs to optimize deployment in large-
+scale, real-world scenarios. 
+ACKNOWLEDGEMENTS 
+This work was funded by the Department of 
+Informatics, Institut Teknologi Sepuluh Nopember, 
+through the Departmental Research Grant Scheme – Batch 
+1, 2025 (Grant No. 2432/PKS/ITS/2025, dated 13 June 
+2025). 
+REFERENCES 
+[1] T. Ningsih, H. Gunawan, and J. Parhorasan, “STUDY OF 
+HARVEST SYSTEM ON CRUDE PALM OIL POTENTIAL IN 
+AFDELING I TANAH RAJA PLANTATION PT. BAKRIE 
+SUMATERA PLANTATION, Tbk.,” Jurnal Budidaya Perkebunan 
+Kelapa Sawit dan Karet, no. Sekolah Tinggi Ilmu Pertanian 
+Agrobisnis Perkebunan (STIP-AP) Medan, Indonesia, Dec. 2021. 
+[2] D. Dablain, K. N. Jacobson, C. Bellinger, M. Roberts, and N. V. 
+Chawla, “Understanding CNN fragility when learning with 
+imbalanced data,” Mach Learn, vol. 113, no. 7, pp. 4785–4810, Jul. 
+2024, doi: 10.1007/s10994-023-06326-9. 
+[3] M. Greenacre, P. J. F. Groenen, T. Hastie, A. I. D’Enza, A. Markos, 
+and E. Tuzhilina, “Principal component analysis,” Nature Reviews 
+Methods Primers, vol. 2, no. 1, Dec. 2022, doi: 10.1038/s43586-022-
+00184-w. 
+[4] F. Zhu, J. Gao, J. Yang, and N. Ye, “Neighborhood linear 
+discriminant analysis,” Pattern Recogn., vol. 123, no. C, Mar. 2022, 
+doi: 10.1016/j.patcog.2021.108422. 
+[5] I. D. Mienye and T. G. Swart, “Deep Autoencoder Neural Networks: 
+A Comprehensive Review and New Perspectives,” 2025, Springer 
+Science and Business Media B.V. doi: 10.1007/s11831-025-10260-
+5. 
+[6] A. Singh and T. Ogunfunmi, “An Overview of Variational 
+Autoencoders for Source Separation, Finance, and Bio-Signal 
+Applications,” Jan. 01, 2022, Multidisciplinary Digital Publishing 
+Institute (MDPI). doi: 10.3390/e24010055. 
+[7] S. Hong, S. An, and J. J. Jeon, “Improving SMOTE via fusing 
+conditional VAE for data-adaptive noise filtering,” Applied 
+Intelligence, vol. 55, no. 12, Aug. 2025, doi: 10.1007/s10489-025-
+06692-y. 
+[8] D. Dablain, B. Krawczyk, and N. V. Chawla, “DeepSMOTE: Fusing 
+Deep Learning and SMOTE for Imbalanced Data,” IEEE Trans 
+Neural Netw Learn Syst, vol. 34, no. 9, pp. 6390–6404, Sep. 2023, 
+doi: 10.1109/TNNLS.2021.3136503. 
+[9] I. M. Kamal and H. Bae, “Super-encoder with cooperative 
+autoencoder networks,” Pattern Recognit, vol. 126, Jun. 2022, doi: 
+10.1016/j.patcog.2022.108562. 
+[10] A. Septiarini, “Maturity Grading of Oil Palm Fresh Fruit Bunches 
+Based on a Machine Learning Approach.” 
+[11] Suharjito, G. N. Elwirehardja, and J. S. Prayoga, “Oil palm fresh 
+fruit bunch ripeness classification on mobile devices using deep 
+learning approaches,” Comput Electron Agric, vol. 188, Sep. 2021, 
+doi: 10.1016/j.compag.2021.106359. 
+[12] H. Herman, T. W. Cenggoro, A. Susanto, and B. Pardamean, “Deep 
+learning for oil palm fruit ripeness classification with densenet,” in 
+Proceedings of 2021 International Conference on Information 
+Management and Technology, ICIMTech 2021, Institute of 
+Electrical and Electronics Engineers Inc., Aug. 2021, pp. 116–119. 
+doi: 10.1109/ICIMTech53080.2021.9534988. 
+[13] M. Altalhan, A. Algarni, and M. Turki-Hadj Alouane, “Imbalanced 
+Data Problem in Machine Learning: A Review,” IEEE Access, vol. 
+13, pp. 13686–13699, 2025, doi: 10.1109/ACCESS.2025.3531662. 
+[14] I. M. Kamal, S. Mochammad, L. Nurahmi, A. Natawijaya, and M. 
+Kalili, “An Ordinal Dataset for Ripeness Level Classification in Oil 
+Palm Fruit Quality Grading,” 2024, Mendeley Data. doi: 
+10.17632/424Y96M6SW. 
+[15] D. A. Navastara, C. Fatichah, Y. Niza, F. I. E. Sari, and M. M. A. 
+Jalil, “Analyzing Oversampling and Machine Learning Approaches 
+for Imbalanced Dataset Classification,” in 2023 IEEE 21st Student 
+Conference on Research and Development, SCOReD 2023, Institute 
+of Electrical and Electronics Engineers Inc., 2023, pp. 27–32. doi: 
+10.1109/SCOReD60679.2023.10563710. 
+[16] W. Feng, Y. Long, G. Dauphin, Y. Quan, W. Huang, and M. Xing, 
+“Ensemble synthetic oversampling with pixel pair for class-
+imbalanced and small-sized hyperspectral data classification,” 
+International Journal of Applied Earth Observation and 
+Geoinformation, 
+vol. 
+128, 
+Apr. 
+2024, 
+doi: 
+10.1016/j.jag.2024.103697. 
+[17] S. S. Mullick, S. Datta, and S. Das, “Generative Adversarial 
+Minority Oversampling,” in 2019 IEEE/CVF International 
+Conference on Computer Vision (ICCV), 2019, pp. 1695–1704. doi: 
+10.1109/ICCV.2019.00178. 
+[18] M. Yeung, E. Sala, C. B. Schönlieb, and L. Rundo, “Unified Focal 
+loss: Generalising Dice and cross entropy-based losses to handle 
+class imbalanced medical image segmentation,” Computerized 
+Medical Imaging and Graphics, vol. 95, Jan. 2022, doi: 
+10.1016/j.compmedimag.2021.102026. 
+[19] L. Wang, C. Wang, Z. Sun, S. Cheng, and L. Guo, “Class Balanced 
+Loss for Image Classification,” IEEE Access, vol. 8, pp. 81142–
+81153, 2020, doi: 10.1109/ACCESS.2020.2991237. 
+[20] K. Cao, C. Wei, A. Gaidon, N. Arechiga, and T. Ma, “Learning 
+Imbalanced Datasets with Label-Distribution-Aware Margin Loss,” 
+in Advances in Neural Information Processing Systems, H. Wallach, 
+H. Larochelle, A. Beygelzimer, F. d Alché-Buc, E. Fox, and R. 
+Garnett, Eds., Curran Associates, Inc., 2019. [Online]. Available: 
+https://proceedings.neurips.cc/paper_files/paper/2019/file/621461af
+90cadfdaf0e8d4cc25129f91-Paper.pdf 
+[21] D. A. Dablain, C. Bellinger, B. Krawczyk, and N. V. Chawla, 
+“Efficient Augmentation for Imbalanced Deep Learning,” in 
+Proceedings - International Conference on Data Engineering, IEEE 
+Computer 
+Society, 
+2023, 
+pp. 
+1433–1446. 
+doi: 
+10.1109/ICDE55515.2023.00114. 
+[22] P. Khosla et al., “Supervised contrastive learning,” in Proceedings 
+of the 34th International Conference on Neural Information 
+Processing Systems, in NIPS ’20. Red Hook, NY, USA: Curran 
+Associates Inc., 2020. 
+2025 15th International Conference on Information & Communication Technology and System (ICTS)
+Authorized licensed use limited to: UNIVERSIDADE DE SAO PAULO. Downloaded on August 13,2026 at 22:33:00 UTC from IEEE Xplore.  Restrictions apply. 

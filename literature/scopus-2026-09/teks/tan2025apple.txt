@@ -1,0 +1,834 @@
+ 
+ 
+ 
+Apple Diameter Measurement from RGB Images 
+Using ORCNN and Calibrated Monocular Depth
+Dian Gloria Tan  
+Computer Science Department 
+School of Computer Science 
+Bina Nusantara University 
+Jakarta, Indonesia 
+dian.tan@binus.ac.id 
+ 
+Stefani Gitawardani 
+Computer Science Department 
+School of Computer Science 
+Bina Nusantara University 
+Jakarta, Indonesia 
+stefani.gitawardani@binus.ac.id 
+Henry Lucky 
+Computer Science Department 
+School of Computer Science 
+Bina Nusantara University 
+Jakarta, Indonesia 
+henry.lucky@binus.ac.id 
+Alexandra Hadiprawira 
+Computer Science Department 
+School of Computer Science 
+Bina Nusantara University  
+Jakarta, Indonesia 
+alexandra.hadiprawira@binus.ac.id 
+Abstract—Accurate apple size measurement is crucial both 
+for yield estimation and quality assessment in modern precision 
+agriculture. The aim of this paper is to introduce a new RGB-
+only approach for on-tree apple size estimation without the use 
+of a dedicated depth sensor. We propose a framework that 
+integrates the Occlusion-aware Mask R-CNN for apple 
+detection, amodal segmentation, and diameter estimation from 
+mask geometry with the Depth Anything V2 model for 
+monocular metric depth estimation. By combining amodal 
+masks with calibrated depth prediction, the proposed system 
+converts pixel-based diameter measurements into real-world 
+millimeters using a pinhole projection model. Experiments on 
+the PApple RGB-D-Size dataset show that the calibrated 
+monocular approach achieves a mean absolute error of about 
+7.72 mm while maintaining strong segmentation accuracy. The 
+results confirm that monocular depth, if properly calibrated, is 
+an excellent substitute for sensor-based depth in practice and a 
+low-cost solution to automated yield monitoring and orchard 
+management. 
+Keywords—Apple 
+Size 
+Estimation, 
+Monocular 
+Depth 
+Estimation, Occlusion-Aware Mask Region-Based CNN, Amodal 
+Segmentation, Precision Agriculture 
+I. 
+INTRODUCTION 
+Accurate fruit-size measurement is important in modern 
+agriculture for yield estimation, grading, and harvest planning. 
+Manual tools such as Vernier calipers [1] are reliable but slow, 
+labor-intensive, and prone to operator error. This has 
+motivated the development of automated RGB-D and 
+learning-based approaches for fruit sizing, including apples 
+[2], strawberries [3], and broccoli heads [4]. RGB-D imaging 
+enables precise measurement even under challenging 
+conditions, such as overlapping fruits or occlusions. Prior 
+studies show that RGB-D pipelines can detect and measure 
+apples [1] and that multitask networks using RGB-D data can 
+jointly perform detection and size estimation. However, most 
+existing systems depend on annotated fruit sizes and accurate 
+ground-truth depth [2], which are difficult to obtain at orchard 
+scale [5] and therefore limit practical deployment. 
+Occlusion-aware models have further advanced the field. 
+ORCNN [6] extends Mask R-CNN [7] with amodal and 
+occlusion masks to infer complete object shapes, improving 
+sizing performance under heavy occlusion, as demonstrated 
+for broccoli heads [5]. Depth-based measurement has also 
+been applied outside agriculture, including aquaculture [8]. 
+and monocular fish sizing [9], highlighting the feasibility of 
+low-cost, non-invasive measurement. 
+This research extends these developments by presenting 
+an RGB-based method for the estimation of apple sizes, 
+including monocular depth prediction without the use of 
+dedicated depth sensors. Accordingly, the proposed method 
+fuses RGB imaging, camera parameters (focal length and 
+image scale), and amodal segmentation masks to perform 
+apple size estimation in real-world metric units. Unlike 
+existing methods, which rely on sensor-based or manually 
+annotated depth information, the approach introduced here 
+utilizes visual cues and learned depth priors, offering a cost-
+effective, scalable, and practical solution for automated apple 
+size estimation. 
+II. 
+LITERATURE REVIEW 
+Over the years, various methods have been developed for 
+estimating fruit sizes from images, differing in complexity, 
+hardware requirements, and environmental robustness. This 
+work focuses on three core components of fruit-size 
+estimation: 
+object 
+detection 
+and 
+segmentation, 
+size 
+estimation, and depth estimation, which together enable 
+accurate RGB-based fruit sizing in orchard environments. 
+A. Object Detection 
+Object detection and segmentation are fundamental for 
+locating fruits and producing the masks needed for geometric 
+measurement. RetinaNet [9] addresses class imbalance in 
+dense detection with Focal Loss for fast and accurate one-
+stage performance. MobileNet [10] provides a lightweight 
+backbone using depthwise-separable convolutions, while 
+MobileNetV2 [11] provides further efficiency improvements 
+using inverted residuals and linear bottlenecks, both suitable 
+for mobile or edge deployment. Faster R-CNN [12] uses a 
+two-stage region-proposal pipeline (RPN + Fast R-CNN [13]) 
+for improved detection accuracy at the cost of slower 
+inference. Mask R-CNN [7] extends this two-stage approach 
+by adding a segmentation head and RoIAlign to produce 
+accurate instance masks. ORCNN [14] provides further 
+capability through the joint prediction of visible and amodal 
+masks that enable the reconstruction of occluded object parts 
+for a more complete instance understanding. 
+B. Size Estimation 
+Reference objects and geometric patterns can recover real-
+world scale when placed in the same image plane as the target. 
+An 8×8 cm ArUco marker [15] has demonstrated sub-
+centimeter accuracy under ideal conditions. A bank-card 
+homography method [16] can estimate 3D dimensions and 
+volume from a single image with relative error below ~3.5% 
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS)
+979-8-3315-7930-2/25/$31.00 ©2025 IEEE
+278
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS) | 979-8-3315-7930-2/25/$31.00 ©2025 IEEE | DOI: 10.1109/ICIMCIS68501.2025.11327435
+Authorized licensed use limited to: University of Pittsburgh. Downloaded on July 08,2026 at 12:26:08 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+ 
+ 
+ 
+in practical settings. Multitask networks that merge instance 
+segmentation and diameter regression provide end-to-end, 
+millimeter-level apple sizing (reported MAE ≈ 5.64 mm) 
+while reducing the need for manual calibration [17]. 
+Regression-head detectors embed diameter estimation into the 
+detection backbone to enable single-pass sizing suitable for 
+orchard deployments [18]. Finally, amodal segmentation 
+approaches such as ORCNN [14], [19] predict both visible and 
+occluded regions to reconstruct full object shapes under 
+occlusion, improving geometric consistency and downstream 
+diameter/volume estimates. 
+C. Depth Estimation Methods 
+Depth estimation is necessary to convert the pixel 
+measurements to real-world units when using only RGB 
+images in orchards with varying light and occlusion 
+conditions. Deep learning has allowed the field of monocular 
+depth estimation (MDE) to rapidly advance, enabling dense 
+depth maps from a single RGB image without additional 
+hardware. MiDaS [20] learns robust relative depth from large, 
+diverse datasets using a scale and shift-invariant loss, which 
+yields strong generalization but does not produce metric-scale 
+depth out of the box. ZoeDepth [21] extends this idea by 
+adding metric bins and domain-specific heads in a two-stage 
+pipeline to obtain scale-aware predictions while retaining 
+transferability. Depth Anything V2 [22] further improves 
+metric consistency and visual detail by training on very large 
+synthetic and pseudo-labeled real datasets, offering a good 
+balance between accuracy and generalization. Depth Pro [23] 
+produces very sharp, high-resolution metric depth using 
+transformer-based, multi-scale designs, but its heavy 
+computational cost limits practicality for real-time field 
+deployment. 
+Based on these insights, our research will leverage the 
+ORCNN model for object detection and segmentation, mask 
+geometry to estimate the apple diameter from the amodal 
+mask, while also including a regression head to predict the 
+diameter of the apple from the amodal mask and combined 
+with Depth Anything V2 for monocular depth estimation. 
+Given the model we selected, we aim to deliver a feasible and 
+accurate approach to measuring apple size in actual orchard 
+contexts, using natural RGB imagery and avoiding the 
+necessity of ground-truth depth data or additional hardware. 
+We anticipate delivering robust outcomes under a range of 
+lighting and occlusion conditions while making our method 
+applicable for scaled purposes in agriculture. 
+III. 
+METHODOLOGY 
+ The methodology estimates apple size from RGB images 
+through a structured pipeline. First, images are preprocessed 
+for consistent input, and Depth Anything V2 predicts a metric 
+depth map that is later calibrated to match real-world scale. 
+The ORCNN model then detects apples and generates both 
+modal and amodal masks, from which the apple diameter in 
+pixels is derived. Using the calibrated depth and camera 
+parameters, this pixel diameter is converted to millimeters, 
+enabling accurate apple-size estimation from RGB images 
+alone without ground-truth depth data. 
+A. Dataset and Preprocessing 
+The PApple RGB-D-Size v1 dataset was used, containing 
+4,017 RGB images with depth maps, modal and amodal 
+masks, and ground-truth diameters measured using a Vernier 
+calliper. All images were captured with a Canon EOS 60D (18 
+MP APS-C sensor) and an EFS 24 mm f/2.8 STM lens under 
+diverse orchard conditions, including varying lighting, 
+occlusions, and viewpoints. 
+Camera intrinsics were estimated using a standard 
+OpenCV checkerboard calibration, assuming zero skew and 
+square pixels. After resizing all images to 1,300×1,300, the 
+effective focal length was approximately 𝑓𝑝𝑥≈2180pixels. 
+Lens distortion was corrected during preprocessing; 
+remaining radial distortion was below 0.5% and therefore 
+omitted in the geometric projection model. 
+Amodal masks supervised full-shape prediction for 
+diameter regression, while modal masks were used at test time 
+to extract average depth. Depth maps were aligned to the same 
+1,300 × 1,300 resolution for one-to-one pixel correspondence. 
+Very small or empty instances were removed, and the dataset 
+was split 60:20:20 for training, validation, and testing with 
+balanced size and occlusion distributions. 
+B. Experimental Setup 
+The model was implemented with the PyTorch 
+environment in conjunction with the Detectron2 library on the 
+Kaggle. The architecture was adapted from the original Mask 
+R-CNN to have the amodal segmentation head and an 
+additional regression branch to estimate diameter. Rather than 
+ground-truth depth maps, the model incorporated monocular 
+depth estimation during testing with the Depth Anything V2 
+model, enabling size inference in the real world using only 
+RGB images. All training and testing were conducted in 
+Kaggle with an NVIDIA Tesla T4 GPU (16 GB VRAM) and 
+2 CPU cores. A Stochastic Gradient Descent (SGD) optimizer 
+was used for the model. The dataset was split into 60:20:20 to 
+maintain balanced distributions of apple size and oclussion 
+levels across training, validation, and testing. 
+C. Depth Anything V2 
+To get an estimate of the actual distance in the world from 
+the camera to the apples identified in the images, we utilized 
+Depth Anything V2. This model is a monocular depth 
+estimation model that predicts metric depth from a single 
+RGB image. Unlike RGB-D sensors or photogrammetry, 
+Depth Anything V2 does not require specialized hardware or 
+multiple camera views. The model leverages learned visual 
+ 
+Fig. 1. Methodology Flowchart 
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS)
+279
+Authorized licensed use limited to: University of Pittsburgh. Downloaded on July 08,2026 at 12:26:08 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+ 
+ 
+ 
+features from a RGB image to produce a high density of metric 
+depth. 
+The approach proposed by Depth Anything V2 is a three-
+step method. The first step involves training a large teacher 
+model with high-quality synthetic images containing accurate 
+ground truth depth labels. After the training process is 
+finished, the teacher model is used to create pseudo-labeled 
+metric depth from a large scale of unlabeled real images. This 
+step helps to reduce the domain gap between synthetic images 
+and real-world images. The pseudo-labeled real images are 
+used to train the student model, allowing for robust 
+generalization in outdoor orchard scenes. The metric depth 
+map generated with Depth Anything V2 we used to convert 
+the predicted apple size from pixels to metric units (mm) in 
+the real-world using pinhole camera geometric projection 
+method. Depth Anything V2 is selected because it provided 
+stronger metric depth accuracy and a more robust 
+generalization than Zoe Depth, MiDaS, and DPT among other 
+monocular depth estimates models, and therefore is to be 
+compared to a 3D ground truth. 
+D. Calibration Process 
+Monocular depth estimations return relative, not absolute, 
+values to be calibrated to recover the metric scale. Calibration 
+aligns predicted depth values onto the actual, physical 
+measurements taken from the reference diameters in the 
+dataset. This step ensures that the estimated size of apple 
+aligns with its physical size. 
+Calibration is described as a linear transformation, where 
+𝑍𝑝𝑟𝑒𝑑  is converted into metric depth 𝑍𝑚𝑒𝑡𝑟𝑖𝑐 using a scale 
+factor and offset: 
+𝑍𝑚𝑒𝑡𝑟𝑖𝑐= 𝑠  ×  𝑍𝑝𝑟𝑒𝑑  +  𝑏   
+where 𝑍𝑝𝑟𝑒𝑑 denoted the predicted relative depth map, 𝑍𝑚𝑒𝑡𝑟𝑖𝑐 
+represents the calibrated metric depth, 𝑠 is the scale factor, and 
+𝑏 is the bias term. The parameters 𝑠 and 𝑏 are optimized to 
+align 
+the 
+predicted 
+depth 
+values 
+with 
+real-world 
+measurements. 
+The calibration parameters 𝑠 and 𝑏 are fit by linear 
+regression on validation images with known diameters. We 
+consider two strategies: a global calibration (one 𝑠, 𝑏 for all 
+images) 
+and 
+a 
+per-base-image 
+calibration 
+(adaptive 
+scale/offset per image to account for camera pose and 
+lighting). This step aligns relative depth to metric scale, 
+ensuring downstream geometry is physically meaningful. 
+E. ORCNN 
+ 
+ The second main component, ORCNN, was used to 
+perform apple detection, amodal segmentation, and diameter 
+regression. The ORCNN extends the standard Mask R-CNN 
+architecture with a branch that performs amodal segmentation 
+predicting the full apple shape even though part of the apple 
+may be occluded by leaves or by other apples. This allows the 
+model to reason about occluded areas and infer the full shape 
+of the apple. 
+The network architecture is built on a ResNet-101 
+backbone combined with a Feature Pyramid Network (FPN) 
+to capture multi-scale features from the input image. The 
+Region Proposal Network (RPN) generates bounding boxes 
+for potential apple regions, which are then refined using 
+RoIAlign to preserve spatial alignment. The model outputs 
+bounding boxes, visible (modal) masks, and complete 
+(amodal) masks. The modal mask is used to estimate the 
+average depth of the apple surface as: 
+𝑧  = 1
+𝑁∑𝑑𝑖
+𝑁
+𝑖=1
+ 
+where 𝑑𝑖 denotes the depth value of each pixel 𝑖 within the 
+modal mask, 𝑁 is the number of pixels, and 𝑧  is their mean 
+depth. The amodal mask yields the apple area 𝐴 (pixels
+2). 
+Assuming a circular silhouette, 𝐴= 𝜋(𝑑/2)2 gives the pixel 
+diameter: 
+𝑑  =  2√𝐴
+Π 
+This assumes a circular apple silhouette and uses the estimated 
+depth 𝑧  to convert pixel measurement to real-world units.  
+The training used Stochastic Gradient Descent (SGD) as 
+an optimizer, with a learning rate set to 0.02, along with 0.90 
+momentum and a weight decay of 1 × 10−4. A total loss 
+combined objectives for classification, mask segmentation 
+and the diameter regression were used. The regression branch 
+utilizes Smooth L1 Loss, which converges stably and is less 
+sensitive to outliers in the pixel-diameter predictions. 
+During the training process, the amodal branch learned to 
+extrapolate the hidden contours of apples based on their 
+visible shape and the contextual information surrounding the 
+apple. Finally, 
+the 
+validation process 
+reported the 
+performance of the segmentation and regression outputs 
+against (1) early stopping to ensure the model converged and 
+(2) was not overfitting. Due to this convergence, the model's 
+ 
+Fig. 2. ORCNN Architecture 
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS)
+280
+Authorized licensed use limited to: University of Pittsburgh. Downloaded on July 08,2026 at 12:26:08 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+ 
+ 
+ 
+best checkpoint was based on the minimum validation error 
+and accuracy (segmentation output). 
+F. Testing phase and Evaluation Metrics 
+In the testing stage, the trained ORCNN model was 
+applied to the unseen test subset. For each detected apple, the 
+modal mask was used to extract the corresponding region 
+from the predicted depth map. The mean depth value within 
+this region, denoted as 𝑍mm, represents the camera-to-object 
+distance. 
+The diameter of each apple in pixel units 𝑑px was obtained 
+using mask geometry, which calculates the diameter from the 
+spatial extent of the predicted amodal mask. Using the 
+calibrated depth and the estimated pixel diameter, the real-
+world diameter 𝐷mm was computed through the pinhole-
+camera projection relationship: 
+ 
+𝐷𝑚𝑚= 𝑑𝑝𝑥× 𝑍𝑚𝑚
+𝑓𝑝𝑥
+, 
+ 
+where 𝑓px denotes the focal length of the imaging system 
+expressed in pixels. This geometric conversion allows the 
+model to translate pixel-based measurements into millimetres, 
+yielding a metric estimate of apple size from a single RGB 
+image. 
+Each test sample was assessed independently so all 
+inferences were consistent across images and to prevent bias 
+in any of the comparisons. The predicted diameters were 
+compared directly with their corresponding ground-truth 
+values. 
+G. Evaluation Metrics 
+To measure the performance of the proposed framework, 
+two sets of evaluation metrics were considered: segmentation-
+based and regression-based. For the measure of segmentation 
+quality, Precision, Recall, and F1-score were used to measure 
+how well the model is able to detect and segment apples. In 
+unison, these metrics assess the model’s ability to confidently 
+detect all instances of the apples (recall) and to minimize false 
+detections (precision).  
+To evaluate the estimated diameters, the study used Mean 
+Absolute Error (MAE), Root Mean Square Error (RMSE), 
+Mean Absolute Percentage Error (MAPE), and the Coefficient 
+of Determination (R²).  MAE captures the average difference 
+between the estimated diameters and actual diameters, RMSE 
+gives more emphasis to larger differences indicating stability, 
+MAPE indicates the difference as percent relative to actual 
+diameters, and R² indicates the suitability of the model in 
+predicting diameter values. All these measures were selected 
+such that collectively they provide a holistic view of accuracy, 
+proportion, and stability giving an objective view of the 
+geometric and predictive quality of the model. 
+IV. 
+RESULT AND DISCUSSION 
+The experiments were analyzed in two phases: depth 
+estimation and apple size estimation, each evaluated both 
+quantitatively and qualitatively to assess the robustness of the 
+proposed RGB-based approach. 
+A. Depth Estimation Performance 
+The first phase compared ZoeDepth-NK, a fine-tuned 
+model on the PApple RGB-D-Size dataset, and Depth 
+Anything V2, pretrained on large synthetic outdoor data. As 
+summarized in Table I, Depth Anything V2 consistently 
+achieved lower errors across all metrics, confirming that large-
+scale pretraining yields better generalization than domain-
+specific 
+fine-tuning. 
+ZoeDepth-NK 
+showed 
+degraded 
+performance due to overfitting and limited texture diversity. 
+A visual comparison in Fig 3 illustrates that Depth 
+Anything V2 produces smoother and more coherent depth 
+structures, particularly around object edges and in shaded 
+regions. Accurate and continuous depth predictions are critical 
+since the mean depth within the apple region is later used to 
+convert pixel diameters into real-world measurements. 
+B. Size Estimation Using Predicted Depth 
+Building on the depth results, the pipeline was evaluated 
+for estimating apple diameters in millimeters. ORCNN was 
+trained on RGB images and masks, with multiple depth 
+sources tested. As shown in Table II, Depth Anything V2 
+achieves a strong performance once calibrated. 
+Without calibration, the model produced correct relative 
+but incorrect absolute depths, resulting in overestimated 
+diameters. A global calibration reduced MAE by ~18%, while 
+per-image calibration achieved the best performance 
+(MAE≈7.72 mm, R²≈0.45). The relatively low R² indicates 
+that although the average error is small, the prediction 
+variance is larger for certain scenes. This reflects instability 
+due to depth noise in occluded or distant fruit regions. 
+Although effective, this step still depends on ground-truth 
+diameters to recover metric scale, meaning any reference error 
+propagates directly into the final size estimate. To assess 
+calibration stability, the predicted metric scale was also 
+validated against a small set of physically measured apples 
+using Vernier calipers. The average deviation between the 
+calibrated monocular depth and physical measurements 
+remained within 2-3 mm, confirming that the scale regression 
+is consistent when the camera pose is stable. However, the 
+approach remains sensitive to inaccuracies in the reference 
+diameters used during calibration. Since diameter estimation 
+TABLE I.  
+DEPTH-ESTIMATION PERFORMANCE COMPARISON 
+Metric 
+Model 
+ZoeDepth-NK 
+(finetuned) 
+Depth Anything V2 
+(pretrained) 
+Abs Rel 
+0.26 
+0.09 
+Sq Rel 
+0.53 
+0.08 
+RMSE 
+(m) 
+1.11 
+0.46 
+RMSE log 
+0.29 
+0.13 
+δ < 1.25 
+0.59 
+0.91 
+δ < 1.25² 
+0.86 
+0.98 
+δ < 1.25³ 
+0.91 
+1.00 
+ 
+Raw 
+ 
+ZoeDepth 
+ 
+Depth Anything V2 
+Fig. 3. Comparison between the original RGB image and the depth 
+prediction results from ZoeDepth and Depth Anything V2. 
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS)
+281
+Authorized licensed use limited to: University of Pittsburgh. Downloaded on July 08,2026 at 12:26:08 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+ 
+ 
+ 
+follows 𝐷𝑚𝑚  =  
+𝑑𝑝𝑥𝑍
+𝑓𝑝𝑥, small depth perturbations directly 
+scale the final metric output. An error ΔZ produces a 
+proportional error ∆𝐷  =  
+𝑑𝑝𝑥𝑍
+𝑓𝑝𝑥∆𝑍, meaning depth noise of 
+only 2–3% can translate into 5-8 mm diameter variation for 
+apples at typical working distances. This phenomenon 
+explains the inconsistent R² despite low MAE. 
+The evaluation also does not cover variations in focal 
+length, strong backlighting, or extreme occlusion. Heavy 
+occlusion and low-light scenes introduce depth and 
+segmentation instability, contributing to the modest R² and 
+highlighting the need for further robustness studies. 
+Fig 4 shows examples of predicted apple diameters 
+overlaid on the input images, demonstrating that the estimated 
+sizes align well with the ground truth, even under partial 
+occlusion. The visible (modal) and amodal masks produced 
+by ORCNN enable the model to reconstruct hidden fruit 
+regions, ensuring consistent diameter estimation. However, 
+heavily occluded instances can still bias mean-depth estimates 
+and increase errors. 
+Taken altogether, the full Depth Anything V2 + ORCNN 
+pipeline, after careful calibration, demonstrated sub-
+centimeter performance without depth sensors. Importantly, 
+relative rankings of apple sizes remained consistent across 
+scenes, boding well for reliable yield estimation and growth 
+monitoring. Fine-tuning of the ZoeDepth-NK model resulted 
+in notably weaker performance: Abs Rel ≈ 0.26, δ₁ ≈ 0.59, 
+with higher sensitivity to illumination and viewing angle, 
+further supporting the benefits of large-scale pretraining. 
+In summary, monocular depth prediction, once calibrated, 
+can replace sensor-based depth for estimating apple sizes. The 
+proposed method achieves high segmentation accuracy and a 
+mean absolute error of about 7.72 mm using only RGB 
+imagery, demonstrating a practical, low-cost, and scalable 
+approach for precision-agriculture applications. 
+V. 
+CONCLUSION 
+The proposed system integrates ORCNN for amodal 
+segmentation and diameter regression with Depth Anything 
+V2 for monocular metric depth. This combination allows 
+pixel-level diameter measurements to be converted into 
+millimetres through calibrated projection, enabling accurate 
+apple-size estimation using RGB images alone. The proposed 
+approach achieved a mean absolute error of about 7.72 mm 
+after calibration to correct the depth scale.  
+These findings demonstrate that monocular depth, once 
+calibrated, is a viable alternative to sensor-based depth in real 
+orchard environments. Most remaining errors arise from 
+variations in camera distance and lighting rather than random 
+noise. Per-image calibration helps reduce such discrepancies 
+and improves prediction stability across different scenes. 
+Enhanced by amodal segmentation for handling occlusion, the 
+TABLE II.  
+OVERALL PERFORMANCE OF APPLE DETECTION AND 
+SIZE ESTIMATION 
+Metric 
+Model 
+GT Depth 
+Predicted 
+Depth 
+Only 
+Predicted + 
+Global 
+Calibration 
+Predicted + 
+Per-Image 
+Calibration 
+Precision 
+0.93 
+0.91 
+0.91 
+0.91 
+Recall 
+0.73 
+0.79 
+0.79 
+0.79 
+F1 Score 
+0.81 
+0.83 
+0.83 
+0.83 
+AP 
+0.26 
+0.35 
+0.35 
+0.35 
+MAE 
+4.02 
+10.99 
+9.09 
+7.72 
+MBE 
+-16.23 
+-8.64 
+-12.76 
+-15.06 
+MAPE 
+0.06 
+0.17 
+0.14 
+0.11 
+RMSE 
+30.10 
+164.33 
+125.23 
+93.56 
+R² 
+0.82 
+0.03 
+0.26 
+0.45 
+ 
+Raw 
+ 
+Predicted Diameter 
+Fig. 4. Comparison between the original RGB image and the predicted diameter. 
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS)
+282
+Authorized licensed use limited to: University of Pittsburgh. Downloaded on July 08,2026 at 12:26:08 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+ 
+ 
+ 
+system shows strong potential for automated apple 
+measurement and yield monitoring. 
+However, for practical large-scale field deployment, a 
+global calibration configuration is more realistic, as it avoids 
+per-image reference measurements and requires only a one-
+time scale fitting. Future research can pursue real-time 
+processing, method expansion to additional crops, and refined 
+calibration to accommodate more extreme field conditions. 
+REFERENCES 
+[1] 
+M. Ferrer-Ferrer, J. Ruiz-Hidalgo, E. Gregorio, V. 
+Vilaplana, J. R. Morros, and J. Gené-Mola, 
+“Simultaneous fruit detection and size estimation 
+using multitask deep neural networks,” Biosyst Eng, 
+vol. 
+233, 
+pp. 
+63–75, 
+Sep. 
+2023, 
+doi: 
+10.1016/j.biosystemseng.2023.07.010. 
+[2] 
+J. Gené-Mola et al., “Looking behind occlusions: A 
+study on amodal segmentation for robust on-tree 
+apple fruit size estimation,” Comput Electron Agric, 
+vol. 
+209, 
+Jun. 
+2023, 
+doi: 
+10.1016/j.compag.2023.107854. 
+[3] 
+H. Jeong et al., “Automated Technology for 
+Strawberry Size Measurement and Weight Prediction 
+Using AI,” IEEE Access, vol. 12, pp. 14157–14167, 
+2024, doi: 10.1109/ACCESS.2024.3356118. 
+[4] 
+K. Kusumam, T. Krajník, S. Pearson, T. Duckett, and 
+G. 
+Cielniak, 
+“3D-Vision 
+Based 
+Detection, 
+Localisation and Sizing of Broccoli Heads in the 
+Field.” 
+[5] 
+P. M. Blok, E. J. van Henten, F. K. van Evert, and G. 
+Kootstra, “Image-based size estimation of broccoli 
+heads under varying degrees of occlusion,” Biosyst 
+Eng, vol. 208, pp. 213–233, Aug. 2021, doi: 
+10.1016/j.biosystemseng.2021.06.001. 
+[6] 
+S. Zhang, L. Wen, X. Bian, Z. Lei, and S. Z. Li, 
+“Occlusion-aware R-CNN: Detecting Pedestrians in 
+a 
+Crowd,” 
+Jul. 
+2018, 
+[Online]. 
+Available: 
+http://arxiv.org/abs/1807.08407 
+[7] 
+K. He, G. Gkioxari, P. Dollár, and R. Girshick, 
+“Mask R-CNN,” Mar. 2017, [Online]. Available: 
+http://arxiv.org/abs/1703.06870 
+[8] 
+H. Liu, X. Ma, Y. Yu, L. Wang, and L. Hao, 
+“Application of Deep Learning-Based Object 
+Detection Techniques in Fish Aquaculture: A 
+Review,” J Mar Sci Eng, vol. 11, no. 4, p. 867, Apr. 
+2023, doi: 10.3390/jmse11040867. 
+[9] 
+M. N. Alhasanat, M. H. Alsafasfeh, A. E. Alhasanat, 
+and S. G. Althunibat, “Retinanet-based approach for 
+object detection and distance estimation in an 
+image,” Int J Commun Antenna Propag, vol. 11, no. 
+1, 
+pp. 
+19–25, 
+Feb. 
+2021, 
+doi: 
+10.15866/irecap.v11i1.19341. 
+[10] 
+A. G. Howard et al., “MobileNets: Efficient 
+Convolutional Neural Networks for Mobile Vision 
+Applications,” Apr. 2017, [Online]. Available: 
+http://arxiv.org/abs/1704.04861 
+[11] 
+M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and 
+L.-C. Chen, “MobileNetV2: Inverted Residuals and 
+Linear Bottlenecks,” Jan. 2018, [Online]. Available: 
+http://arxiv.org/abs/1801.04381 
+[12] 
+S. Ren, K. He, R. Girshick, and J. Sun, “Faster R-
+CNN: Towards Real-Time Object Detection with 
+Region Proposal Networks,” Jun. 2015, [Online]. 
+Available: http://arxiv.org/abs/1506.01497 
+[13] 
+R. Girshick, “Fast R-CNN,” Apr. 2015, [Online]. 
+Available: http://arxiv.org/abs/1504.08083 
+[14] 
+P. Follmann, R. König, P. Härtinger, and M. 
+Klostermann, “Learning to See the Invisible: End-to-
+End Trainable Amodal Instance Segmentation,” Apr. 
+2018, 
+[Online]. 
+Available: 
+http://arxiv.org/abs/1804.08864 
+[15] 
+H. Kurnianto, W. Puspitasari, and R. H. Yoga 
+Perdana, “A Computer Vision-based for Fish Size 
+Measurement,” in 2021 International Conference on 
+Advanced Mechatronics, Intelligent Manufacture 
+and Industrial Automation, ICAMIMIA 2021 - 
+Proceeding, Institute of Electrical and Electronics 
+Engineers 
+Inc., 
+2021, 
+pp. 
+311–315. 
+doi: 
+10.1109/ICAMIMIA54022.2021.9809728. 
+[16] 
+C. Zhang and L. Han, “Intelligent Measurement of 
+Object Volume Based on Image,” in ACM 
+International 
+Conference 
+Proceeding 
+Series, 
+Association for Computing Machinery, Apr. 2021, 
+pp. 146–153. doi: 10.1145/3467707.3467728. 
+[17] 
+M. Ferrer-Ferrer, J. Ruiz-Hidalgo, E. Gregorio, V. 
+Vilaplana, J. R. Morros, and J. Gené-Mola, 
+“Simultaneous fruit detection and size estimation 
+using multitask deep neural networks,” Biosyst Eng, 
+vol. 
+233, 
+pp. 
+63–75, 
+Sep. 
+2023, 
+doi: 
+10.1016/j.biosystemseng.2023.07.010. 
+[18] 
+J. C. Miranda et al., “Fruit sizing using AI: A review 
+of methods and challenges,” Postharvest Biol 
+Technol, 
+vol. 
+206, 
+p. 
+112587, 
+2023, 
+doi: 
+https://doi.org/10.1016/j.postharvbio.2023.112587. 
+[19] 
+X. Xie, G. Cheng, J. Wang, X. Yao, and J. Han, 
+“Oriented R-CNN for Object Detection.” [Online]. 
+Available: https://github.com/jbwang1997/ 
+[20] 
+R. Birkl, D. Wofk, and M. Müller, “MiDaS v3.1 -- A 
+Model Zoo for Robust Monocular Relative Depth 
+Estimation,” 
+Jul. 
+2023, 
+[Online]. 
+Available: 
+http://arxiv.org/abs/2307.14460 
+[21] 
+S. F. Bhat, R. Birkl, D. Wofk, P. Wonka, and M. 
+Müller, 
+“ZoeDepth: 
+Zero-shot 
+Transfer 
+by 
+Combining Relative and Metric Depth,” Feb. 2023, 
+[Online]. Available: http://arxiv.org/abs/2302.12288 
+[22] 
+L. Yang et al., “Depth Anything V2,” Oct. 2024, 
+[Online]. Available: http://arxiv.org/abs/2406.09414 
+[23] 
+A. Bochkovskii et al., “Depth Pro: Sharp Monocular 
+Metric Depth in Less Than a Second,” Apr. 2025, 
+[Online]. Available: http://arxiv.org/abs/2410.02073 
+ 
+2025 International Conference on Informatics, Multimedia, Cyber and Information System (ICIMCIS)
+283
+Authorized licensed use limited to: University of Pittsburgh. Downloaded on July 08,2026 at 12:26:08 UTC from IEEE Xplore.  Restrictions apply. 

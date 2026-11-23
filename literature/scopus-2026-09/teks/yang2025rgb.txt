@@ -1,0 +1,884 @@
+ An RGB-D Multi-modal Apple Recognition and Instance Segmentation Method 
+for Orchard Harvesting 
+ 
+1st Mingji Yang  
+School of Measurement Control and Communication 
+Engineering 
+Harbin University of Science and Technology 
+Harbin, China 
+yangmingji@126.com 
+ 
+ 2nd Da Teng* 
+School of Measurement Control and Communication 
+Engineering 
+Harbin University of Science and Technology 
+Harbin, China 
+2685564285@qq.com
+Abstract—Accurate localization of apples during harvesting is 
+a critical step towards automated and intelligent orchard 
+picking. However, the prevalence of 
+occlusion 
+and 
+backlighting in orchard environments poses significant 
+challenges to model precision. Sole reliance on RGB-based 
+object detection models often fails to provide the precise 
+target positioning required for successful grasping and 
+picking. To address this, this study proposes an RGB-D dual-
+branch instance segmentation model based on YOLOv11n-
+seg. Firstly, an improved CSPDarknet-based backbone from 
+YOLOv11 and an enhanced MobileNetV4 are employed to 
+construct a dual-branch feature extraction network, which 
+independently extracts features from the RGB and depth 
+modalities. Secondly, a Bidirectional Feature Fusion 
+Attention mechanism is employed to improve the integration 
+of information across different modalities. Furthermore, the 
+adaptive dynamic upsampling module, DySample, is 
+incorporated to dynamically generate upsampling kernels, 
+thereby improving the quality of segmentation mask 
+boundaries. Finally, experimental results demonstrate that 
+compared to the original model, the proposed improved 
+model achieves increases of 2.9% and 2.7% in Box mAP50 
+and Mask mAP50, respectively.  
+Keywords-Agricultural Intelligence; Apple Harvesting; 
+Multimodal; RGB-D; Instance Segmentation 
+I. 
+ INTRODUCTION  
+As one of the most widely cultivated fruit species in the 
+world, apples possess both great nutritional value and 
+economical significance[1]. Currently, apple harvesting in 
+orchards primarily relies on traditional manual labor, which 
+is characterized by high labor costs and low levels of 
+mechanization and intelligence[2]. To promote industrial 
+upgrading, the adoption of robots to replace human pickers 
+has become an industry trend. With the advancement of 
+deep learning techniques, vision-based solutions for fruit 
+localization have been widely adopted. However, complex 
+orchard environments—featuring uneven fruit distribution, 
+substantial occlusion, and challenges such as an overhead 
+perspective with backlighting during picking—pose 
+significant obstacles. In these scenarios, the object detection 
+accuracy and localization performance of models remain 
+considerable challenges. 
+In recent years, fruit harvesting algorithms for complex 
+orchard environments have been widely applied. To address 
+the issue of fruit mutual occlusion in identifying and 
+localizing clustered fruits, Wang et al.[3] proposed an 
+adaptive parameter clustering algorithm, KGAP-DBSCAN, 
+for localizing lychee clusters, achieving a precision of 
+94.20%. Meanwhile, Li et al.[4] enhanced the traditional 
+DQN algorithm to tackle the low efficiency caused by 
+tightly arranged kiwifruits during harvesting. 
+To achieve precise harvesting, researchers have adopted 
+cascaded strategies. For instance, He et al.[5] categorized 
+strawberry targets into occluded and non-occluded states, 
+employing a two-stage architecture to accomplish high-
+precision picking. In another study, Qifan Wang et al.[6] 
+utilized two separate models to identify grape berries and 
+stems respectively, enabling the robotic arm to perform 
+rapid approach and precise detachment. 
+The YOLO object detection model has been widely 
+adopted for fruit recognition and localization due to its high 
+speed and lightweight architecture[7]. For instance, 
+Hongxiong Su et al.[8] presented a keypoint detection 
+framework for simultaneous localization of zucchini fruits 
+and their corresponding picking points. Their YOLOv8n-
+Pose-DSW model, developed from a YOLOv8n-pose 
+baseline, attained performance levels of 94.0% mAP@50 
+and 71.4% mAP@50-95, demonstrating its effectiveness in 
+precise agricultural target localization. Furthermore, 
+building upon the YOLOv11 architecture, the GIA-YOLO 
+model developed by Longlong Ren et al.[9] integrates an 
+attention mechanism, attaining a mean average precision of 
+96.2% for nectarine fruit detection. In a related effort, 
+Jinpeng Wang et al.[10] enhanced the YOLOv7 algorithm, 
+attaining an average precision of 91.7% for localizing 
+camellia oleifera fruits. 
+Compared to object detection methods, instance 
+segmentation is characterized by its higher precision and 
+more detailed informational output[11]. For example, Yuan 
+Fang et al.[12] employed a modified Mask R-CNN instance 
+segmentation algorithm, utilizing morphological cropping 
+and concave point segmentation to address the adhesion 
+problem caused by overlapping or occlusion between 
+persimmons, achieving a mean average precision of 
+94.25%. In another study, through the integration of the 
+SimAM attention mechanism with the Mish activation 
+function, enhancements made by Xinzhao Zhou et al.[13] to 
+the PG-YOLACT++ network subsequently led to 
+performance gains of 2.2% and 2.6% in mean precision for 
+object detection and mask segmentation, respectively. 
+Pengjun Xiang et al.[14] proposed a CNN-Transformer 
+hybrid network model named MixSegNext for the 
+segmentation of prickly ash fruits and flower clusters, 
+reporting significant improvements in segmentation 
+accuracy and pick-point localization precision. Similarly, 
+Han Li et al.[15] enhanced the YOLOv8n-seg model for 
+segmenting citrus fruits and stems, achieving a mean 
+average precision of 94.43%. 
+A significant gap exists between the predominant focus 
+on 2D fruit detection in research and the actual 3D 
+2025 2nd International Symposium on AI and Cybersecurity (ISAICS) | 979-8-3315-5490-3/25/$31.00 ©2025 IEEE | DOI: 10.1109/ISAICS66888.2025.11350135
+Authorized licensed use limited to: Istanbul Bilgi University. Downloaded on July 19,2026 at 05:17:50 UTC from IEEE Xplore.  Restrictions apply. 
+
+environment of harvesting scenarios. Acquiring detailed 
+three-dimensional information is essential for enabling the 
+sophisticated motion planning and reliable performance of 
+automated picking devices in real-world conditions. 
+Consequently, many researchers have adopted RGB-D 
+cameras as primary sensors for acquiring 3D information 
+[16]. C. Beldek et al.[17] relied on an RGB-D camera to 
+collect point cloud data, combining it with a YOLOv8n 
+network to localize picking points on target fruits.   
+The aforementioned methods have achieved significant 
+progress in fruit localization for harvesting in various 
+aspects. However, when dealing with the complex 
+environments of orchards, each approach presents certain 
+limitations. Traditional clustering algorithms are primarily 
+suitable for locating and harvesting clustered fruits. While 
+cascade strategies can adapt to various scenarios, they 
+improve accuracy at the cost of increased system 
+complexity. Single-stage object detection algorithms like 
+the YOLO series offer faster speeds, yet their detection 
+accuracy is generally inferior to that of instance 
+segmentation models, which is detrimental to precise fruit 
+grasping. Conversely, two-stage instance segmentation 
+algorithms, which prioritize accuracy, demand considerable 
+computational resources and memory, resulting in slower 
+inference speeds. Although employing RGB-D cameras for 
+assisted perception aligns better with real-world harvesting 
+conditions, it often requires separate task-specific 
+processing, lacking the advantages of an end-to-end 
+framework, such as lower cost and architectural simplicity. 
+Therefore, this study proposes an end-to-end dual-
+branch RGB-D multimodal instance segmentation model 
+based on YOLOv11n-seg. The main contributions are 
+summarized as follows: 
+(1) Incorporation of Depth Data: A dual-branch feature 
+extraction network is designed to process both RGB and 
+depth modalities. The star operation is integrated into the 
+C3K2 module of the network to enhance the model's feature 
+representation capability. 
+(2) Construction of a multimodal feature interaction 
+module: This module enhances information interaction and 
+fusion between the different RGB-D modalities. By 
+employing a cross-attention mechanism, it fully exploits the 
+complementary nature of deep-level multimodal features, 
+achieving effective multi-scale feature fusion. 
+(3) Integration of an adaptive dynamic upsampling 
+module: This module dynamically generates upsampling 
+kernels, improving the quality of segmentation boundaries 
+and effectively boosting the segmentation accuracy for 
+apples in orchard environments. 
+II. 
+ATERIALS AND METHODS 
+A. Dataset 
+The 
+experiments 
+utilized 
+the PApple-RGB-D-
+Size dataset[18]. This dataset comprises 3,925 PNG-format 
+RGB images with a resolution of 1200×1200 pixels, 
+captured from six Fuji apple trees at different growth stages. 
+Each RGB image has a corresponding depth map stored in 
+NPY format. In total, the dataset contains 15,335 annotated 
+Fuji apples with ground truth annotations. The imaged trees 
+include three at a late maturation stage (exhibiting a reddish 
+tint) and three that were imaged when the apples had 
+reached approximately 70% of their final size. 
+The dataset was partitioned into training, validation, and 
+test subsets in an 8:1:1 proportion. The depth data was 
+aligned with the RGB images during preprocessing. As 
+shown in Figure 1, the dataset encompasses various 
+challenging scenarios found in orchard environments, 
+including occlusion between fruits, occlusion of fruits by 
+trunks and leaves, and challenging perspectives such as 
+upward views under backlit conditions during harvesting. 
+ 
+Figure 1.  Dataset Samples and Challenging Scenarios. 
+B. Network Architecture 
+The proposed network architecture, illustrated in 
+Figure 2, includes a dual-branch feature extraction network, 
+a neck feature fusion network, and a segmentation head. 
+RGB images and depth maps are simultaneously input into 
+the extraction network, with features from each branch 
+processed and integrated through the neck network via a 
+multimodal interaction module. The segmentation head 
+then outputs the final detection and segmentation results.
+....
+..
+Results
+...
+RGB
+Depth
+MobileNetV4
+YOLOv11 Backbone
+RGB Features
+Depth Features
+....
+..
+PSFM
+SPPF
+C2PSA
+DySample
+C3K2
+C3K2
+P3
+Conv
+P5
+segment
+DySample
+Conv
+P4
+segment
+segment
+ 
+Figure 2.  Overall Network Architecture of the Proposed Model. 
+C. Dual-Branch Feature Extraction Network 
+The dual-branch feature extraction network is composed 
+of an improved CSPDarknet-based backbone from 
+YOLOv11[19] and an optimized MobileNetV4[20], as 
+illustrated in Figure 3. Specifically, the YOLOv11 
+backbone is dedicated to extracting features from the RGB 
+input, while the optimized MobileNetV4 branch handles the 
+depth data. 
+Authorized licensed use limited to: Istanbul Bilgi University. Downloaded on July 19,2026 at 05:17:50 UTC from IEEE Xplore.  Restrictions apply. 
+
+O utput
+Input
+P3
+P4
+P5
+Conv
+Conv
+C3K2-Star
+Conv
+Conv
+C3K2-Star
+C3K2-Star
+C3K2-Star
+C3K2-Star
+Conv
+Conv-BN
+Conv-
+BN·2
+UIB·6
+Conv-
+BN·2
+UIB·6
+Conv-
+BN·2
+Input
+ 
+Figure 3.  Structure of the Dual-Branch Feature Extraction Network. 
+The C3K2 module within YOLOv11 backbone has been 
+redesigned by incorporating StarNet[21]. The processing 
+pipeline is as follows: the input features are first split, with 
+one portion preserved as a residual connection for later use. 
+The other portion undergoes a 1×1 convolutional layer for 
+linear transformation, generating two separate feature 
+streams. A star operation—defined as an element-wise 
+multiplication between these two feature streams—is then 
+performed to achieve a mapping into a high-dimensional, 
+non-linear feature space. The result of this star operation is 
+subsequently combined with the initially preserved residual 
+via a residual connection. Finally, the integrated feature map 
+is output. 
+This operation fundamentally differs from traditional 
+approaches that increase network width to enhance 
+dimensionality. 
+Instead, 
+it 
+achieves 
+remarkable 
+performance while maintaining a compact network 
+structure. 
+To ensure dimensional alignment between the two 
+feature pathways and to facilitate subsequent feature fusion 
+operations, the MobileNetV4 network architecture was 
+optimized. It was restructured into a 4-stage pyramid, 
+retaining its core components of depthwise separable 
+convolutions and Universal Inverted Bottleneck (UIB) 
+blocks. This optimized architecture extracts and outputs 
+features from the depth data at multiple scales, specifically 
+tailored to align with the P3, P4, and P5 feature pyramid 
+levels of the YOLOv11 backbone. 
+D. Feature Fusion Module 
+The Profound Semantic Fusion Module (PSFM)[22] is 
+a multi-scale feature fusion module that leverages a cross-
+attention mechanism to fully exploit the complementary 
+nature of deep-level features across different modalities. 
+Simultaneously, it enhances the model's adaptability for 
+high-level semantic tasks, thereby effectively improving 
+overall image fusion performance. The overall architecture 
+of this module is depicted in Figure 4 below. 
+FR
+FD
+D L
+C
+.
+V R
+K R
+Q
+D L
+C
+.
+.
+.
+.
+K D
+V D
+	.
+	
+
+Conv
+	.
+	
+
+F
+ 
+Figure 4.  Architecture of the Profound Semantic Fusion Module. 
+The architecture of the PSFM is designed around a 
+Cross-Attention mechanism. Its specific workflow can be 
+divided into four steps: Feature Enhancement, Projection 
+Mapping, Attention Computation, and Feature Fusion. 
+Firstly, the PSFM performs enhancement processing on 
+the depth features () and RGB features () extracted by 
+the backbone networks. Dense Layers are employed to 
+strengthen the semantic representation capacity of these 
+features, outputting the enhanced deep-level features  
+and . 
+Subsequently, 
+a 
+convolutional 
+kernel 
+reshaping 
+operation is applied to the enhanced features to project them 
+into the keys and values required by the attention 
+mechanism. The transformation is formulated as follows: 
+ = 	ℎ
+1 
+ = 	ℎ
+2 
+where: 
+• 
+! represents the different input modalities, such as 
+RGB and Depth. 
+• 
+" denotes the key features corresponding to 
+modality !. 
+• 
+" denotes the value features corresponding to 
+modality !. 
+• 
+Conv refers to a 3×3 convolutional layer 
+employed 
+for 
+modality-specific 
+feature 
+transformation and channel count adjustment. 
+• 
+Reshape is the function that restructures the 
+feature dimensions. 
+The module then generates the Query by fusing the 
+enhanced features from both modalities to prevent bias 
+towards either. Using this fused Query and the previously 
+projected Keys, it computes modality-specific attention 
+maps, 
+thereby 
+enhancing 
+cross-modal 
+correlations. 
+Specifically, the Query is produced by concatenating the 
+enhanced depth and RGB features, followed by 
+convolutional processing and reshaping, which ensures it 
+encapsulates 
+information 
+from 
+both 
+sources. 
+The 
+formulation is as follows: 
+< = 	ℎ, 
+3 
+where: 
+• 
+< denotes the modality-agnostic Query. 
+• 
+ and  represent the enhanced deep-level 
+RGB and depth features, respectively. 
+• 
+Conv denotes a 3×3 convolutional layer for 
+channel number adjustment. 
+• 
+ denotes the concatenation function along the 
+channel dimension for the depth and RGB 
+features. 
+For the depth and RGB modalities respectively, the 
+similarity between the Query and each modality's Key is 
+calculated. These similarity scores are then normalized by 
+the Softmax function to generate the attention maps, as 
+formulated below: 
+C = D
+< ∙"
+F
+4 
+where: 
+• 
+C" denotes the attention map for modality !. 
+• 
+< ⋅"
+F
+ denotes 
+the 
+matrix 
+multiplication 
+between the Query< and the transposed Key 
+"
+F of that modality. 
+Following this, the modality-specific attention maps are 
+applied to their corresponding Value features via batch 
+matrix multiplication, yielding the attention-weighted 
+Authorized licensed use limited to: Istanbul Bilgi University. Downloaded on July 19,2026 at 05:17:50 UTC from IEEE Xplore.  Restrictions apply. 
+
+global contextual features, denoted as L. To achieve cross-
+modal complementarity, these attention-weighted features 
+from one modality are then fused with the original enhanced 
+features of the other modality using element-wise addition. 
+This process is formulated as follows: 
+L = C ∙
+5 
+N =  ⊕L
+6 
+The 
+two 
+cross-modally 
+enhanced 
+features 
+are 
+concatenated along the channel dimension and subsequently 
+passed through a 3×3 convolutional layer to reduce the 
+channel dimension to , resulting in the final deeply fused 
+feature. This process is represented as follows: 
+ =  Q
+R, 
+RS
+7 
+E. Dynamic Upsampling Module 
+DySample is a dynamic upsampling module[23], whose 
+core structure is illustrated in Figure 5. The feature ! with 
+dimensions  × U × V (where U is height, V is width, 
+and  is the number of channels) is fed into two parallel 
+linear layers for spatial dimension mapping. Based on the 
+module's predefined number of groups W and upsampling 
+scale factor 	, these linear layers output features with a 
+dimension of 2W	X . The outputs from both layers then 
+undergo a sigmoid activation function, scaled by 0.5, to 
+adjust their dimensions, producing the final upsampling 
+offsets Y with dimensions 	U × 	V × 2W. 
+Subsequently, to satisfy the requirement for element-
+wise addition, the original sampling grid Z, which has the 
+same dimensions 	U × 	V × 2W , is combined with the 
+offsets Y through element-wise summation. This generates 
+the dynamically adjusted sampling point set, referred to as 
+the dynamic sampling set D. Finally, using D as the precise 
+sampling guide, a resampling operation is performed on the 
+input feature map !, yielding the upsampled output feature 
+map !L. The dimensions of !L are  × 	U × 	V, achieving 
+both an 	 -fold increase in spatial resolution and the 
+complete preservation of the original feature map's channel 
+count and critical semantic information. 
+This module departs from the traditional paradigm of 
+dynamic kernel convolution, fundamentally rethinking 
+upsampling from the perspective of point sampling. It 
+dynamically selects kernel sizes and resolutions, and 
+optimizes the sampling strategy based on target distance 
+information from the depth data. This capability effectively 
+mitigates feature ambiguity for distant targets in RGB-D 
+tasks, thereby enhancing the segmentation accuracy of 
+small objects. Furthermore, performance and flexibility are 
+improved by grouping the feature channels and generating 
+independent sampling sets for each group. 
+ 
+Figure 5.  Architecture of the Adaptive Dynamic Upsampling Module. 
+III. 
+RESULTS AND ANALYSIS 
+A. Evaluation Metrics 
+To evaluate the performance of ours model, Box mAP50 
+and Mask mAP50 were used as metrics. In this context, 
+mAP50 refers to the mean Average Precision over all 
+categories at an IoU threshold of 0.5. 
+A Bounding Box(Box) is a fundamental output in object 
+detection tasks within computer vision, used to delineate the 
+approximate location of a target in an image. In contrast, an 
+Instance Mask(Mask) serves as the core output for instance 
+segmentation, providing a pixel-wise distinction between 
+the target and the background, thereby offering a more 
+precise delineation than a bounding box. 
+B. Experimental Setup 
+To ensure the fairness of the experiments, all trials were 
+conducted under identical environmental conditions and 
+parameter settings. The hardware configuration utilized 
+an NVIDIA RTX 3090(24 GB) GPU and an Intel Xeon 
+Platinum 8352V CPU @ 2.10GHz. The experiments were 
+conducted in a software environment consisting of Ubuntu 
+20.04, Python 3.8, PyTorch 2.0.0, and CUDA 11.8. The 
+hyperparameters selected for the model training process are 
+detailed in TABLE I. 
+TABLE I.  
+TRAINING HYPERPARAMETERS 
+Hyperparameters 
+Value 
+epochs 
+200 
+img_size 
+640×640 
+batch_size 
+12 
+optimizer 
+AdamW 
+lr0 
+0.01 
+weight_decay 
+0.0005 
+mask_ratio 
+4 
+activation function 
+SiLU 
+C. Ablation Study 
+An ablation experiment was carried out under identical 
+training conditions and using the same dataset, with 
+YOLOv11n-seg as the baseline, to investigate the 
+contribution 
+of 
+each 
+proposed 
+modification. 
+This 
+experiment aims to evaluate the individual contributions of 
+the depth data(Depth), the star operation(Star), the Profound 
+Semantic Fusion Module(PSFM), and the adaptive dynamic 
+upsampling module(DySample) to the overall performance. 
+The results are shown in TABLE II. 
+TABLE II.  
+ABLATION STUDY RESULTS 
+Baseli
+-ne 
+Depth 
+Star 
+PSFM 
+DySa-
+mple 
+Box(m
+AP50) 
+Mask(
+mAP5
+0) 
+√ 
+ 
+ 
+ 
+ 
+0.886 
+0.882 
+√ 
+√ 
+ 
+ 
+ 
+0.893 
+0.891 
+√ 
+√ 
+√ 
+ 
+ 
+0.905 
+0.894 
+√ 
+√ 
+√ 
+√ 
+ 
+0.910 
+0.903 
+√ 
+√ 
+√ 
+ 
+√ 
+0.908 
+0.896 
+√ 
+√ 
+√ 
+√ 
+√ 
+0.915 
+0.909 
+As evidenced by the results in TABLE II, compared to 
+the baseline model, the introduction of depth data led to 
+increases of 0.007 and 0.009 in Box mAP50 and Mask 
+mAP50, respectively. This indicates that multimodal 
+information enriches apple features and plays a positive role 
+in 
+improving 
+model 
+accuracy. 
+The 
+subsequent 
+Authorized licensed use limited to: Istanbul Bilgi University. Downloaded on July 19,2026 at 05:17:50 UTC from IEEE Xplore.  Restrictions apply. 
+
+incorporation of the star operation into the feature extraction 
+network 
+further 
+enhanced 
+the 
+model's 
+precision, 
+demonstrating its effectiveness in strengthening feature 
+representation capabilities. 
+In contrast to a simple concatenation of the two 
+modalities' features, the employment of the attention-based 
+feature fusion module(PSFM) enabled full complementarity 
+between the modalities while reducing redundancy, leading 
+to further optimized model performance. Building upon this, 
+the use of adaptive upsampling(DySample) resulted in a 
+more substantial improvement in Mask mAP50 compared 
+to Box mAP50, validating its specific effectiveness in 
+enhancing segmentation accuracy. 
+Throughout this progressive enhancement, both feature 
+extraction and feature fusion improvements contributed 
+significantly to the final accuracy gains. Specifically, the 
+Star module was pivotal for the overall gain in Box mAP50, 
+whereas the PSFM module played the primary role in 
+boosting Mask mAP50. 
+In the multi-module combination analysis, the 
+configuration pairing the PSFM module with DySample 
+proved less effective than the combination of PSFM and 
+Star. This suggests that the most substantial performance 
+gains are concentrated in the improvements made to feature 
+extraction and fusion components, while changes to the 
+upsampling strategy yield more refined, targeted benefits. 
+Ultimately, with the synergistic integration of all 
+proposed components, the final model achieved notable 
+improvements over the original model, with gains of 2.9% 
+in Box mAP50 and 2.7% in Mask mAP50. Qualitative 
+detection results are visualized in Figure 6. 
+ 
+Figure 6.  Qualitative Detection Results of the Proposed Model. 
+D. Comparative Experiments 
+To further investigate the performance of ours model in 
+tasks involving fruit recognition and localization, this study 
+selected several representative instance segmentation 
+models 
+for 
+comparative 
+benchmarking. Mask 
+R-
+CNN represents the category of two-stage, high-accuracy 
+segmentation models, while YOLACT achieves real-time, 
+single-stage 
+instance 
+segmentation. YOLOv8n-
+Seg and YOLOv9-Seg[24] 
+represent 
+lightweight 
+and 
+enhanced 
+YOLO-based 
+segmentation 
+architectures, 
+respectively. YOLOv12n-Seg[25] 
+incorporates 
+Transformer components to boost performance in high-
+resolution segmentation. SOLO[26] reformulates instance 
+segmentation as a position classification problem, 
+eliminating dependence on detection boxes or anchors. To 
+ensure the consistency of comparison metrics, the 
+Box(mAP50) is calculated based on masks. 
+The performance metrics of these models are presented 
+in TABLE III. 
+TABLE III.  
+COMPARATIVE EXPERIMENTAL RESULTS 
+Model 
+Box(mAP50) 
+Mask(mAP50) 
+Mask-RCNN 
+0.886 
+0.885 
+YOLACT 
+0.861 
+0.838 
+YOLOv8n-seg 
+0.885 
+0.884 
+YOLOv9-seg 
+0.891 
+0.887 
+SOLO 
+0.890 
+0.889 
+YOLOv12n-seg 
+0.897 
+0.894 
+Ours 
+0.915 
+0.909 
+These 
+models 
+encompass 
+diverse 
+segmentation 
+paradigms, ranging from two-stage to single-stage 
+architectures and 
+from 
+convolutional 
+networks 
+to 
+Transformer-based designs, providing a comprehensive 
+benchmark for evaluating the performance of our 
+method. Results from the experiments confirm that the 
+proposed model achieves superior performance in instance 
+segmentation tasks. It surpasses the top-performing 
+baseline, YOLOv12-seg, by margins of 1.8% and 1.5% in 
+Box mAP50 and Mask mAP50, respectively. The model 
+proves to be well-suited for harvesting applications in 
+complex orchard environments. 
+IV. 
+CONCLUSIONS 
+This study proposed a dual-branch RGB-D multimodal 
+instance segmentation model based on YOLOv11n-seg. 
+The designed dual-branch feature extraction network, 
+combined with the introduced cross-modal interaction 
+attention module and dynamic upsampling module, 
+achieved improvements of 2.9% and 2.7% in Box mAP50 
+and Mask mAP50, respectively, on the public PApple-
+RGB-D-Size dataset compared to the base model. The 
+proposed model demonstrates robust capability in complex 
+orchard 
+environments, 
+effectively 
+handling 
+various 
+challenging conditions such as occlusion and backlighting 
+to achieve accurate apple localization. This work provides a 
+solid technical foundation for automated and intelligent 
+robotic harvesting in orchards. 
+Subsequent research will aim to refine the model 
+architecture and implement it on edge devices for evaluating 
+its real-time capabilities. We will also expand the dataset to 
+accommodate nocturnal harvesting scenarios, thereby 
+enhancing the model's adaptability and generalization 
+capability in practical orchard harvesting environments. 
+REFERENCES 
+[1] 
+C. Chen, Z. Song, X. Li, C. Chen, F. Yang, Z. Wang, Research 
+status of apple picking robotic arm picking strategy and end-
+effector, Computers and Electronics in Agriculture 235 (2025) 
+110349. 
+[2] 
+T. Li, F. Xie, Z. Zhao, H. Zhao, X. Guo, Q. Feng, A multi-arm 
+robot system for efficient apple harvesting: Perception, task plan 
+and control, Computers and Electronics in Agriculture 211 (2023) 
+107979. 
+[3] 
+C. Wang, H. Wang, Q. Han, Z. Wu, C. Li, Z. Zhang, Litchi bunch 
+detection and ripeness assessment using deep learning and 
+clustering with image processing techniques, Biosystems 
+Engineering  (2025). 
+[4] 
+H. Li, Z. He, Y. Wang, X. Ding, Y. Cui, Research on the 
+mechanized harvesting strategy for clustered kiwi fruits based on 
+Authorized licensed use limited to: Istanbul Bilgi University. Downloaded on July 19,2026 at 05:17:50 UTC from IEEE Xplore.  Restrictions apply. 
+
+deep reinforcement learning, Computers and Electronics in 
+Agriculture  (2025). 
+[5] 
+Z. He, Z. Liu, Z. Zhou, M. Karkee, Q. Zhang, Improving picking 
+efficiency under occlusion: Design, development, and field 
+evaluation of an innovative robotic strawberry harvester, 
+Computers and Electronics in Agriculture  (2025). 
+[6] 
+Q. Wang, F. Xu, Q. Chen, Z. Mi, Y. Fan, B. Su, Detection and 
+location of wine grape (Cabernet Sauvignon) picking points by 
+using a dual-stage deep learning method, Computers and 
+Electronics in Agriculture  (2025). 
+[7] 
+G. Hou, H. Chen, R. Niu, T. Li, Y. Ma, Y. Zhang, Research on 
+multi-layer model attitude recognition and picking strategy of 
+small tomato picking robot, Computers and Electronics in 
+Agriculture  (2025). 
+[8] 
+H. Su, S. Wang, H. Su, F. Ma, Y. Li, J. Li, YOLOv8n-Pose-DSW: 
+A Precision Picking Point Localization Model for Zucchini in 
+Complex Greenhouse Environments, Agriculture  (2025). 
+[9] 
+L. Ren, Y. Li, Y. Du, A. Gao, W. Ma, Y. Song, X. Han, GIA-
+YOLO: A Target Detection Method for Nectarine Picking Robots 
+in Facility Orchards, Agronomy  (2025). 
+[10] J. Wang, F. Yuan, J. Zhou, M. He, Q. Zhen, C. Fang, S. Chen, H. 
+Zhou, A Universal Visual Detection Method for Camellia oleifera 
+Fruit Picking Robot, Journal of Field Robotics  (2025). 
+[11] L. Deng, R. Ma, B. Chen, G. Song, A detection method for 
+synchronous recognition of string tomatoes and picking points 
+based on keypoint detection, Frontiers in Plant Science  (2025). 
+[12] Y. Fang, Y. Liu, Y. Feng, Y. Chen, H. Jiang, Research on 
+persimmon fruit diameter accurate detection method based on 
+improved RCNN instance segmentation algorithm, Frontiers in 
+Plant Science  (2025). 
+[13] X. Zhou, X. Zou, H. Meng, F. Wu, S. Chen, X. Luo, Multi-task 
+perception and three-dimensional picking point localization 
+method for grapes based on structural constraints and geometric 
+analysis, Computers and Electronics in Agriculture  (2025). 
+[14] P. Xiang, F. Pan, T. Liu, X. Zhao, M. Hu, D. He, B. Zhang, 
+MixSegNext: A CNN-Transformer hybrid model for semantic 
+segmentation and picking point localization algorithm of Sichuan 
+pepper in natural environments, Computers and Electronics in 
+Agriculture  (2025). 
+[15] H. Li, Z. Yin, Z. Zuo, L. Pan, J. Zhang, Precision citrus 
+segmentation and stem picking point localization using improved 
+YOLOv8n-seg algorithm, Frontiers in Plant Science  (2025). 
+[16] S. Xiao, Q. Zhao, Y. Chen, T. Li, A dual-backbone lightweight 
+detection and depth position picking system for multiple occlusions 
+Camellia oleifera fruit, Computers and Electronics in Agriculture  
+(2025). 
+[17] C. Beldek, A. Dunn, J. Cunningham, E. Sariyildiz, S.L. Phung, G. 
+Alici, Multi-vision-based Picking Point Localisation of Target 
+Fruit for Harvesting Robots, arXiv - CS - Robotics  (2025). 
+[18] J. Gené-Mola, M. Ferrer-Ferrer, E. Gregorio, P.M. Blok, J. 
+Hemming, J.-R. Morros, J.R. Rosell-Polo, V. Vilaplana, J. Ruiz-
+Hidalgo, Looking behind occlusions: A study on amodal 
+segmentation for robust on-tree apple fruit size estimation, 
+Comput. Electron. Agric. 209(C) (2023) 13. 
+[19] Y. Fang, C. Yang, C. Zhu, H. Jiang, J. Tu, J. Li, CML-RTDETR: 
+A Lightweight Wheat Head Detection and Counting Algorithm 
+Based on the Improved RT-DETR, Electronics 14(15) (2025) 
+3051. 
+[20] Y. Jiang, T. Jiang, C. Song, J. Wang, CycleGAN with Atrous 
+Spatial Pyramid Pooling and Attention-Enhanced MobileNetV4 
+for Tomato Disease Recognition Under Limited Training Data, 
+Applied Sciences 15(19) (2025) 10790. 
+[21] X. Ma, X. Dai, Y. Bai, Y. Wang, Y. Fu, Rewrite the Stars, 2024 
+IEEE/CVF Conference on Computer Vision and Pattern 
+Recognition (CVPR), 2024, pp. 5694–5703. 
+[22] L. Tang, H. Zhang, H. Xu, J. Ma, Rethinking the necessity of image 
+fusion in high-level vision tasks: A practical infrared and visible 
+image fusion network based on progressive semantic injection and 
+scene fidelity, Information Fusion 99 (2023) 101870. 
+[23] W. Liu, H. Lu, H. Fu, Z. Cao, Learning to Upsample by Learning 
+to Sample, 2023 IEEE/CVF International Conference on Computer 
+Vision (ICCV), 2023, pp. 6004–6014. 
+[24] Y. Zhou, Y. Wang, R. Wang, W. Zhang, H. Yang, Automatic crack 
+detection and segmentation of masonry structure based on deep 
+learning network and edge detection, Structures 76 (2025) 108850. 
+[25] T. Sledevič, Evaluation of Single-Shot Object Detection Models 
+for Identifying Fanning Behavior in Honeybees at the Hive 
+Entrance, Agriculture 15(15) (2025) 1609. 
+[26] X. Wang, T. Kong, C. Shen, Y. Jiang, L. Li, SOLO: Segmenting 
+Objects by Locations, in: A. Vedaldi, H. Bischof, T. Brox, J.-M. 
+Frahm (Eds.) Computer Vision – ECCV 2020, Springer 
+International Publishing, Cham, 2020, pp. 649–665. 
+ 
+ 
+ 
+Authorized licensed use limited to: Istanbul Bilgi University. Downloaded on July 19,2026 at 05:17:50 UTC from IEEE Xplore.  Restrictions apply. 
