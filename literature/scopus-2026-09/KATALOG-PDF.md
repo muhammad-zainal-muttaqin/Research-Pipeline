@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 898 kajian korpus `main6` yang PDF-nya tersedia, dari 898 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -8,12 +8,12 @@ Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kaj
 |---|---|---|---|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 248 | 248 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 157 | 157 |
-| C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
+| C3 | Pencitraan TBS kelapa sawit | 148 | 148 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
-| R | Tinjauan terdahulu | 114 | 114 |
+| R | Tinjauan terdahulu | 115 | 115 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 896 | 896 |
+| | **Jumlah** | 898 | 898 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (248)
 
@@ -430,7 +430,7 @@ Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kaj
 | 2013 | Yamamoto K. | Detection and counting of intact tomato fruits on tree using image analysis and machine learning methods | Conference Proceeding 5th International Conference Tae 2013 Trends in Agricultural Engineering 2013 | [PDF](pdf/yamamoto2013detection.pdf) |  |
 | 2012 | Ye X. | Fruit yield estimation through multispectral imaging | Advances in Citrus Nutrition | [PDF](pdf/ye2012fruit.pdf) | [DOI](https://doi.org/10.1007/978-94-007-4171-3_30) |
 
-## C3: Pencitraan TBS kelapa sawit (147)
+## C3: Pencitraan TBS kelapa sawit (148)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -522,6 +522,7 @@ Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kaj
 | 2022 | Arulnathan D.N. | Background Subtraction for Accurate Palm Oil Fruitlet Ripeness Detection | 2022 IEEE International Conference on Automatic Control and Intelligent Systems I2cacis 2022 Proceedings | [PDF](pdf/arulnathan2022background.pdf) | [DOI](https://doi.org/10.1109/i2cacis54679.2022.9815275) |
 | 2022 | Chen Z. | Detection of Oil Palm Fresh Fruit Bunches (FFBS) with Computer Vision Models | Proceedings 2022 International Conference on Mechanical Automation and Electrical Engineering Cmaee 2022 | [PDF](pdf/chen2022detection.pdf) | [DOI](https://doi.org/10.1109/cmaee58250.2022.00023) |
 | 2022 | Junos M.H. | Automatic detection of oil palm fruits from UAV images using an improved YOLO model | Visual Computer | [PDF](pdf/junos2022automatic.pdf) | [DOI](https://doi.org/10.1007/s00371-021-02116-3) |
+| 2022 | Kadir K. | Analysis Of Ground FFB Detection Via Real Sense Camera | 8th IEEE International Conference on Smart Instrumentation Measurement and Applications Icsima 2022 | [PDF](pdf/kadir2022analysis.pdf) | [DOI](https://doi.org/10.1109/icsima55652.2022.9929099) |
 | 2022 | Lai J.W. | Real-Time Detection of Ripe Oil Palm Fresh Fruit Bunch Based on YOLOv4 | IEEE Access | [PDF](pdf/lai2022real.pdf) | [DOI](https://doi.org/10.1109/access.2022.3204762) |
 | 2022 | Mansour M.Y.M.A. | Object Detection Algorithms for Ripeness Classification of Oil Palm Fresh Fruit Bunch | International Journal of Technology | [PDF](pdf/mansour2022object.pdf) | [DOI](https://doi.org/10.14716/ijtech.v13i6.5932) |
 | 2022 | Robi S.N.A.B.M. | Image Detection and Classification of Oil Palm Fruit Bunches | 4th International Conference on Smart Sensors and Application Digitalization for Societal Well Being Icssa 2022 | [PDF](pdf/robi2022image.pdf) | [DOI](https://doi.org/10.1109/icssa54161.2022.9870945) |
@@ -736,7 +737,7 @@ Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kaj
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
 | 2013 | Hung C. | Orchard fruit segmentation using multi-spectral feature learning | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hung2013orchard.pdf) | [DOI](https://doi.org/10.1109/iros.2013.6697125) |
 
-## R: Tinjauan terdahulu (114)
+## R: Tinjauan terdahulu (115)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -747,6 +748,7 @@ Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kaj
 | 2026 | Chang J. | AI-driven 3D point cloud analysis in plant phenotyping: A Systematic Review | Smart Agricultural Technology | [PDF](pdf/chang2026ai.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.101869) |
 | 2026 | Farhan M. | Artificial intelligence for oil palm tree management using deep structured learning: A systematic review | Al Qadisiyah Journal for Engineering Sciences | [PDF](pdf/farhan2026artificial.pdf) | [DOI](https://doi.org/10.30772/qjes.2026.165663.1755) |
 | 2026 | Ghonimy M. | Robotic Fruit Harvesting Systems: Integration of Perception, Manipulation, and Detachment for Autonomous Harvesting | Agronomy | [PDF](pdf/ghonimy2026robotic.pdf) | [DOI](https://doi.org/10.3390/agronomy16121127) |
+| 2026 | Gunawan T.S. | Drone and deep learning-based instrumentation for palm fruit detection and yield measurement: A Southeast Asian roadmap | IEEE Instrumentation and Measurement Magazine | [PDF](pdf/gunawan2026drone.pdf) | [DOI](https://doi.org/10.1109/mim.2026.11224873) |
 | 2026 | Han D. | Advances in Recognition Methods for Fruit and Vegetable Harvesting | Agriculture Switzerland | [PDF](pdf/han2026advances.pdf) | [DOI](https://doi.org/10.3390/agriculture16171924) |
 | 2026 | Han K. | What's next in agri-vision: A review of Vision Transformers and Vision Mamba in crop management | Computers and Electronics in Agriculture | [PDF](pdf/han2026what.pdf) | [DOI](https://doi.org/10.1016/j.compag.2026.111551) |
 | 2026 | Liu Q. | RECENT ADVANCES SURVEY IN COMPUTER VISION AND ARTIFICIAL INTELLIGENCE FOR FRUIT DETECTION | Inmateh Agricultural Engineering | [PDF](pdf/liu2026recent.pdf) | [DOI](https://doi.org/10.35633/inmateh-79-28) |
