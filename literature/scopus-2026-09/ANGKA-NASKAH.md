@@ -8,15 +8,15 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,578
 - Dinilai kelayakannya dari judul dan abstrak 1,145 (dengan abstrak 891; judul dan sumber saja 254)
 - Dikeluarkan di tahap kelayakan abstrak 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
-- Laporan dicari teks lengkapnya 1013; tidak diperoleh 208 (C1 1, C2 75, C3 64, C4 12, C5 33, R 17, T 6)
+- Laporan dicari teks lengkapnya 1013; tidak diperoleh 204 (C1 1, C2 75, C3 60, C4 12, C5 33, R 17, T 6)
 - PDF ada, menunggu penilaian teks lengkap 0 (C1 0, C2 0, C3 0, C4 0, C5 0, R 0, T 0)
-- Dinilai dari teks lengkap 805; dikeluarkan 24: E1 1, E2 9, E3 2, E5 10, E8 2
-- Masuk dari Scopus 781: C1 235, C2 130, C3 107, C4 33, C5 90, R 104, T 82
+- Dinilai dari teks lengkap 809; dikeluarkan 25: E1 1, E2 9, E3 2, E5 11, E8 2
+- Masuk dari Scopus 784: C1 235, C2 130, C3 110, C4 33, C5 90, R 104, T 82
 - Metode lain 5, teks lengkap diperoleh 5: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
-- Total kajian masuk 786
-- Kajian per tahun: 2012: 7, 2013: 11, 2014: 9, 2015: 14, 2016: 17, 2017: 20, 2018: 24, 2019: 30, 2020: 57, 2021: 63, 2022: 69, 2023: 99, 2024: 115, 2025: 140, 2026: 110, 2027: 1
+- Total kajian masuk 789
+- Kajian per tahun: 2012: 8, 2013: 11, 2014: 9, 2015: 14, 2016: 17, 2017: 20, 2018: 24, 2019: 30, 2020: 58, 2021: 63, 2022: 69, 2023: 99, 2024: 116, 2025: 140, 2026: 110, 2027: 1
 - Multi-pengamatan per tahun: 2012: 2, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 4, 2019: 7, 2020: 15, 2021: 19, 2022: 20, 2023: 30, 2024: 38, 2025: 55, 2026: 34
-- Dengan abstrak 636 dari 786; PDF teks lengkap 786 (teks terekstrak 786); multi-pengamatan dengan PDF 236 dari 236
+- Dengan abstrak 638 dari 789; PDF teks lengkap 789 (teks terekstrak 789); multi-pengamatan dengan PDF 236 dari 236
 - Peta istilah: 42 istilah, 283 tautan; istilah identitas 24-31 kajian; detection 479; counting 350
 
 ## Seksi 3: kajian multi-pengamatan
@@ -64,11 +64,11 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 8: kelapa sawit
 
-- Kajian 107 (matriks: 107)
-- Tugas: KLS 49, DET 20, MUTU 15, SENSOR 12, DATA 4, LF 4, HIT 3
-- Lokasi: PABRIK 33, ? 19, POHON 16, KEBUN 16, WEB 8, TANAH 8, CAMPUR 5, UAV 2
-- Modalitas: RGB 89, TERMAL 4, RGB+DEPTH 2, HSI 2, RGB+NIR 1, RGB+RADAR 1, MSI+NIR 1, STEREO 1, MSI 1, LIDAR 1, MSI+TERMAL 1, RGB+LASER 1, LASER 1, RGB+NIR+DEPTH 1
-- Multipandang Y: 17; kelas per instans Y: 84
+- Kajian 110 (matriks: 110)
+- Tugas: KLS 51, DET 21, MUTU 15, SENSOR 12, DATA 4, LF 4, HIT 3
+- Lokasi: PABRIK 33, ? 20, KEBUN 17, POHON 16, TANAH 9, WEB 8, CAMPUR 5, UAV 2
+- Modalitas: RGB 92, TERMAL 4, RGB+DEPTH 2, HSI 2, RGB+NIR 1, RGB+RADAR 1, MSI+NIR 1, STEREO 1, MSI 1, LIDAR 1, MSI+TERMAL 1, RGB+LASER 1, LASER 1, RGB+NIR+DEPTH 1
+- Multipandang Y: 17; kelas per instans Y: 87
 - Kajian pencacahan (HIT): hamdani2026automated, naftali2024palm, prasetyo2020automatic
 - Kajian multipandang: arief2026machine, cherie2015advance, cherie2015optical, cherie2020optical, cherie2021non, fadilah2012intelligent, hidayat2024establishing, junior2023video, naftali2024palm, omar2024outdoor, salambue2018investigation, shiddiq2024multispectral, shiddiq2024neural, suharjito2023annotated, suharjito2023real, suharjito2025oil, wang2024novel
 

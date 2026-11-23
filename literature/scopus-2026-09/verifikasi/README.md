@@ -3,11 +3,11 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (810), dan 786 di antaranya masuk peta.
+lengkapnya (814), dan 789 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
-## Posisi per 22 November 2026
+## Posisi per 23 November 2026
 
 Pemeriksaan 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026. Pada
 18 November 2026 ditambahkan tahap teks lengkap: 32 perubahan kelompok dan
@@ -20,7 +20,8 @@ Nyéki 2025, Xiao dkk. 2025); ketiganya dinilai AI tetap tinjauan terdahulu
 dan disetujui peninjau pada hari yang sama. Pada 22 November 2026 dua laporan
 Ni dkk. (2020, 2021) dikeluarkan karena tandan blueberry difoto di
 laboratorium setelah dipotong (kriteria eksklusi (ii)), dengan persetujuan
-peninjau. Butir yang masih menunggu ada di
+peninjau. Pada 23 November 2026 masuk 4 PDF kajian sawit; tiga masuk kelompok
+sawit dan Husin dkk. 2021 dikeluarkan, dengan persetujuan peninjau. Butir yang masih menunggu ada di
 [TUGAS.md](TUGAS.md).
 
 | Pemeriksaan | Yang diperiksa | Hasil |
@@ -35,6 +36,7 @@ peninjau. Butir yang masih menunggu ada di
 | PDF ganda (18 November 2026) | Bab buku Parico dkk. 2023 dan artikel *Sensors* 2021 memakai berkas yang sama | Bab buku dicatat tidak diperoleh; korpus menjadi 467 kajian, C1 214; disetujui peninjau |
 | PDF tambahan (20 dan 21 November 2026) | Kelompok 325 artikel dan 3 tinjauan yang PDF-nya baru diperoleh | 22 pindah ke C1, 8 dikeluarkan; 3 tinjauan tetap tinjauan terdahulu; peta 788 kajian; disetujui peninjau |
 | Pencitraan laboratorium (22 November 2026) | Dua laporan Ni dkk. (2020, 2021) tentang tandan blueberry | Keduanya dikeluarkan: tandan dipotong lalu difoto di laboratorium; peta 786 kajian, C1 236; disetujui peninjau |
+| PDF sawit tambahan (23 November 2026) | Empat kajian sawit yang PDF-nya baru diperoleh | Junos dkk. 2024, Septiarini dkk. 2020, dan Fadilah dkk. 2012 (konferensi) masuk kelompok sawit; Husin dkk. 2021 dikeluarkan karena tanpa evaluasi kuantitatif; peta 789 kajian, sawit 110; disetujui peninjau |
 
 
 ## Langkah berikutnya

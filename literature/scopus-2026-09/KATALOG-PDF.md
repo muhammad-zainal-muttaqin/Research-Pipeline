@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -8,12 +8,12 @@ Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kaj
 |---|---|---|---|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 236 | 236 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 132 | 132 |
-| C3 | Pencitraan TBS kelapa sawit | 107 | 107 |
+| C3 | Pencitraan TBS kelapa sawit | 110 | 110 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 | 33 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 91 | 91 |
 | R | Tinjauan terdahulu | 105 | 105 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 82 | 82 |
-| | **Jumlah** | 786 | 786 |
+| | **Jumlah** | 789 | 789 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (236)
 
@@ -393,7 +393,7 @@ Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kaj
 | 2013 | Yamamoto K. | Detection and counting of intact tomato fruits on tree using image analysis and machine learning methods | Conference Proceeding 5th International Conference Tae 2013 Trends in Agricultural Engineering 2013 | [PDF](pdf/yamamoto2013detection.pdf) |  |
 | 2012 | Ye X. | Fruit yield estimation through multispectral imaging | Advances in Citrus Nutrition | [PDF](pdf/ye2012fruit.pdf) | [DOI](https://doi.org/10.1007/978-94-007-4171-3_30) |
 
-## C3: Pencitraan TBS kelapa sawit (107)
+## C3: Pencitraan TBS kelapa sawit (110)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -435,6 +435,7 @@ Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kaj
 | 2024 | Hutapea R.R. | Palm Fruit Ripeness Detection and Counting Using YOLOv8 Algorithm in PTPN IV Medan North Sumatera Indonesia | 2024 6th International Conference on Cybernetics and Intelligent System Icoris 2024 | [PDF](pdf/hutapea2024palm.pdf) | [DOI](https://doi.org/10.1109/icoris63540.2024.10903790) |
 | 2024 | Japar A.F. | Oil Palm Loose Fruit Detection Using YOLOv4 for an Autonomous Mobile Robot Collector | IEEE Access | [PDF](pdf/japar2024oil.pdf) | [DOI](https://doi.org/10.1109/access.2024.3446890) |
 | 2024 | Josdaan J. | Revolutionizing palm oil ripeness classification: Utilizing YOLOv8 for ultra-precise ripeness detection | Procedia Computer Science | [PDF](pdf/josdaan2024revolutionizing.pdf) | [DOI](https://doi.org/10.1016/j.procs.2024.10.296) |
+| 2024 | Junos M.H. | Improved hybrid feature extractor in lightweight convolutional neural network for postharvesting technology: automated oil palm fruit grading | Neural Computing and Applications | [PDF](pdf/junos2024improved.pdf) | [DOI](https://doi.org/10.1007/s00521-024-10300-4) |
 | 2024 | Naftali M.G. | Palm Oil Counter: State-of-the-Art Deep Learning Models for Detection and Counting in Plantations | IEEE Access | [PDF](pdf/naftali2024palm.pdf) | [DOI](https://doi.org/10.1109/access.2024.3419835) |
 | 2024 | Omar Z. | Outdoor oil palm fruit ripeness dataset | Data in Brief | [PDF](pdf/omar2024outdoor.pdf) | [DOI](https://doi.org/10.1016/j.dib.2024.110667) |
 | 2024 | Puttinaovarat S. | Oil Palm Bunch Ripeness Classification and Plantation Verification Platform: Leveraging Deep Learning and Geospatial Analysis and Visualization | ISPRS International Journal of Geo Information | [PDF](pdf/puttinaovarat2024oil.pdf) | [DOI](https://doi.org/10.3390/ijgi13050158) |
@@ -483,6 +484,7 @@ Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kaj
 | 2020 | Mohd Ali M. | Combination of laser-light backscattering imaging and computer vision for rapid determination of oil palm fresh fruit bunches maturity | Computers and Electronics in Agriculture | [PDF](pdf/mohd2020combination.pdf) | [DOI](https://doi.org/10.1016/j.compag.2020.105235) |
 | 2020 | Prasetyo N.A. | Automatic detection and calculation of palm oil fresh fruit bunches using faster R-CNN | International Journal of Applied Science and Engineering | [PDF](pdf/prasetyo2020automatic.pdf) | [DOI](https://doi.org/10.6703/ijase.202005_17(2).121) |
 | 2020 | Septiarini A. | Automatic image segmentation of oil palm fruits by applying the contour-based approach | Scientia Horticulturae | [PDF](pdf/septiarini2020automatic.pdf) | [DOI](https://doi.org/10.1016/j.scienta.2019.108939) |
+| 2020 | Septiarini A. | Maturity grading of oil palm fresh fruit bunches based on a machine learning approach | 2020 5th International Conference on Informatics and Computing Icic 2020 | [PDF](pdf/septiarini2020maturity.pdf) | [DOI](https://doi.org/10.1109/icic50835.2020.9288603) |
 | 2020 | Syaifuddin A. | Detection of palm fruit maturity level in the grading process through image recognition and fuzzy inference system to improve quality and productivity of crude palm oil (CPO) | Journal of Physics Conference Series | [PDF](pdf/syaifuddin2020detection.pdf) | [DOI](https://doi.org/10.1088/1742-6596/1581/1/012003) |
 | 2019 | Astuti I. | Oil palm fruit ripeness detection using K-Nearest neighbour | Journal of Physics Conference Series | [PDF](pdf/astuti2019oil.pdf) | [DOI](https://doi.org/10.1088/1742-6596/1277/1/012028) |
 | 2018 | Alfatni M.S.M. | Real-time oil palm FFB ripeness grading system based on ANN, KNN and SVM classifiers | Iop Conference Series Earth and Environmental Science | [PDF](pdf/alfatni2018real.pdf) | [DOI](https://doi.org/10.1088/1755-1315/169/1/012067) |
@@ -502,6 +504,7 @@ Katalog ini memuat 786 kajian korpus `main6` yang PDF-nya tersedia, dari 786 kaj
 | 2013 | Amosh L. | Adaptive region growing for automated oil palm fruit quality recognition | Lecture Notes in Computer Science Including Subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics | [PDF](pdf/amosh2013adaptive.pdf) | [DOI](https://doi.org/10.1007/978-3-319-02958-0_18) |
 | 2013 | Makky M. | Development of an automatic grading machine for oil palm fresh fruits bunches (FFBs) based on machine vision | Computers and Electronics in Agriculture | [PDF](pdf/makky2013development.pdf) | [DOI](https://doi.org/10.1016/j.compag.2013.02.008) |
 | 2012 | Fadilah N. | Intelligent color vision system for ripeness classification of oil palm fresh fruit bunch | Sensors Switzerland | [PDF](pdf/fadilah2012intelligent.pdf) | [DOI](https://doi.org/10.3390/s121014179) |
+| 2012 | Fadilah N. | Oil palm fresh fruit bunch ripeness classification using artificial neural network | Icias 2012 2012 4th International Conference on Intelligent and Advanced Systems A Conference of World Engineering Science and Technology Congress Estcon Conference Proceedings | [PDF](pdf/fadilah2012oil.pdf) | [DOI](https://doi.org/10.1109/icias.2012.6306151) |
 | 2012 | Hudzari R.M. | Simulation and modeling application in agricultural mechanization | Modelling and Simulation in Engineering | [PDF](pdf/hudzari2012simulation.pdf) | [DOI](https://doi.org/10.1155/2012/381239) |
 | 2012 | Mohamad F. | Exploiting suitable color model for ripeness identification | Proceedings of the 2012 International Conference on Image Processing Computer Vision and Pattern Recognition Ipcv 2012 | [PDF](pdf/mohamad2012exploiting.pdf) |  |
 
