@@ -27,7 +27,7 @@ from pathlib import Path
 
 import requests
 
-from latex_teks import ke_latex
+from latex_teks import ke_latex, tanpa_em_dash
 
 MAILTO = "research-pipeline@users.noreply.github.com"
 
@@ -175,7 +175,7 @@ def entri(rec, msg, oa=None, penulis_pdf=None):
         judul = judul.capitalize()
         for pola, ganti in SINGKATAN:
             judul = re.sub(pola, ganti, judul)
-    f["title"] = judul_terlindung(judul)
+    f["title"] = judul_terlindung(tanpa_em_dash(judul))
     aut = penulis_pdf or penulis_crossref(msg or {}) or penulis_openalex(oa)
     if not aut:
         fa = rec.get("first_author", "")
