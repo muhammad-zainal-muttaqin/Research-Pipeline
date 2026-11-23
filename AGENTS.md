@@ -149,16 +149,16 @@ pesan commit, dan naskah.
 
 Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 
-1. **Tinjauan pustaka** untuk jurnal terindeks Scopus. Naskah aktif `main6`:
-   tinjauan sistematis tentang identitas lintas pandang (*cross-view identity*)
-   dalam pencacahan buah berbasis citra, dari korpus Scopus September 2026.
+1. **Tinjauan pustaka** untuk jurnal terindeks Scopus tentang identitas lintas
+   pandang (*cross-view identity*) dalam pencacahan buah berbasis citra.
+   Naskah yang dikembangkan pada cabang `main7` adalah `main7`.
 2. **Eksperimen deteksi** yang menguji keputusan teknis dari tinjauan itu.
 
 ## 3. Kondisi Terkini
 
 | Jalur | Status |
 |---|---|
-| Naskah | Kandidat pada cabang `main7` adalah `main7` (Muttaqin dan Indriani, templat Elsevier `cas-dc`). Versi ini memakai korpus `main6` dan memperluas sintesis tentang rujukan hitung, asosiasi buah, galat kelas, depth, dan sensus sawit. Rincian metode dan daftar periksa PRISMA 2020 ada di `main7-supplementary.tex`. Daftar seluruh laporan yang dinilai ada di `manuscript/output/papers/main7-supplementary-studies.csv`. `main6` disimpan sebagai pembanding. Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) dipertahankan untuk Ruang Baca. |
+| Naskah | `main7` (Muttaqin dan Indriani, templat Elsevier `cas-dc`). Rincian metode dan daftar periksa PRISMA 2020 ada di `main7-supplementary.tex`. Daftar seluruh laporan yang dinilai ada di `manuscript/output/papers/main7-supplementary-studies.csv`. `main6` disimpan sebagai pembanding. Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) dipertahankan untuk Ruang Baca. |
 | Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → 1.013 lolos tahap abstrak (+5 dari luar pencarian) → 930 dengan PDF dinilai dari teks lengkap (925 Scopus + 5 dari luar pencarian; 88 tidak diperoleh) → **895 masuk peta** (2012–2026). Kode: C1 248 · C2 157 · C3 147 · C4 36 · C5 108 · R 113 · T 86. Korpus dibatasi pada kajian yang PDF-nya ada di `literature/scopus-2026-09/pdf/`; keputusan teks lengkap di `literature/scopus-2026-09/topik/penyaringan/teks_lengkap.txt`. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: Cek 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026; tahap teks lengkap disetujui peninjau pada 18 November 2026, untuk 325 PDF tambahan pada 20 November 2026 (bersama A.1 tanaman dan platform C1 dari teks lengkap, dan A.3 label C1), dan untuk 3 tinjauan tambahan pada 21 November 2026; Ni dkk. 2020 dan 2021 dikeluarkan (pencitraan laboratorium) dengan persetujuan peninjau pada 22 November 2026; 4 PDF sawit tambahan dinilai dan disetujui peninjau pada 23 November 2026 (3 masuk C3, Husin dkk. 2021 dikeluarkan), 31 PDF berikutnya pada hari yang sama (30 masuk, termasuk 4 ke C1; Cheng dkk. 2016 dikeluarkan), 36 PDF lagi pada hari yang sama (34 masuk, termasuk 3 ke C1; Bazame dkk. 2022 dan Achraf dkk. 2024 dikeluarkan), dan 28 PDF berikutnya pada hari yang sama (25 masuk, termasuk Chandra dkk. 2025 ke C1; Pragatheesh, Kiran, dan Prabhu dkk. 2025 dikeluarkan), dan 11 PDF terakhir pada hari yang sama (10 masuk, termasuk Wu dkk. 2025, Zhang dkk. 2024, dan Wang dkk. 2024 ke C1; Yi dkk. 2021 dikeluarkan), dan 2 PDF terakhir pada hari yang sama (Cheng dkk. 2021 masuk C4; Chauhan dan Singh 2022 dikeluarkan), dan 5 PDF terakhir pada hari yang sama (Lou dkk. 2024 ke C1; Xiao dkk. 2024 dikeluarkan), 1 PDF pada hari yang sama (Li dkk. 2021 tetap C2, dari terjemahan mesin *postprint*), dan 2 PDF pada hari yang sama (Zhang dkk. 2019 tetap C2; Li dkk. 2014 dikeluarkan karena tanpa pencacahan); 5.7 (isian penulis) menunggu di `literature/scopus-2026-09/verifikasi/TUGAS.md`.** Belum dikerjakan: pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar 3.300 rekaman; Q1 dan Q3 sudah). |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
@@ -169,6 +169,35 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 Titik masuk: `manuscript/source/main7-body.tex` (naskah pada cabang `main7`),
 `literature/scopus-2026-09/README.md` (korpus), `experiments/README.md`
 (eksperimen), `README.md` (peta repo).
+
+### Arah `main7` dan hubungannya dengan `main6`
+
+`main6` menyusun peta bukti dan kerangka identitas lintas pandang.
+`main7` memakai korpus dan protokol yang sama untuk memperdalam sintesis.
+Pembaca perlu memahami kapan sudut pandang tambahan membuat lebih banyak buah
+terlihat, kapan pengamatan perlu ditautkan, dan bukti apa yang cukup untuk
+menyatakan setiap buah telah dihitung sekali dan diberi kelas yang tepat.
+
+- Abstrak, pendahuluan, dan simpulan mengutamakan masalah, temuan, dan
+  implikasinya. Tanggal pencarian dan alur penyaringan dicatat di metode,
+  dengan rincian prosedur dan profil kuantitatif lengkap di bahan tambahan.
+- Paragraf bukti dibuka dengan temuan, asumsi, atau kondisi gagal sebelum
+  menyebut penulis. Saat membandingkan hasil, sebutkan data, acuan hitung,
+  dan komponen yang berubah. Jika beberapa komponen berubah sekaligus,
+  kaitkan hasilnya dengan perubahan gabungan. Utamakan perbandingan pada
+  data dan acuan yang sama untuk menilai pengaruh satu komponen.
+- `main7` menjelaskan bagaimana hitungan yang mendekati acuan dapat
+  menyembunyikan buah yang terlewat, hitung ganda, atau galat kelas.
+  Acuan lapangan dan anotasi lintas pandang pada tanaman yang sama dapat
+  menunjukkan berapa banyak buah yang terlihat dan mana yang ditautkan
+  dengan benar. Sensus tandan pada sawit menjadi kasus utama untuk
+  menghubungkan pengambilan citra, penautan pengamatan, dan penetapan kelas.
+
+Gunakan bahasa Inggris akademik yang lugas, alami, dan tepat. Panjang
+naskah mengikuti kebutuhan pembahasan. Periksa kalimat demi kalimat,
+cocokkan klaim dan angka penting dengan sumber primer, lalu periksa halaman
+PDF yang berubah. Kerjakan revisi dalam bagian kecil dan buat satu *commit*
+untuk setiap bagian yang sudah diperiksa.
 
 ## 4. Peta Berkas
 
