@@ -1,0 +1,1955 @@
+Received: 6 May 2021 |
+Revised: 17 August 2021 |
+Accepted: 21 September 2021
+DOI: 10.1002/rob.22041
+R E S E A R C H A R T I C L E
+Robotic harvesting of the occluded fruits with a precise shape
+and position reconstruction approach
+Liang Gong
+|
+Wenjie Wang
+|
+Tao Wang
+|
+Chengliang Liu
+School of Mechanical Engineering, Shanghai
+Jiao Tong University, Shanghai, China
+Correspondence
+Liang Gong, School of Mechanical
+Engineering, Shanghai Jiao Tong University,
+200240 Shanghai, China.
+Email: 020910287@sjtu.edu.cn and
+gongliang_mi@sjtu.edu.cn
+Funding information
+National Natural Science Foundation of China;
+Project of Science and Technology
+Commission of Shanghai Municipality
+Abstract
+Occlusion is one of the key factors affecting the success rate of vision‐based fruit‐
+picking robots. It is important to accurately locate and grasp the occluded fruit in
+field applications, However, there is yet no universal and effective solution. In this
+paper, a high‐precision estimation method of spatial geometric features of occluded
+targets based on deep learning and multisource images is presented, enabling the
+selective harvest robot to envision the whole target fruit as if its occlusions do not
+exist. First, RGB, depth and infrared images are acquired. And pixel‐level matched
+RGB‐D‐I fusion images are obtained by image registration. Second, aiming at the
+problem of detecting the occluded tomatoes in the greenhouse, an extended Mask‐
+RCNN network is designed to extract the target tomato. The target segmentation
+accuracy is improved by 7.6%. Then, for partially occluded tomatoes, a shape and
+position restoration method is used to recover the obscured tomato. This algorithm
+can extract tomato radius and centroid coordinates directly from the restored depth
+image. The mean Intersection over Union is 0.895, and the centroid position error is
+0.62 mm for the occluded rate under 25% and the illuminance between 1 and
+12 KLux. And hereby a dual‐arm robotic harvesting system is improved to achieve a
+picking time of 11 s per fruit, an average gripping accuracy of 8.21 mm, and an
+average picking success rate of 73.04%. The proposed approach realizes a high‐
+fidelity geometrics reconstruction instead of mere image style restoration, which
+endows the robot with the ability to see through obstacles in the field scenes and
+improves its operational success rate in its result.
+K E Y W O R D S
+agricultural robots, deep learning, occluded fruits, shape and position reconstruction
+1
+|
+INTRODUCTION
+When a fruit‐picking robot is deployed, its visual ability is a critical
+factor for successful operation. Machine vision and its precise posi-
+tioning have been proved as the bottleneck in their commercial ap-
+plication (Tang, Wang, et al., 2020; Xu et al., 2019). Yang et al.
+developed a mushroom picking robot and achieved a F1 score of
+0.951 and an average 3D localization error of 2.43 mm. The targets
+are in the plane and the experimental scenario is simple (Q. Yang
+et al., 2020). In 2015, Feng et al. (2015) developed a tomato‐picking
+robot, which combined structured lighting and HSI color threshold to
+detect tomatoes. The execution time was about 24 s/f (second per
+fruit) and the success rate had reached 83.9%. The main reason for
+picking failure is due to the overlapped or deformed fruit that is not
+identified. In 2016, Yaguchi et al. (2016) designed a tomato‐picking
+robot system having binocular vision combined with HSI color space
+thresholding and clustering. It realized 23 s/f execution efficiency in
+practice. In 2017, Lili et al. developed a greenhouse tomato‐picking
+J Field Robotics. 2022;39:69–84.
+wileyonlinelibrary.com/journal/rob
+© 2021 Wiley Periodicals LLC
+|
+69
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+robot by using binocular vision and color difference. The system can
+pick tomatoes with a 15 s/f processing rate and 86% success rate.
+The failure is attributed to the tomato of interest being sheltered by
+obstacles such as immature fruits, stems, and leaves (L. Wang
+et al., 2017). However, some research had indicated that binocular
+vision often has poor performance when the fruits are clustered. It is
+due to the failure of feature point matching.
+Some recent studies have begun to adopt pattern recognition
+methods that can address the problem in vision‐based fruit‐picking
+robotic systems. Lin et al. proposed a fruit‐recognition algorithm that
+combines partial shape matching, probabilistic Hough transform, and
+SVM. It was applied to the identification of citrus images and reached
+a precision of 0.783 and a recall of 0.802 (Tang, Zou, et al., 2020).
+Kurtulmus et al. (2014) used statistical classifiers and neural networks
+to detect peaches with a correct rate of 84.6%, although some highly‐
+overlapped peaches could not be successfully detected. In 2018, a
+humanoid dual‐arm tomato‐picking robot was developed with va-
+cuum cup grasping and wide‐range cutting. The success rate achieved
+87.5% and the positioning error of the end‐point was less than
+10 mm. Picking failure is often due to excessive overlapping of the
+target tomato (Ling et al., 2019).
+It can be found that recent research on fruit‐picking robots are
+using more and more advanced detection methods to improve de-
+tection accuracy and efficiency, however, the overlap problem has
+not been solved yet (Pastrana & Rath, 2013; Y. Zhao, Gong,
+et al., 2016). Related studies indicate that in the real‐world scenario,
+only 60% of strawberries are intact (including adjacent situations) in
+picking robot's visual fields (Hayashi, 2005). On the other hand, the
+tomato plant is densely composed and occluded by branches
+(X. Chen, Chaudhary, et al., 2015), according to our statistics, intact
+tomato only accounts for about 50% in total.
+In the agricultural environment, there are often overlapped and
+occluded cases such as tomatoes behind its leaves, which results in
+large errors in positioning and hampers the harvest success rate. The
+major difficulty of the tomato‐picking robot is to find the shape and
+position of the tomatoes. In previous studies, there exist three types of
+shape and position estimation methods. The first type is the mor-
+phological method. Song had used mathematical morphology and the
+convex hull of the object boundary to extract the contours (Song
+et al., 2012). The disadvantage rests on its low accuracy due to the lack
+of color and spatial information. The second type is the image in-
+painting
+method.
+It
+is
+roughly
+categorized
+as
+diffusion‐based
+(Bertalmio et al., 2000; D. Liu et al., 2007) and patch‐based (Huang
+et al., 2014) algorithms. However the inpainting method is less ef-
+fective in handling images with large missing parts or large structures.
+In recent years, some researchers used deep learning based generative
+methods to fill the missing parts. Generative adversarial networks
+(GAN) and convolutional neural network (CNN) are the two basic
+networks. GAN keeps style consistency but is not suitable for images
+with complex structures (Lahiri et al., 2020). CNN may generate dis-
+torted textures due to the lack of direct supervision on attention
+scores (Zhou et al., 2020). The third type is the three‐dimensional (3D)
+object reconstruction method. C. Wang et al. (2019) introduced a
+method to extract geometric features from RGB and depth (RGB‐D)
+images. This method obtains 3D bounding boxes instead of accurate
+positions and cannot be used to navigate the picking robot. These
+methods, developed for recovering RGB images are not able to re-
+construct real targets. Meanwhile, the goal of these tasks is to restore
+images for visual naturalness but not for the shape and position esti-
+mation. Notably, we refer to the style restoration from the image as an
+inpainting method while the precise shape and position as a high‐
+fidelity reconstruction approach. “high‐fidelity” refer to sound and
+researchers extended it to the image area to describe the high‐quality
+restoration of image (Chang et al., 2021; Zhou et al., 2020).
+This study takes tomato as the experimental object and aims at
+solving the target positioning problem of the greenhouse tomato‐
+picking robot. The following issues are considered:
+(1) Low detection rate for excessively occluded tomatoes;
+(2) Difficulty in determining the contours of occluded tomatoes;
+(3) Positioning error of the target tomato due to partial occlusion.
+It is common sense that humans may conjure up the whole body
+of a partially visible object precisely according to their life experience.
+Inspired by nature, we mimic this human capability with a learning
+and generative approach. We propose an instance segmentation
+CNN enhanced by multisources including RGB, depth, and infrared
+(RGB‐D‐I) images. Furthermore, a neural network for restoring the
+complete shape and position (S‐P) information of occluded tomato is
+designed and trained. Finally, we implement the whole visual scheme
+that can precisely locate the overlapped or occluded tomato and
+experimented with in‐field data. Interestingly, the proposed approach
+provides the fruit‐picking robot with an augmented reality environ-
+ment, where the robot can see through the obstacles to figure out
+the shape and position of the occluded fruits for the picking decision
+making as if the foreground obstacles do not exist.
+The paper is organized as follows. Section 2 introduces the
+experimental equipment, the data set preparation, and the frame-
+work of the proposed method. Section 3 presents the effect of the
+extended Mask R‐CNN algorithm, compares the proposed SPR model
+with other inpainting algorithms. Then the position accuracy of this
+algorithm for different occluded rates and different lighting is in-
+troduced. The Field experimentation is introduced in Section 3.5.
+Camera calibration and hand‐eye calibration of the robot system,
+gripping accuracy and picking success rate are described. Lastly, a
+conclusion is presented in Section 4.
+2
+|
+MATERIALS AND METHODS
+The proposed high‐precision estimation method for occluded targets
+is based on deep learning and multisource images. It is schematically
+shown in Figure 1. The pipelined process contains the acquisition of
+tomato plant images, feature alignment, tomato identification, depth
+recovery of occluded tomatoes, and the computation for geometric
+features. Details of each process are presented in the sequel.
+70
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+2.1
+|
+Hardware equipment
+This study is concerned with a dual‐arm tomato‐picking robot. The
+robot is designed for working in a Venlo‐type tomato planting
+greenhouse, Figure 2 (left). It has two arms that work together,
+Figure 2 (right). The image collecting device is a Kinect‐v2 RGB‐D
+camera, which can simultaneously capture RGB images (1920 × 1080
+resolution), depth images (512 × 424 resolution), and infrared images
+(512 × 424 resolution). The computation platform is an industrial PC
+(NVIDIA TESLA P100 GPU, 16.0 G RAM, Ubuntu 16.04 OS). Figure 3
+illustrates the proposed dual‐arm picking robot system on the
+practical lever. This system mainly consists of the robotic arms,
+Kinect‐v2
+camera,
+control box,
+industrial
+host
+computer,
+and
+self‐guided vehicle.
+2.2
+|
+Data preparation
+To train and test the proposed tomato S‐P restoring neural network,
+two image data sets are used. The first data set is the open‐sourced
+fruits‐360 image set (Mureşan & Oltean, 2018), which contains
+49,561 images of 74 kinds of fruits. The second data set (RGB‐D‐I
+tomato set) has 2000 pairs of RGB‐D‐I images (RGB image, the depth
+image, and the infrared image, captured at the same time by Kinect‐
+V2) collected in the tomato greenhouse of Shanghai Sunqiao Modern
+Agriculture Base. Each pair contains one RGB‐D‐I image of an intact
+tomato and several RGB‐D‐I images taken when the aforesaid tomato
+is occluded by leaves or other tomatoes. All the image pairs are
+captured by keeping the target tomato's position fixed. The depth
+and infrared images are 512 × 424
+while the RGB image is
+1920 × 1080. Because of the difficulties of using the information of
+images with different resolutions, we match the depth and infrared
+images to the RGB image at the pixel level. By calling the SDK
+function, “MapDepthFrameToColorFrame,” provided by Microsoft we
+can get the mapping table between depth and RGB image. Then the
+512 × 424 depth image is mapped to 1920 × 1080 resolution
+through this table, same for the infrared image. Furthermore, for each
+FIGURE 1
+The overall workflow of the proposed high‐precision
+fruit reconstruction approach
+FIGURE 2
+Tomato greenhouse picking scene
+(left) and dual‐arm tomato picking robot (right)
+GONG ET AL.
+|
+71
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+sample image, we mark the foreground pixels (i.e., all the pixels be-
+long to the target tomato in the image) through the customized
+simple linear iterative clustering (SLIC). SLIC algorithm generates
+compact and uniform superpixels based on color similarity and
+proximity, making it easier for fast data annotation.
+2.3
+|
+Vision solution
+Starting with the original RGB‐D‐I channel image acquired by the
+Kinect‐V2 camera, it takes three phases to extract the tomato co-
+ordinates, as shown in Figure 4. In the first stage, the target tomato,
+Figure 4e, is segmented from the original image, Figure 4a–d, by
+using the extended Mask R‐CNN model. In the second stage, with
+the mask generated in the first stage, the depth information of the
+complete tomato is recovered using the shape and position re-
+construction (SPR) model. In the third stage, the centroid and the
+diameter of the complete tomato in camera coordinates are extracted
+from the reconstructed depth image.
+2.3.1
+|
+Phase 1: Instance segmentation
+Many of the previous methods can realize semantic segmentation,
+that is, mark all the targets in an image with the same label. Then each
+object is individually annotated according to the separation of image
+regions. This method is unable to distinguish each other when the
+fruits overlap. However, different from semantic segmentation,
+instance segmentation requires individual annotation for each object
+of the target category. In the development of deep learning,
+Mask‐RCNN is one of the most popular open‐source models. It works
+in various scenarios with high precision and fast computation speed
+(5 fps). However, when Mask‐RCNN is applied in the fruit‐picking
+robot system, the boundary of the overlap fruits is still difficult to be
+segmented accurately. This is because the segmentation relies on
+texture features, while the texture of sticky fruit is very smooth and
+uniform in color.
+Although the overlapped tomatoes are highly similar in the RGB
+space, they can be easily distinguished in the depth (D‐channel) im-
+age and infrared (I‐channel) image, as shown in Figure 5. To make it
+more informative, we displayed the depth image as a heatmap, with
+different colors indicating different depths. The depth image is not
+affected by illumination and can distinguish between different in-
+dividual tomatoes by depth information, and the bright center and
+dark surroundings of the infrared image are useful for extracting edge
+features. Previous research also proved that multisource images can
+improve segmentation accuracy (Gupta et al., 2014). Based on the
+above considerations, we introduce the depth channel image and
+infrared channel image into the instance segmentation process.
+As shown in Figure 6, our method uses Mask‐RCNN as a basic
+segmentation network, then modifies the dimension of input data
+and randomly initializes parameters of the network's first layer. By
+this strategy, the network can be trained to utilize the information of
+the RGB‐D‐I images. Moreover, only the first layer of Mask‐RCNN is
+changed,
+which
+avoids
+increasing
+the
+computational
+burden.
+The network output is the class, the minimum envelope box, and the
+pixel‐level mask of the target object. As the input images were
+changed from three‐ to five‐dimensional, the shallow network
+structure of ResNet was modified and the parameters of the modified
+network were initialized with the Gaussian random. The model was
+trained with an initial learning rate of 0.001 for the head network
+layer, and then the whole network layer was trained with a learning
+FIGURE 3
+Conceptual illustration dual‐arm tomato‐picking robot
+system
+FIGURE 4
+RGB‐D‐I images from Kinect‐V2 camera. (a) Full visual
+fiels of RGB camera, (b) RGB channel, (c) depth channel, (d) infrared
+channel, and (e) segmentation result of RGB‐D‐I channels
+72
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+rate of 0.0001. The model hyperparameters were adjusted according
+to the effect of the model on the validation set.
+2.3.2
+|
+Phase 2: Shape and position restoration
+Neural networks are becoming the focus in several areas of
+computer vision and image processing such as in image restora-
+tion (H. Zhao, Gallo, et al., 2016). Image restoration is the process
+of estimating uncorrupted images from noisy or blurred ones
+(Y. Chen, Yu, et al., 2015). Particularly, what we are interested in
+is how to estimate a true intact image from an image with an
+incomplete object. In recent years, many deep learning models
+have demonstrated encouraging image inpainting performance,
+such as complementing face images by given an incomplete one.
+However, the inpainting image was often found to be quite
+different from the original image and the results tend to be fuzzy
+(Li et al., 2018).
+The existence of this situation is mainly due to the following
+reasons:
+1. Most of the recent image inpainting networks are GAN based
+(Bao et al., 2017; Li et al., 2018; Yeh et al., 2017; Yu et al., 2019). As a
+generative model, GAN does not update directly with data examples.
+If we name the GAN's generator network as G, the discriminator
+network as D, the defective input image as x and D y
+( ) represents the
+probability that y comes from the real data rather than G. Then ac-
+cording to (Goodfellow et al., 2014), the objective G is to achieve the
+optimization in Equation (2).
+D G x
+max
+(
+( ))
+(1)
+It can be seen that the presence of D makes GAN not being
+directly optimized for the likelihood of ground truth. Besides, the
+function D is expected to optimize the Jensen‐Shannon divergence
+and to make the overall data distribution of the generated samples
+closer to the training samples. Intuitively, D makes the results of GAN
+more diversified, so it can achieve better visual quality. It also makes
+G x( ) different from the ground truth as long as the difference of
+D G x
+(
+( )) and D y
+( ) is small enough.
+2. The optimization goal of these models is the visual naturalness
+of the result in color rather than the physical similarities in shape.
+For example, perceptual loss (PL) and total variation (TV) loss are
+used as training targets (G. Liu et al., 2018), where PL is used to
+enhancing the naturalness of perception, and TV loss is used to en-
+hance the smoothness of the object boundary.
+3. The object of the most existing image inpainting algorithms is
+the entire image, while the restored object has not been specified,
+and the target contour is only one of the many implicit features
+instead of the goal to be optimized. This results in inaccurate and
+smoothed‐out contour predictions.
+To enable restoring the true state of the intact tomato, the fol-
+lowing designs are proposed. For the structure, Figure 7, we refer to
+the UNet, Resnet, and Partial Conv convolutions structure. a UNet‐
+like network (Ronneberger et al., 2015). It is constructed instead of
+GAN while UNet could output the image directly. With the shortcut
+structure of Resnet (He et al., 2016), low‐dimensional and high‐
+dimensional features can be adequately contained in the output.
+Besides, the partial convolutions structure (G. Liu et al., 2018) is in-
+troduced, which predicts the masked part from the outside to the
+inside step by step.
+Regarding the input to this model, we use the result of the in-
+stance segmentation to crop out the minimum envelope rectangle
+containing the target tomato in the RGB‐D‐I image. For the depth
+channel image, we use the normalization operation shown in
+FIGURE 5
+Characteristics of overlapping
+adherent tomato fruit (a) RGB image, (b) depth
+image, and (c) Infrared image. Depth image
+displayed as a heatmap
+FIGURE 6
+Structure of extended Mask R‐CNN
+GONG ET AL.
+|
+73
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+Equation (3) to eliminate the interference caused by the difference in
+the spatial location of the samples.
+d x y
+d x y
+d
+d
+d
+*( , ) =
+( , ) −
+−
+min
+max
+min
+(2)
+Then we resize the image to 96 × 96. Only the pixels that belong
+to the object are reserved and the other pixels are all set to 1, that is,
+the background is filled with pure white pixels. After that, the
+boundary of the 96 × 96 × 5 image is padded to 128 × 128 × 5 by
+white pixels. The output is just the predicted depth channel image
+because it is sufficient to reflect the shape and position information
+of the target. Abandoning the prediction of RGB channel and infrared
+channel can reduce the burden on the network, which not only
+facilitates the design of optimization strategy, but also simplifies the
+network structure, reduces the quantity of necessary training data,
+and reduces the computational complexity of the network.
+As for optimization, we use the combined shape and depth loss
+(jsS D
+−) to train the network. The conversion formula of Kinect
+camera coordinates x
+y
+z
+(
+,
+,
+)
+pixel
+pixel
+depth to the world coordinates x y z
+( , , )
+(Olesen et al., 2015), is given by Equations (4)–(6).
+⋅
+⋅
+⋅
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+x
+y
+z
+x
+y
+z
+=
+tan
+tan
+1
+norm
+h
+norm
+v
+depth
+2
+2
+FOV
+IR
+FOV
+IR
+(3)
+
+
+
+
+
+
+x
+x
+r
+= 2 ×
+−0.5
+norm
+pixel
+x
+(4)
+
+
+
+
+
+
+y
+y
+r
+= 2 × 0.5 −
+norm
+pixel
+y
+(5)
+where
+
+
+
+
+
+
+tan
+h
+2
+FOV
+IR
+,
+
+
+
+
+
+
+tan
+v
+2
+FOV
+IR
+, rx and ry are constant parameters of the
+Kinect camera, x
+y
+(
+,
+)
+pixel
+pixel is the pixel coordinate in the depth image,
+zdepth is its pixel value. The equations show that the error in axis z is
+derived from the error of zdepth after image restoration, the error of x
+is derived from both the error of xpixel and zdepth, and the error of y is
+derived from ypixel and zdepth.
+Since the sample has been segmented, it is easy to distinguish the
+foreground pixel and the background pixel. To measure the differ-
+ence between x
+y
+(
+,
+)
+pixel
+pixel and x y
+( , ), the degree of overlap between
+the predicted target and the real intact target is calculated, which is
+the Intersection over Union (IoU) (see Equation 1). The corresponding
+loss function is the Shape Loss (jss), which is
+js
+IoU
+= 1 −
+S
+(6)
+The depth loss (jsD) is defined as Equation (8):
+js
+d
+d
+w
+h
+=
+∑( * −
+*)
+×
+D
+P
+G
+2
+(7)
+where d*P and d*G are the depth value of the predicted and original
+image; w and h are the width and height of the image. jsD uses mean
+squared error (MSE) to measure the difference of depth information
+between the predicted sample and the real sample, then it is divided
+by the size of the image for normalization.
+jsS D
+−
+is defined in Equation (8) as the total loss function:
+j
+j
+j
+s
+λ
+s
+λ
+s
+=
++
+S D
+S
+S
+D
+D
+−
+(8)
+where the hyperparameters λS and λD control the relative importance
+of the shape loss and depth loss. We set λ = 1
+S
+and λ
+= 10
+D
+in our
+experiment.
+The training of the shape and position restoration consists of two
+phases: the pretraining stage and the formal training stage.
+During the pretraining stage, RGB channel restoration is trained.
+We separate the leaf image from the RGB‐D‐I tomato set as de-
+scribed in Section 2.2. Then use rotation, zoom, combination, and so
+on, to generate an extended mask image. The fruits‐360 open‐source
+data set (Mureşan & Oltean, 2018) is introduced as the ground truth,
+and the mask image overlays the ground truth image to form the
+FIGURE 7
+UNet‐like based network structure
+FIGURE 8
+RGB restoration performance of the pretrained stage.
+(a) Input, (b) prediction, and (c) ground truth
+74
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+input to train the network for RGB channel recovery. This expands
+the training set and enhances the generalization performance of the
+method. At this point, the output retains five channels, corresponding
+to the RGB‐D‐I image of the complete sample.
+Figure 8 shows the RGB restoration performance of the pre-
+trained process on the RGB‐D‐I tomato set. It is noteworthy that the
+tested RGB‐D‐I tomato sample was not used in the pretraining phase.
+During the formal training phase, jsS D
+−
+is optimized as a loss
+function for depth channel prediction. Figure 9 shows in different
+steps of the formal training, the prediction performance of the
+method on the validate set. Since the RGB channel is discarded, the
+RGB image prediction is gradually degraded. However, the contour of
+the RGB image is consistent with the contour of the depth map
+during the training, which indicates that the pre‐training stage gives a
+certain ability to predict the tomato's contour, and the ability is in-
+herited during the formal training stage. With the training epochs
+increasing, the color properties of the prediction fade away while the
+depth and shape properties approximate the ground truth. Attribu-
+tably, our loss function is about shape and depth position (λS and λD).
+Purposely, the deep learning network eventually minimizes the depth
+and shape loss. Since visual naturalness is optimized here, the pre-
+diction results do not appear very smooth at the edge of the mask.
+To evaluate the performance of the SPR method, jss, jsD, and
+jsS D
+−
+are applied, respectively, as the optimization target in the
+formal training stage. All other parameters are kept the same during
+the training and the training samples are not involved in the test.
+Figure 10 shows the IoU indicator achieved by the three optimization
+functions on the test set. The jss loss function obtained the highest
+IoU value, reaching 0.954, which means the result of the prediction
+and the real tomato has an overlap rate of 95.4%. The IoU obtained
+by jsS D
+−
+is 0.949, which is closer to the SL result. While the jsD is
+only 0.917, which is much lower than the jss and jsS D
+−
+results.
+Figure 11 shows the MSE score obtained by the three optimization
+functions on the test set. The jsD and jsS D
+−
+are close to the MSE
+scores, which are 0.0036 and 0.0039, respectively. While the jss
+achieves an MSE of 0.042, more than 10 times of the first two
+functions.
+2.3.3
+|
+Phase 3: Tomato shape and position
+estimation
+Tomato is generally considered as a sphere, the contour of tomato
+always corresponds to its largest cross‐section, which is independent
+of the perspective of the viewer. Based on the above assumption, the
+algorithm for extracting the centroid coordinates and radius of the
+FIGURE 9
+Visualization of the shape‐preserved and geometrics‐enriched process during the formal training, from left to right the number of
+training epochs increases
+FIGURE 10
+Intersection over Union scores achieved by the three
+different optimization methods
+FIGURE 11
+Mean squared error scores obtained by the three
+optimization methods
+GONG ET AL.
+|
+75
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+tomato is as follows (Table 1): The input of the algorithm is the depth
+image, where the patch of the original tomato has been replaced by a
+reconstructed intact tomato image. The algorithm finds out the
+contour points of intact tomatoes, then calculates their mean
+coordinate as tomato centroid in the depth image. After that, the real
+position of the tomato centroid in the camera coordinate can be
+obtained as follows:
+⋅
+⋅
+z
+D x
+y
+f
+R x
+x
+c
+z
+f
+y
+y
+c
+z
+f
+=
+(
+,
+) +
+,
+= (
+−
+)
+,
+=
+(
+−
+)
+C
+C
+z
+C
+x
+x
+C
+y
+y
+(9)
+where x
+y
+(
+,
+)
+C
+C is the centroid's coordinate in the depth image, x y z
+( , , )
+is the centroid's coordinate in world coordinate frame, c
+c
+f
+f
+f
+,
+,
+,
+,
+x
+y
+x
+y
+z
+are known parameters of the Kinect‐V2 camera.
+In the next step, the axis passing through the centroid is rotated
+from 0° to 360°. The algorithm calculates intersection points of the
+axis and the contour then records their camera coordinates and
+marks the pair of points with the longest distance as the diameter of
+the tomato. These values help to determine the posture of the robot's
+end‐effector.
+3
+|
+EXPERIMENT RESULTS
+3.1
+|
+Detection and segmentation experiments
+The test data set includes 500 samples, with 371 samples of single
+tomato and the other 129 samples of overlapped tomatoes. IoU,
+Equation (1), is employed to assess the segmentation accuracy of the
+instance segmentation process.
+∪
+IoU
+f
+P
+G
+f
+P
+G
+=
+(
+∩
+)
+(
+)
+area
+area
+(10)
+where P is the region of tomato segmented, while G is the true region
+of tomato. The function f
+x( )
+area
+provides the number of pixels of the
+input set.
+Finally, ablation experiments were performed on the test data
+set, and the results are shown in Table 2. Compared to the
+RGB‐based Mask R‐CNN model (Mean IoU of 0.851 and 195 ms
+per image), the performance of the models based on the fused
+image has been improved. The RGBD‐based model runs at 375 ms
+per image with the mean IoU of 0.897, while 0.891 and 298 ms for
+the RGBI‐based model. As for the extended Mask R‐CNN model
+based on RGBDI fused images, the segmentation accuracy im-
+proved with the mean IoU of 0.916. But the speed was reduced to
+456 ms per image.
+Figure 12 shows the prediction results of the extended Mask
+R‐CNN model. This algorithm segmented the tomato fruits from
+the background. For the occluded tomatoes, the partial missing
+masks would be used for further restoration. The model is
+robust under different light conditions. More detailed prediction
+results are shown in Figure 13. Segmentation results of the depth
+and infrared channel are the same as the RGB segmentation
+results
+as
+they
+are
+pixel‐level
+aligned.
+The
+segmentation
+algorithm generates the mature tomato part from the leaves'
+background.
+3.2
+|
+Qualitative comparison
+We compare our method to the other two state‐of‐the‐art methods:
+•
+PC: Partial convolution (G. Liu et al., 2018).
+•
+CA: Contextual attention (Yu et al., 2018).
+Figure 14 shows images generated by PC, CA, and ours. The first
+column is the masked image, and the green parts are the mask
+extracted from covered leaves. With the masked areas increasing
+from top to bottom, our method achieves better subjective results in
+terms of shape and color recovery.
+It can infer the correct structure of the tomatoes where the
+Contextual Attention fails, and can also get better color details
+compared to the PC method.
+TABLE 1
+Shape and position estimation algorithm
+Algorithm: Tomato's shape and position estimation
+Input: Intact tomato's depth image D
+1. P P
+[
+,
+]
+x
+y = find_contour_points (D)
+2. x
+y
+[
+,
+]
+C
+C = mean P P
+(
+,
+)
+x
+y
+3. P P
+[
+,
+]
+1
+2 = find_diameter_point (D)
+4. R = get_real_distance (P1, P2)
+5. x y z
+[ , , ] = camera_coordinate_mapping x
+y
+D R
+(
+,
+,
+,
+)
+C
+C
+return [x, y, z, R]
+TABLE 2
+Controlled variables experiment result of
+segmentation accuracy with different image source
+Image source utilized
+RGB
+RGBD
+RGBI
+RGBDI
+Mean IoU
+0.851
+0.897
+0.891
+0.916
+Speed (ms)
+195
+375
+298
+456
+FIGURE 12
+Instance segmentation results of extended Mask
+R‐CNN
+76
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+3.3
+|
+Quantitative comparison
+To evaluate image inpainting results we follow the previous image
+inpainting works (Z. Wang et al., 2004; C. Yang et al., 2017;
+Yu et al., 2018). We use the 1 error (Equation 11), peak signal‐to‐
+noise ratio (PSNR, Equation 12), and structural similarity (SSIM,
+Equation 13) as the quantitative metrics.
+
+∑∑
+mn
+f i j
+g i j
+=
+1
+‖ ( , ) −
+( , )‖
+m
+n
+1
+0
+−1
+0
+−1
+(11)
+
+
+
+
+
+
+PSNR
+f i j
+g i j
+= 20 log
+255
+∑
+∑
+‖ ( , ) −
+( , )‖
+mn
+m
+n
+10
+1
+0
+−1
+0
+−1
+2
+(12)
+SSIM
+μ μ
+c
+σ
+c
+μ
+μ
+c
+σ
+σ
+c
+=
+(2
++
+)(2
++
+)
+(
++
++
+)(
++
++
+)
+f
+g
+fg
+f
+g
+f
+g
+1
+2
+2
+2
+1
+2
+2
+2
+(13)
+with:
+f is the matrix data of the original image;
+g is the matrix data of the restored image;
+m is the numbers of rows of pixels of the image;
+i is the index of the row;
+n is the numbers of columns of pixels of the image;
+j is the index of the column;
+μf is the average of f;
+μg is the average of g;
+σf
+2 is the variance of f;
+σg
+2 is the variance of g;
+σfg is the covariance of f and g
+c
+k
+= (255 )
+1
+1 2 and c
+k
+= (255 )
+2
+2 2 two variables to stabilize the
+division with weak denominator, k
+k
+= 0.01,
+= 0.03
+1
+2
+by default.
+Our method obtains relatively better diversity scores than other
+existing methods with the highest PSNR and SSIM as shown in
+Table 3.
+FIGURE 13
+Segmentation results of RGB, depth and infrared images. From left to right: original image, RGB result, Depth result (shown as
+heatmap), Infrared result. From top to bottom the occlusion rate increase
+FIGURE 14
+Qualitative comparison on the test set. (a) Input,
+(b) ours, (c) PC, (d) CA, (e) grounded truth. CA, contextual attention;
+PC, partial convolution
+TABLE 3
+Quantitative comparison with the state‐of‐the‐art
+approaches
+Method
+PSNR (dB)
+SSIM
+ℓ1 error (%)
+PC
+18.1612
+0.8236
+1.85
+CA
+19.2461
+0.8484
+3.27
+Ours
+23.8948
+0.9304
+2.15
+Note: Higher PSNR and SSIM values are better; lower ℓ1 error is better.
+Abbreviations: CA, contextual attention; PC, partial convolution; PSNR,
+peak signal‐to‐noise ratio; SSIM, structural similarity.
+GONG ET AL.
+|
+77
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+3.4
+|
+Algorithm's shape and positioning error
+analysis
+The shape and position restoration effect of the SPR algorithm
+proposed is affected by many factors, such as masking areas, light
+intensity, and so on. High precision restoration indicates the high
+accuracy of the boundary and the position. This section discusses the
+boundary contour accuracy and surface point cloud position accuracy
+of masked‐restored tomato fruits under different occluded rates and
+different lighting conditions.
+3.4.1
+|
+Shape and positioning error for different
+occluded rate
+The centroid localization error of the entire vision system is de-
+rived from the error of image acquisition equipment, image re-
+construction error, and coordinate extraction algorithm error.
+Since the error scale is small (<10 mm) and the centroid is an ab-
+stract concept, the localization error is difficult to be measured
+directly in an unstructured environment. Accordingly, we focus on
+the centroid's camera coordinate error caused by depth image
+reconstruction. One hundred samples containing complete toma-
+toes are selected for testing. As shown in Figure 15, each un-
+obstructed tomato sample is occluded by the different masks from
+the data set in Section 2.2. After that, reconstruction is applied to
+the occluded image (Figure 16). It takes 80 ms per image for the
+SPR algorithm. Finally, the centroid coordinate described in
+Section 2.3.3 is used to calculate the centroid coordinates corre-
+sponding to the real sample and the reconstructed sample.
+The error in each axis is recorded and the Euclidean norm is
+calculated as the centroid error, that is:
+X
+Y Z
+X
+Y
+Z
+‖(
+,
+,
+)‖ =
++
++
+e
+e
+e
+e
+e
+e
+2
+2
+2
+(14)
+where Xe, Ye, Ze are the average deviations of camera coordinates.
+The centroid error and the mean IoU are used to evaluate the
+position accuracy and contour accuracy of the restored fruit.
+Experiments show that the occlusion rate has a great influence on
+reconstruction accuracy. The test results are shown inTable 4. As the
+masking area increases, the centroid error increases while mean IoU
+decreases. The restoration accuracy rapidly decreases when the
+tomato is heavily occluded.
+3.4.2
+|
+Shape and positioning error under different
+light conditions
+The Kinect v2 camera is based on TOF technology. An infrared
+emitter actively projects modulated near‐infrared light and then
+the depth of the object is calculated by the time difference of the
+light. External high‐intensity infrared light makes it difficult for TOF
+sensors to differentiate the active infrared signal from external light.
+FIGURE 15
+One group of samples over
+different occlusion rates. From left to right the
+occlusion rates increase. (a) without occlusion,
+(b) ~10% occlusion, (c) ~30% occlusion, (d) ~50%
+occlusion, (e) ~75% occlusion
+FIGURE 16
+Restoration results of the SPR algorithm. (a) RGB‐D‐
+I‐inputs, (b) outputs, and (c) ground truth
+78
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+The shaded fruit recovery experiments under different light in-
+tensities are performed to evaluate the influence of the light
+condition.
+The light intensity was measured by illuminance. The fruit
+recovery accuracy was still expressed in terms of centroid
+accuracy and mean IoU. Fifty sets of tomato fruits with a
+25%–50% occluded rate are selected under three different
+lighting conditions: cloudy day, clear morning, and sunny midday.
+The experimental results are shown in Table 5. Overcast get
+the best performance with the lowest centroid error of 1.52 and
+the highest Mean IoU of 0.863. Clear morning with 60–75–kLux
+illuminance gets the result of 7.22 centroid error and 0.802
+mean IoU. Sunny midday with the highest illuminance has the
+worst result. The centroid error is 11.79 and the mean IoU
+is 0.767.
+3.5
+|
+Field experimentation
+3.5.1
+|
+Camera calibration and hand‐eye calibration
+Kinect v2 camera is widely used in real‐time robotic vision applica-
+tions, such as detecting and measuring objects and estimating hu-
+mans' poses. To realize the tomato picking process, the target's
+position to the camera and the camera to the robot arm needs to be
+known, this process is achieved by camera calibration and hand‐eye
+calibration. The accuracy of the calibrations determines the overall
+performance of the robotic system.
+Camera calibration helps correct radial lens distortions and
+measurement errors. Hand‐eye calibration helps know where a
+point in the camera coordinate is positioned in the robot
+coordinates. The intrinsic calibration parameters represent the
+projective transformation between the 2D image coordinates u v
+( , )
+and 3D camera coordinates x y z
+( , , ) (Equation 15). The extrinsic
+calibration parameters follow a rotation and a translation trans-
+formation between camera x y z
+( , , ) and robot coordinates X Y Z
+( ,
+,
+)
+(Equation 16).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+z
+u
+v
+f
+c
+f
+c
+x
+y
+z
+1
+=
+0
+0
+0
+0
+0
+0 1
+0 1
+x
+x
+y
+y
+(15)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+x
+y
+z
+R
+T
+X
+Y
+Z
+1
+= 0
+1
+1
+3×3
+3×1
+1×3
+(16)
+with:
+f
+f,
+x
+y is the focal length in pixels;
+c
+c
+,
+x
+y is the optical center in pixels;
+∈
+R
+3×3 is the rotation matrix;
+∈
+T
+3×1 is the translation matrix.
+The coordinate frame assignment of the dual‐arm picking robot is
+shown in Figure 17. The relations between the camera coordinate
+and the left base coordinate, the camera and the right base
+coordinate need to be calibrated.
+For Kinect v2 camera, Wiedemeyer from the University Bremen
+developed the iai_kinect2 libraries for a ROS Interface to the Kinect
+(Wiedemeyer, 2014). Figure 18 shows the calibration process.
+The left and right robotic arms are calibrated separately. Move the
+calibration plate to where the calibration pattern is clearly in
+the camera's view. Repeat this process and complete the calibration.
+The error of camera calibration is described as a reprojection error:
+∑
+ε
+d
+=
+(x′, Hˆ x )
+i
+n
+i
+i
+=1
+2
+(17)
+with:
+x , x′
+i
+i is the correspond points;
+TABLE 4
+The centroid errors distribution of depth result in
+different masked areas
+Occlusion
+rate (%)
+The error of each axis
+Centroid
+error (mm)
+Mean IoU
+Xe (mm)
+Ye (mm)
+Ze (mm)
+0–25
+0.31
+0.28
+0.46
+0.62
+0.895
+25–50
+0.71
+0.76
+1.11
+1.52
+0.863
+50–75
+3.25
+3.41
+3.92
+6.13
+0.765
+75–100
+6.55
+6.87
+8.80
+12.94
+0.653
+TABLE 5
+The centroid errors distribution of depth result in
+different light condition
+Light condition
+(kLux)
+The error of each axis
+Centroid
+error
+(mm)
+Mean
+IoU
+Xe (mm) Ye (mm)
+Ze (mm)
+Overcast/(1–12)
+0.71
+0.76
+1.11
+1.52
+0.863
+Sunny morning/
+(60–75)
+2.86
+3.51
+5.62
+7.22
+0.802
+Sunny midday/
+(95–105)
+5.43
+5.86
+8.67
+11.79
+0.767
+FIGURE 17
+Coordinate frame assignment for the dual‐arm
+picking robot
+GONG ET AL.
+|
+79
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+d is the Euclidean distance;
+Hˆ is the homography matrix.
+During the camera calibration, the Kinect v2 camera has a static
+offset of around 7.6 mm in the depth direction (z‐axis direction).
+As shown in Figure 19, the difference between measured and com-
+puted distance is unrelated to the x and y coordinates of the pixel.
+The hand‐eye calibration error is described with root mean
+square (RMS). The results of the camera calibration and hand‐eye
+calibration errors are shown in Table 6. The reprojection error is
+measured in pixel and represents the Euclidean distance between the
+actual position of a point and its position on the image. The camera
+calibration error consists of three parts: the RGB camera reprojection
+error, the IR camera reprojection error and the error between the two
+cameras. The Kinect only has a color camera and an IR camera
+while the depth information is calculated from the IR information.
+The translation RMS error of the two robotic arms is around 7 mm
+and the rotation RMS error is around 0.9 rad.
+3.5.2
+|
+Harvesting experiments
+We have evaluated our proposed method in a real picking environ-
+ment, the recognition and reconstruction process for tomato fruits
+obscured by branches and leaves is divided into the following steps,
+shown in Figure 20.
+First, the Kinect v2 camera acquires a panoramic image of the
+tomato picking environment, then the extended Mask R‐CNN model
+identifies and segments the tomato fruits and separates them from
+the background, and then the resulting 128 × 128 masked image is
+FIGURE 18
+Camera and hand‐eye calibration. (a) Calibration of the right arm and (b) calibration of the left arm. Left is the Kinect v2
+camera view
+FIGURE 19
+Difference between measured and computed
+distance in the x and y coordinates
+TABLE 6
+The camera calibration error and the hand‐eye
+calibration error
+Error
+Value
+RGB reprojection error (pixel)
+0.2072
+Infrared reprojection error (pixel)
+0.1251
+Infrared‐RGB reprojection error (pixel)
+0.2008
+Translation RMS error of the left arm (mm)
+6.5431
+Rotation RMS error of the left arm (rad)
+0.0873
+Translation RMS error of the right arm (mm)
+7.2485
+Rotation RMS error of the right arm (rad)
+0.0924
+80
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+used as input to our SPR method algorithm to obtain the demasked
+tomato fruit and restore it to the panoramic image. Further, the
+location and the radius of the tomatoes are obtained from the
+corresponding depth images and then the picking robot completes
+the picking task.
+The positions for the mature tomatoes presented in Figure 21
+are estimated based on the reconstructed 3D surface point cloud of
+each tomato, which is the result of the SPR algorithm. The environ-
+ment is reconstructed in 3D using the detected 2D image. Within
+each region, each pixel is reprojected to the corresponding point in
+camera coordinates with position values and RGB colors. The 3D
+point
+cloud
+is
+converted
+from
+camera
+coordinates
+to
+robot
+coordinates. Then the tomatoes are detected by the Mask R‐CNN
+algorithm. The color and depth information of the masked fruit is
+inferentially recovered using the SPR algorithm. Next, the 3D co-
+ordinates of the tomato centroid position are computed and stored.
+Finally, the robot arm performs task assignment and trajectory
+planning based on the tomato position.
+As shown in Figure 22, the picking process is divided into four
+parts:
+(1) Standby: A frame of RGB‐D‐I image is acquired, and the spatial
+3D coordinates of the target fruit are obtained after mask
+R‐CNN and SPR algorithms. Based on the position, the target
+fruits are judged to be ready for picking, and then they are
+assigned to the left and right robotic arms. The motion trajec-
+tory is planned.
+(2) Grab. the end‐effector moves to the position of the target
+tomato, the pneumatic clamps close and the robotic arm joint
+6 rotates 180°, imitating human action to twist off the fruit.
+(3) Release. Move over the basket, the pneumatic clamps open and
+place the fruit in the basket located on the side of the vehicle.
+(4) Reset, the robotic arms' posture returns to the standby state and
+prepares for the next action.
+3.5.3
+|
+Picking accuracy and success rates
+Automatic harvesting experiments were conducted in a tomato
+greenhouse, where tomato detection, picking, and robot chassis
+movement was automated. A total of 10–20 tomatoes were picked
+each time, and each attempt was recorded. During the picking
+TABLE 7
+Results of the autonomous harvesting experiments
+No.
+Pick
+attempts
+Successful
+pick
+Success
+rate (%)
+Picking
+accuracy (mm)
+1
+14
+11
+78.57
+6.37
+2
+19
+12
+63.15
+8.64
+3
+16
+13
+81.25
+9.65
+4
+11
+9
+81.81
+6.96
+5
+11
+7
+63.63
+11.32
+6
+13
+10
+76.92
+9.62
+7
+15
+10
+66.67
+8.15
+8
+17
+13
+76.47
+7.62
+9
+13
+10
+76.92
+6.33
+10
+12
+8
+66.67
+7.44
+Total
+141
+103
+73.04
+8.21
+FIGURE 20
+Application on obscured tomato restoration in the
+real environment. (a) Raw image from the robot's view, (b) SPR
+processing, and (c) high‐fidelity restoration for the occluded scenario
+FIGURE 21
+Real‐time view in a 3D point cloud in ROS simulation
+environment
+GONG ET AL.
+|
+81
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+process, there was a 25‐s pause before the gripper closed. We
+measured the gripping accuracy of the robot system in the pause. As
+shown in Figure 23, the gripping accuracy was divided into axial
+accuracy and radial accuracy, reflecting the deviation between the
+picked fruit and the center of the end‐effector in the axial and radial
+directions. The picking accuracy is:
+
+
+
+
+
+
+
+
+
+
+
+
+∑
+∑
+ε
+n
+ε
+n
+ε
+=
+1
++
+1
+p
+n
+ai
+n
+ri
+1
+2
+1
+2
+(18)
+After the experiments, gripping accuracy and success rates were
+calculated. The picking was considered successful if the tomato was
+place into the basket. And it was considered as failure if it was not
+picked or dropped halfway. The experimental results are shown in
+Table 6. A total of 141 picking attempts were made, with 103 suc-
+cesses. The average success rate was 73.04% and the average grip-
+ping accuracy was 8.21 mm. It took an average of 11 s to accomplish
+a complete picking action.
+3.6
+|
+Discussion
+The study of the field harvesting experiments provides valuable
+insights into automated harvesting of the greenhouse tomatoes,
+especially
+the
+detection
+and
+positioning
+of
+branch‐occluded
+tomatoes.
+For the detection problem of the shaded fruits, the extended
+Mask R‐CNN is used to segment the tomato from the background.
+The unique is using RGB‐D‐I images as the input to the network. The
+depth and infrared features are added to make the model more ef-
+fective. The detection accuracy is improved by 7.6% compared to the
+RGB‐based Mask R‐CNN. But the average detection time for a single
+image increases by 159.5% due to the increased computational work.
+For the localization problem of occluded fruits, the SPR model is
+proposed to estimate the color and depth information of the occluded
+part. The centroid error and mean IoU of the reconstructed point cloud
+are used as the evaluation metrics. The model effects under different
+occlusion rates and different light conditions are discussed. The smaller
+the occlusion rate is, the better will the reconstruction effect be.
+When the occlusion rate reaches 75%–100%, the centroid error is
+12.94 mm, the mean IoU is only 0.653. For different lighting condi-
+tions, too strong light intensity leads to the decrease of centroid
+localization accuracy and surface contour accuracy, and the best effect
+is achieved in an overcast day with enough light. The contour error
+(mean IoU) improves by 12.5% and the centroid error reduces by
+87.1% compared with the noon in direct sunlight.
+Automated harvesting experiments were tested in a tomato
+greenhouse. The robot was able to replace humans in harvesting
+mostly, with a single fruit harvesting time of 11 s, average gripping
+accuracy of 8.21 mm, and average picking success rate of 73.04%.
+FIGURE 22
+Diagram of the picking process
+FIGURE 23
+Robot picking accuracy measurement. (a) axial
+accuracy and (b) radial accuracy
+82
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+The reasons for the picking failure are as follows: (1) The working
+space is limited and the motion planning is relatively simple. The soft
+grippers cannot bypass the tomatoes when they are blocked by
+the immovable stems. Obstacle avoidance and path planning are the
+problems to be solved in the future. (2) To reduce damage to the
+tomatoes during picking, the end‐effector was designed as a pneu-
+matic soft gripper, which sometimes slipped during the grasping
+process. The design and improvement of the end‐effector's structure
+is also a focus of future work.
+4
+|
+CONCLUSIONS
+The paper provides an end‐to‐end approach for harvesting the oc-
+cluded fruits in the field scenes, that is, the robot immediately obtains
+the picking decision‐making parameters from the image.
+A vision system that can accurately extract the occluded tomato
+from the background is established. Compared to the original open‐
+source network, the extended Mask‐RCNN network can effectively
+utilize the information of multisource images, finally achieve an IoU
+score increase of 0.065 on the test set. It runs at 456 ms per image.
+The basis of the proposed shape and position restoration method
+is the ability of the human to predict the invisible part of a tomato
+according to the information in visible parts, such as texture, shape,
+and infrared value. The neural network is also able to possess
+this ability by reasonable design and training, which is proved by
+experiments. In the condition that the target tomato has an occlusion
+rate of less than 50%, the tomato centroid position error caused by
+the reconstruction process is less than 2 mm.
+Moreover, automated harvesting experiments were conducted in
+the field. The average picking time per fruit is 11 s. The average
+success rate is 73.04%. Failure was mainly due to the thick stem
+obstruction and the structural defect of the gripper.
+The experiment results show that the proposed method can obtain
+the position of the target tomato, while its positioning accuracy for the
+occluded tomato is much higher than the traditional methods. Further-
+more, this method does not rely on artificial parameters such as color
+threshold, which often perform unsatisfactorily in the reality scene.
+ACKNOWLEDGEMENTS
+This study was supported in part by the Project of Science and
+Technology Commission of Shanghai Municipality under Grant no.
+18391901000, in part by the National Natural Science Foundation of
+China under Grant no. 51775333.
+CONFLICT OF INTERESTS
+The authors declare that there are no conflict of interests.
+DATA AVAILABILITY STATEMENT
+Research data are not shared.
+ORCID
+Liang Gong
+http://orcid.org/0000-0003-0265-1192
+REFERENCES
+Bao, J., Chen, D., Wen, F., Li, H., & Hua, G. (2017). CVAE‐GAN: Fine‐
+grained image generation through asymmetric training. Proceedings
+of
+the
+IEEE
+International
+Conference
+on
+Computer
+Vision
+(pp. 2745–2754).
+Bertalmio, M., Sapiro, G., Caselles, V., & Ballester, C. (2000). Image
+inpainting. Proceedings of the 27th Annual Conference on Computer
+Graphics and Interactive Techniques (pp. 417–424). ACM Press/
+Addison‐Wesley Publishing Co. https://doi.org/10.1145/344779.
+344972
+Chang, Y., Jung, C., & Xu, Y. (2021). FinerPCN: High fidelity point cloud
+completion network using pointwise convolution. Neurocomputing,
+460, 266–276. https://doi.org/10.1016/j.neucom.2021.06.080
+Chen, X., Chaudhary, K., Tanaka, Y., Nagahama, K., Yaguchi, H., Okada, K.,
+&
+Inaba,
+M.
+(2015).
+Reasoning‐based
+vision
+recognition
+for
+agricultural humanoid robot toward tomato harvesting. 2015 IEEE/
+RSJ International Conference on Intelligent Robots and Systems (IROS),
+(pp. 6487–6494). IEEE.
+Chen, Y., Yu, W., & Pock, T. (2015). On learning optimized reaction
+diffusion processes for effective image restoration. In Proceedings of
+the IEEE Conference on Computer Vision and Pattern Recognition
+(pp. 5261–5269).
+Feng, Q., Wang, X., Wang, G., & Li, Z. (2015). Design and test of tomatoes
+harvesting
+robot.
+In
+2015
+IEEE
+International
+Conference
+on
+Information and Automation (pp. 949–952). IEEE.
+Goodfellow, I., Pouget‐Abadie, J., Mirza, M., Xu, B., Warde‐Farley, D.,
+Ozair, S., & Bengio, Y. (2014). Generative adversarial nets. In:
+Advances in Neural Information Processing Systems (NIPS).
+Gupta, S., Girshick, R., Arbeláez, P., & Malik, J. (2014). Learning rich
+features
+from
+RGB‐D
+images
+for
+object
+detection
+and
+segmentation.
+In
+European
+Conference
+on
+Computer
+Vision
+(pp. 345–360). Springer.
+Hayashi, S. (2005). Robotic harvesting technology for fruit vegetables in
+protected horticultural production. In: 7th Fruit, Nut and Vegetable
+Production Engineering Symposium at Montpellier, France, Held from
+Sept. 12 to 16, 2005.
+He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for
+image recognition. Proceedings of the IEEE Conference on Computer
+Vision and Pattern Recognition, 37, 770–778.
+Huang, J., Kang, S. B., Ahuja, N., & Kopf, J. (2014). Image completion using
+planar structure guidance. ACM Transactions on Graphics, 33(4),
+1–10. https://doi.org/10.1145/2601097.2601205
+Kurtulmus, F., Lee, W. S., & Vardar, A. (2014). Immature peach detection
+in colour images acquired in natural illumination conditions using
+statistical classifiers and neural network. Precision Agriculture, 15(1),
+57–79.
+Lahiri, A., Jain, A. K., Agrawal, S., Mitra, P., & Biswas, P. K. (2020). Prior
+Guided GAN Based Semantic Inpainting (pp. 13696–13705). https://
+openaccess.thecvf.com/content_CVPR_2020/html/Lahiri_Prior_
+Guided_GAN_Based_Semantic_Inpainting_CVPR_2020_paper.html
+Li, H., Li, G., Lin, L., Yu, H., & Yu, Y. (2018). Context‐aware semantic
+inpainting. IEEE Transactions on Cybernetics, 49(12), 4398–4411.
+Ling, X., Zhao, Y., Gong, L., Liu, C., & Wang, T. (2019). Dual‐arm
+cooperation and implementing for robotic harvesting tomato using
+binocular vision. Robotics and Autonomous Systems, 114, 134–143.
+Liu, D., Sun, X., Wu, F., Li, S., & Zhang, Y.‐Q. (2007). Image compression
+with edge‐based inpainting. IEEE Transactions on Circuits and Systems
+for Video Technology, 17(10), 1273–1287.
+Liu, G., Reda, F. A., Shih, K. J., Wang, T. ‐C., Tao, A., & Catanzaro, B. (2018).
+Image inpainting for irregular holes using partial convolutions.
+Proceedings of the European Conference on Computer Vision (ECCV)
+(pp. 85–100).
+Mureşan, H., & Oltean, M. (2018). Fruit recognition from images using
+deep learning. Acta Universitatis Sapientiae. Informatica, 10(1),
+26–42.
+GONG ET AL.
+|
+83
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+Olesen, S. M., Lyder, S., Kraft, D., Krüger, N., & Jessen, J. B. (2015). Real‐
+time extraction of surface patches with associated uncertainties by
+means of kinect cameras. Journal of Real‐Time Image Processing,
+10(1), 105–118.
+Pastrana, J. C., & Rath, T. (2013). Novel image processing approach for
+solving
+the
+overlapping
+problem
+in
+agriculture.
+Biosystems
+Engineering, 115(1), 106–115.
+Ronneberger, O., Fischer, P., & Brox, T. (2015). U‐net: Convolutional
+networks
+for
+biomedical image
+segmentation.
+In
+International
+Conference on Medical Image Computing and Computer‐Assisted
+Intervention (pp. 234–241). Springer.
+Song, H., He, D., & Pan, J. (2012). Recognition and localization methods of
+occluded apples based on convex hull theory. Transactions of the
+Chinese Society of Agricultural Engineering, 28(22), 174–180.
+Tang, Y., Wang, C., Luo, L., & Zou, X. (2020). Recognition and localization
+methods for vision‐based fruit picking robots: A review. Frontiers in
+Plant Science, 11, 510.
+Tang, Y., Zou, X., Cheng, J., & Xiong, J. (2020). Fruit detection in natural
+environment using partial shape matching and probabilistic Hough
+transform. Precision Agriculture, 21(1), 160–177. https://doi.org/10.
+1007/s11119-019-09662-w
+Wang, C., Xu, D., Zhu, Y., Martin‐Martin, R., Lu, C., Fei‐Fei, L., & Savarese, S.
+(2019). DenseFusion: 6D Object Pose Estimation by Iterative Dense
+Fusion. (pp. 3343–3352). https://openaccess.thecvf.com/content_
+CVPR_2019/html/Wang_DenseFusion_6D_Object_Pose_Estimation_
+by_Iterative_Dense_Fusion_CVPR_2019_paper.html
+Wang, L., Bo, Z., Fan, J., Hu, X., S, W., Y. L., & Zhou, Q. (2017).
+Development of a tomato harvesting robot used in greenhouse.
+International Journal of Agricultural and Biological Engineering, 10(4),
+140–149.
+Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004). Image
+quality assessment: From error visibility to structural similarity. IEEE
+Transactions on Image Processing, 13(4), 600–612. https://doi.org/
+10.1109/TIP.2003.819861
+Wiedemeyer, T. (2014). IAI kinect2. University Bremen. https://github.
+com/code-iai/iai_kinect2
+Xu, W., Chen, H., Su, Q., Ji, C., Xu, W., Memon, M.‐S., & Zhou, J. (2019).
+Shadow detection and removal in apple image segmentation
+under natural light conditions using an ultrametric contour map.
+Biosystems Engineering, 184, 142–154. https://doi.org/10.1016/j.
+biosystemseng.2019.06.016
+Yaguchi,
+H.,
+Nagahama,
+K.,
+Hasegawa,
+T.,
+&
+Inaba,
+M.
+(2016).
+Development of an autonomous tomato harvesting robot with
+rotational plucking gripper. In 2016 IEEE/RSJ International Conference
+on Intelligent Robots and Systems (IROS) (pp. 652‐657). IEEE.
+Yang, C., Lu, X., Lin, Z., Shechtman, E., Wang, O., & Li, H. (2017). High‐
+Resolution Image Inpainting Using Multi‐Scale Neural Patch Synthesis
+(pp.
+6721–6729).
+https://openaccess.thecvf.com/content_cvpr_
+2017/html/Yang_High-Resolution_Image_Inpainting_CVPR_2017_
+paper.html
+Yang, Q., Rong, J., Wang, P., Yang, Z., & Geng, C. (2020). Real‐time
+detection and localization using SSD method for oyster mushroom
+picking robot*. 2020 IEEE International Conference on Real‐Time
+Computing and Robotics (RCAR) (pp. 158–163). https://doi.org/10.
+1109/RCAR49640.2020.9303258
+Yeh, R. A., Chen, C., Yian Lim, T., Schwing, A. G., Hasegawa‐Johnson, M., &
+Do, M. N. (2017). Semantic image inpainting with deep generative
+models. In Proceedings of the IEEE Conference on Computer Vision and
+Pattern Recognition (pp. 5485–5493).
+Yu, J., Lin, Z., Yang, J., Shen, X., Lu, X., & Huang, T. S. (2018). Generative
+image inpainting with contextual attention. In Proceedings of the IEEE
+Conference
+on
+Computer
+Vision
+and
+Pattern
+Recognition
+(pp. 5505–5514).
+Yu, J., Lin, Z., Yang, J., Shen, X., Lu, X., & Huang, T. S. (2019). Free‐form
+image inpainting with gated convolution. Proceedings of the IEEE/CVF
+International Conference on Computer Vision, 19, 4471–4480.
+Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions for image
+restoration with neural networks. IEEE Transactions on Computational
+Imaging, 3(1), 47–57.
+Zhao, Y., Gong, L., Huang, Y., & Liu, C. (2016). Robust tomato
+recognition for robotic harvesting using feature images fusion.
+Sensors, 16(2), 173.
+Zhou, T., Ding, C., Lin, S., Wang, X., & Tao, D. (2020). Learning Oracle
+Attention for High‐Fidelity Face Completion (pp. 7680–7689). https://
+openaccess.thecvf.com/content_CVPR_2020/html/Zhou_Learning_
+Oracle_Attention_for_High-Fidelity_Face_Completion_CVPR_2020_
+paper.html
+How to cite this article: Gong, L., Wang, W., Wang, T., & Liu,
+C. (2022). Robotic harvesting of the occluded fruits with a
+precise shape and position reconstruction approach. J Field
+Robotics, 39, 69–84. https://doi.org/10.1002/rob.22041
+84
+|
+GONG ET AL.
+ 15564967, 2022, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1002/rob.22041 by Cochrane Philippines, Wiley Online Library on [03/11/2022]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License

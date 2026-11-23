@@ -1,0 +1,554 @@
+UAV-Based Optimization for Fruit Counting in Greenhouses
+Jo˜ao V´ıtor R. Vasconcelos1, Thayron M. Hudson1, Andr´e G. dos Santos2,
+Martin Saska3 and Alexandre S. Brand˜ao1,3
+Abstract— This paper presents a solution for counting fruit
+in agricultural greenhouses using Unmanned Aerial Vehicles
+(UAVs). Initially, a heuristic based on Simulated Annealing
+was used to optimize the UAV’s trajectory, ensuring efficient
+coverage of the beds. Next, digital image processing (DIP)
+techniques were implemented to count the fruit, including depth
+segmentation, application of bounding boxes, color filtering,
+and element counting. The DIP accuracy was evaluated in
+multiple scenarios and the results indicate high reliability
+in fruit counting, with the potential to optimize agricultural
+operations and provide valuable information to producers.
+Possible future improvements could include further refinements
+in image processing to increase the accuracy of counting other
+fruits. Ultimately, this work contributes to the advancement
+of automation in agriculture by offering a viable and efficient
+solution for counting fruit in greenhouses using UAVs.
+I. INTRODUCTION
+In recent decades, research involving the use of unmanned
+aerial vehicles (UAVs) has attracted worldwide attention,
+due to their vast applications in various sectors, from agri-
+culture to public security. These remotely or autonomously
+controlled aircraft offer a range of advantages over manned
+aircraft, including greater safety, lower operating costs, and
+greater flexibility [1]. In agriculture, UAVs are revolutioniz-
+ing the way farmers manage their crops and monitor crop
+growth [2], [3]. Equipped with high-resolution cameras and
+sensors, these drones can fly over large tracts of land quickly
+and accurately, collecting data on plant health, soil moisture,
+nutrient distribution and even detecting pests and diseases
+before they become visible to the naked eye [4].
+When exploring the use of UAVs in agriculture, we
+encounter optimization challenges where efficiency in data
+collection becomes a priority. This scenario brings to mind
+the well-known Traveling Salesman Problem (TSP) [5].
+Despite its simple premise, its resolution is complex, placing
+this problem in the NP-hard class, meaning there is no
+known algorithm to find an optimal solution in polynomial
+time for all instances. In the search for solutions to TSP,
+several algorithms and heuristic techniques have emerged to
+find approximate results for the problem. These include the
+nearest neighbor algorithm, the nearest insertion algorithm,
+This work was supported by CAPES, CNPq and FAPEMIG
+1 N´ucleo de Especializac¸˜ao em Rob´otica, Department of Electrical
+Engineering, and Graduate Program on Computer Science, Federal Univer-
+sity of Vic¸osa, Vic¸osa - MG, Brazil, E-mail: {joao.v.vasconcelos,
+thayron.hudson, alexandre.brandao}@ufv.br
+2Graduate Program on Computer Science, Federal University of Vic¸osa,
+Vic¸osa - MG, Brazil, E-mail: andresantos@ufv.br
+3Multi-robot Systems Group, Department of Cybernetics, Faculty of
+Electrical Engineering, Czech Technical University in Prague, Czech Re-
+public. E-mail: martin.saska@fel.cvut.cz
+and the 2-choice algorithm, along with advanced approaches
+such as genetic algorithms, simulated annealing, and particle
+swarm optimization [6].
+As our study of the case, the Unmanned Aerial Ve-
+hicle Competition held in the 2024 Int´l Conference on
+Unmanned Aircraft Systems brought the use of UAVs in
+agricultural greenhouses1. Figure 1 depicts the simulated
+environment, consisting of nine shelves, each containing
+three beds, totaling 27 beds. Each bed can accommodate
+up to three plants of a variety of fruits, with each fruit
+having unique characteristics of shape, size, and color. With
+prior knowledge of the beds to be visited, the competition
+objective is to count a specific fruit, starting from an initial
+position and returning to the same position in the shortest
+time possible. Evaluation criteria include accuracy in fruit
+counting and the time spent during the journey, combined
+with fruit counting.
+The challenge environment operates in Gazebo2 with ROS
+Noetic (Robot Operating System) on a Linux Ubuntu 20.04
+LTS system. The selected UAV model is the quadrotor
+Kopterworx Eagle. Additionally, the vehicle integrates an
+Inertial Measurement Unit (IMU) and odometry plugins to
+provide altitude and position data. The rotos simulator3 and
+openni kinect4 packages simulate robot dynamics and the
+depth camera, respectively. Control of the UAV is facilitated
+by the uav ros stack package5 within a software-in-the-loop
+paradigm, while the control stack is seamlessly integrated
+into the simulation via uav ros simulation1.
+1https://github.com/larics/icuas24_competition
+2https://gazebosim.org/
+3https://wiki.ros.org/rotos_simulator
+4https://wiki.ros.org/openni_kinect
+5https://github.com/larics/uav_ros_stack
+Fig. 1.
+Simulation of the competition arena in the Gazebo environment.
+2024 International Conference on Unmanned Aircraft Systems (ICUAS)
+June 4-7, 2024. Chania, Crete, Greece
+979-8-3503-5788-2/24/$31.00 ©2024 IEEE
+436
+2024 International Conference on Unmanned Aircraft Systems (ICUAS) | 979-8-3503-5788-2/24/$31.00 ©2024 IEEE | DOI: 10.1109/ICUAS60882.2024.10556844
+Authorized licensed use limited to: Makerere University Library. Downloaded on October 30,2026 at 16:52:58 UTC from IEEE Xplore.  Restrictions apply. 
+
+This paper proposes a solution to solve the challenges
+of the competition and is divided as follows. Section II
+presents the problem formulation and the proposed solution.
+Next, Section III presents the results of navigation, image
+processing, and fruit counting in different scenarios. Finally,
+Section IV highlights our contributions to the field of robotics
+in agriculture.
+II. THE PROBLEM FORMULATION AND SOLUTION
+In the broader context of UAV operation, ensuring an
+accurate representation of the environment is paramount to
+avoiding collisions. This is especially important in competi-
+tive scenarios where any collision during mission execution
+leads to the elimination of the team. So, the main details of
+the environment include dimensions of 20x27x8 meters and
+the layout of static obstacles, as shown in Figure 1. In turn,
+Figure 2 shows the proposed grid for the UAV’s movement
+in this environment.
+To perform the fruit count, two readings of each bed are
+required: one at the front and one at the back. Therefore, for
+n number of beds listed for visitation, it will be necessary
+to take 2n readings, in 2n different poses and up to 2n
+different positions. To find the best route for the visits, this
+traveling UAV problem is reduced to the Traveling Salesman
+Problem (TSP). In this context, the positions to be visited are
+considered to be cities, and the path taken by the UAV from
+one position to another is comparable to the path from one
+city to another in the TSP.
+In the TSP problem, the usual cost measure used is the
+Euclidean distance between cities, which is not suitable for
+the present traveling UAV problem. Observing Figure 2, one
+can see that when tracing a direct path between two points
+in different corridors, the UAV will need to go around the
+planting beds to avoid collisions, as it is forbidden by rule for
+the UAV to pass directly over them, even if they are empty.
+A. Maneuvering Around the Plant Beds
+Before analyzing the navigation costs from one point to
+another within the greenhouse, it is important to emphasize
+the global origin of the orthogonal system O = (0, 0, 0),
+as illustrated in Figure 2. Furthermore, all navigation tasks
+Fig. 2.
+Top and side views of the environment, represented as a grid map.
+occur in the first octant of the Cartesian space, which is
+restricted to the intervals: x ∈[0, 20], y ∈[0, 27], and z ∈
+[0, 8].
+Moreover, there are four vertical corridors visible from the
+top view, designated as observation corridors, characterized
+by abscissas x ∈{1, 7, 13, 19}, and ordinates constrained
+within the range y ∈[1, 26]. To facilitate movement between
+these observation corridors, two horizontal passages, termed
+transition corridors, are present. These passages have fixed
+ordinates at y ∈{1, 26} and their abscissas confined within
+the interval x ∈[1, 19].
+Given that each plant must be observed from both sides,
+navigation through two observation corridors, with inter-
+mediate transit through a transition corridor, is necessary.
+Therefore, it is essential to devise a strategy for circumvent-
+ing the plant beds to determine which transition corridor
+will be used to optimize observation of the cultivation on
+both sides. To do so, we check if the sum of the ordinates
+of the visiting point exceeds the maximum ordinate value
+(ymax = 27). If affirmative, it is more efficient to use
+the upper transition corridor; otherwise, the lower one is
+used. It is important to emphasize that the same approach
+used for visiting points belonging to the same plant can be
+applied to different viewpoints. This premise is utilized in
+the optimization process.
+Finally, it is worth noting that navigating around the
+shelves is accomplished by reaching the reference points,
+highlighted in Figure 2, where the black circles represent
+points for stopping and observing the plants or for transi-
+tioning between shelves.
+B. Navigation Costs and Route Optimization
+Given that the proposed mapping is discrete, navigation
+costs were determined by simulating transitions between two
+grid cells. After performing several simulations, we set the
+following cost functions: 0.0002d3 −0.0154d2 + 0.5955d +
+1.8766
+for
+Ascend/Descend;
+0.0003d3 −0.0168d2 +
+0.5431d + 1.3028
+for
+Horizontal
+Flight;
+0.0002d3 −
+0.0159d2 + 0.549d + 1.3569 for Ascending/Descending Di-
+agonal Flight; and 2.94 for a 180° rotation around its own
+axis. Where d is the Euclidean distance from one point to
+another in the navigation grid.
+To initiate the resolution of the problem of visiting the
+beds, it is necessary to organize the data to facilitate the
+application of the heuristic in its resolution. In this regard, a
+set was created with all the points on the grid, considering
+the possible values for each coordinate: Sx = {1, 7, 13, 19},
+Sy = {1, 6, 13.5, 21, 26}, and Sz = {1, 1.6, 4.5, 7.2}. This
+results in S = {(1, 1, 1), (1, 1, 1.6), · · · , (19, 26, 7.2)}, total-
+ing 80 points of visit or passage. The notation S(i) indicates
+the point from set S at index i, where i = 0, 1, 2, · · · , 79.
+Figure 3 shows how the beds are enumerated. Note that,
+following our reference pattern shown in Figure 2, the
+numbering of the beds increases first in z, followed by
+y, and finally x. Following this logic, to exemplify the
+proposed notation, the element S(5) = (1, 6, 1.6) indicates
+the observation point of bed 1.
+437
+Authorized licensed use limited to: Makerere University Library. Downloaded on October 30,2026 at 16:52:58 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 3.
+Enumeration of the Greenhouse Beds.1
+To determine the element of S from the bed number, given
+by p = 1, 2, · · · , 27, we have
+pf = 5+20
+p −1
+9
+
++4
+(p −1) mod 9
+3
+
++(p−1) mod 3 (1)
+where pf indicates the index for observation at the front and
+center of the bed. While pb = pf + 20 indicates the index
+for observation at the rear of the bed.
+Thus, the points to be visited for bed p are S(pf) and
+S(pb). At the beginning of the task, the beds are provided,
+from which a list is compiled, including the initial point P0.
+Next, the cost of all possible combinations of pairs between
+these points is calculated. The results of these costs are used
+by the heuristic to determine the best path for the UAV to
+traverse.
+The heuristic employed to solve the Traveling Salesman
+Problem (TSP) was Simulated Annealing due to its speed,
+reliable approximation capabilities, and the availability of a
+ready-to-use Python library6, additionally, the resolution time
+for the TSP was factored into the simulation. Initially pro-
+posed in [7]. Subsequently, this technique was successfully
+applied to resolve the TSP [8]. Simulated Annealing operates
+by probabilistically exploring the solution space, enabling the
+algorithm to escape local minima. It begins with a randomly
+generated initial solution and then makes small adjustments
+to this solution, such as changing the order in which cities
+are visited. If the new solution is better (i.e., it reduces
+the total distance traveled in the case of the TSP), it is
+accepted immediately. However, if the new solution is worse,
+it may be accepted with a certain probability determined by
+the current temperature of the system and the difference in
+energy between the solutions [9]. The temperature decreases
+along the algorithm, allowing it to explore regions of the
+solution space that may contain better solutions, even if they
+initially appear worse.
+6https://pypi.org/project/python_tsp/
+After finding a solution for the TSP, it is necessary to
+build the route so that the UAV passes through all the points
+in the order given. During the route assembly, we estab-
+lished that the UAV will only perform rolling movements to
+navigate the observation corridors. Pitching maneuvers will
+be used to navigate the transition corridors. To minimize
+the chances of colliding with shelves, yaw maneuvers will
+only be executed when the UAV is hovering, after observing
+a planting bed. It is also important to mention that, while
+moving longitudinally or laterally, the UAV can make vertical
+displacements to observe lower and higher beds. In the
+simulation environment provided for the competition, there is
+a route planner based on a sequence of points, called TOPP-
+RA [10]. To enable a safe and smooth transition between
+corridors, transition points are added to the sequence of
+points, creating intermediate points at which the UAV does
+not perform observation actions.
+C. Image processing for fruit identification
+To locate, identify and count fruit, the simulation platform
+provides a front-facing RGB-D camera. Although the camera
+captures frames during UAV navigation, in the proposed
+strategy, images are captured and processed only at the
+observation points.
+To improve the fruit counting process, the proposed
+strategy aims to remove artifacts that could interfere with
+fruit segmentation and detection. For example, Figure 4(a)
+depicts an image collected during navigation to count yellow
+peppers. In this scenario, we can see that there are pep-
+pers in both the foreground and background. To mitigate
+counting errors and focus on foreground information, a
+distance threshold is applied using depth information. This
+segmentation ensures that only RGB information within 3
+meters is analyzed. This process results in Figure 4(b).
+Note that the distant information appears in black in the
+new image, indicating that this part of the image should be
+ignored during fruit identification and counting.
+The second step involves identifying the white rectangles
+where the plants are located. Then, after applying a color
+filter, the results are boxes delimiting regions that may or
+may not contain fruit. However, these regions have a much
+smaller search area than the resolution of the original image.
+In addition, the bounding box position information is used to
+correlate the front and back images of the same plant. Figure
+4(c) illustrates the result of segmentation by white color and
+highlights only the resulting bounding box.
+The third stage of processing involves identifying the fruit
+based on their characteristic colors. To do this, based on the
+values observed in the test images, thresholds were defined
+in the HSV standards and then segmentation was applied
+mainly based on hue. Once the segmented fruit had been
+obtained, the regions with the highest concentration of pixels
+were identified, thus removing the filtering noise. Based on
+prior knowledge of the fruit’s dimensions in the image plane,
+a maximum area limit was set for a fruit. Therefore, if
+the radius corresponding to the pixels segmented as a fruit
+438
+Authorized licensed use limited to: Makerere University Library. Downloaded on October 30,2026 at 16:52:58 UTC from IEEE Xplore.  Restrictions apply. 
+
+(a)
+(b)
+(c)
+(d)
+(e)
+Fig. 4. Pipeline of the image processing: (a) image capture, (b) depth image
+cropping, (c) white bounding boxes, image cropping and fruit segmentation,
+(d) fruit counting and (e) fruit correspondence analysis.
+exceeds this limit, the region is split in half, and these two
+new regions are treated individually.
+Finally, considering only fruits with an area greater than
+a predefined limit, the region is divided into two, and an
+exclusive count is made in both, the result is exemplified
+in Figure 4(d). Furthermore, the correspondence between
+the fruits in the front and back images is checked to avoid
+double counting, as shown in Figure 4(e) in red circles. In
+this particular case, all fruits in the back image corresponds
+to those in the front, than they are not counted again.
+The step-by-step of the proposed strategy with UAV nav-
+igation and the image processing adopted for segmentation
+and fruit counting can be seen at link7.
+III. RESULTS AND DISCUSSION
+The flow of operations adopted in the simulation is de-
+scribed in the flowchart in Figure 5. Initially, the simulation
+waits for the start and task messages sent by the environment.
+Next, the data is preprocessed, followed by answering the
+problem using the Simulated Annealing algorithm for solve
+the TSP. To check the accuracy of the cost functions, we
+carried out ten simulations, varying the visitation locations,
+without counting the fruits, i.e., without the need to stop to
+capture the image, which turns the scenario irrelevant. The
+results are shown in Table I. It was defined that the UAV
+would perform the route task without the need to stop to
+capture the image, and the results are shown in Table I.
+The greatest error was found in item 3, with a time of
+10.31 seconds and an error of 14.39%. The corresponding
+trajectory can be seen in Figure 6. It can be seen that there
+were two aggressive diagonal movements which may have
+caused the delay. On the other hand, the smallest error was
+found in item 7, with a time of 0.54 seconds and an error
+of 0.65%. Figure 7 illustrates this route, which appears to
+be smooth, with few changes of direction. These results
+highlight the importance of the accuracy of the cost functions
+7https://youtu.be/Mjco4_wGXeY
+Fig. 5.
+Flowchart of our proposed solution for the counting fruit challange.
+in determining the optimal route for the UAV. The significant
+error observed in item 3 highlights the need to refine the
+modeling of the costs associated with diagonal movements in
+order to reduce the variation in route execution time. On the
+other hand, the success of item 7 suggests that trajectories
+with smoother movements and fewer changes in direction
+tend to result in faster execution times and lower percentage
+errors.
+After running Simulated Annealing for the TSP, the code
+proceeds to process the trajectory, dividing it into visit points,
+since the route will be sent in parts. To validate the UAV’s
+TABLE I
+COMPARISON OF THE TIME CALCULATED BY THE COST FUNCTIONS AND
+THE ACTUAL TIME TAKEN BY THE UAV.
+#
+Fruit Beds
+Time (s)
+Error (%)
+Cost
+Spent
+1
+10, 11, 14, 21, 23, 24
+69.85
+74.70
+6.94
+2
+1, 2, 4, 6, 9, 17, 25, 27, 10, 7, 22
+121.82
+127.87
+4.97
+3
+1, 2, 8, 12, 19
+71.66
+81.97
+14.39
+4
+1, 7, 9, 14, 17, 21, 22
+92.17
+98.28
+6.63
+5
+2, 5, 10, 13, 15, 19, 24
+84.43
+87.76
+3.94
+6
+3, 4, 8, 11, 16, 20, 23
+88.54
+98.66
+11.43
+7
+6, 10, 14, 19, 21, 27
+83.70
+84.24
+0.65
+8
+1, 3, 11, 15, 16, 20, 25
+88.56
+98.75
+11.51
+9
+10, 15, 20, 25, 26, 27
+76.72
+79.58
+3.73
+10
+8, 11, 13, 14, 25, 27
+79.48
+82.10
+3.30
+439
+Authorized licensed use limited to: Makerere University Library. Downloaded on October 30,2026 at 16:52:58 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 6.
+Route of task number 3 in Table I.
+Fig. 7.
+Route of task number 7 in Table I.
+Fig. 8.
+UAV trace during the planning and execution of task 1 in Table I.
+mission, we select task number 1 from Table I, as these
+plots contain peppers, which will be counted by the PDI.
+Figure 8 illustrates the UAV’s path in space (orange line), the
+planned trajectory (blue line) and the visit points (red dots).
+We can see that TOPP-RA optimizes the trajectory in certain
+sections, ensuring that the UAV reaches all the waypoints,
+as they always mark the end of the trajectory sent in parts.
+Subsequently, after sending each segment of the route, the
+code performs a series of checks. Firstly, it checks whether
+the next point is the last one. If so, the code sends the
+number of fruits counted to the /fruit count topic and ends
+the simulation. If not, it waits for the UAV to reach the
+next destination to capture the image. It then checks whether
+this image is the second one on the fruit bed. If so, it
+indicates that the front and rear photos of the bed have been
+taken, allowing the image processing to count the fruit. After
+processing, the code sends the route to the next visit point
+and waits for the process to continue.
+To evaluate the effectiveness of PDI in images, images
+were captured of all the beds with peppers in ten different
+environments, totaling 60 beds. The mosaic of these images
+is shown in Figure 9(a). The PDI analyzed each pair of
+images separately, and the results are illustrated in Figure
+9(b), where green indicates a correct result and red indicates
+an error in the pair. Based on these analyses, we can state
+that PDI has an accuracy rate of over 86.67%, although
+some errors can be attributed to the low precision with which
+the UAV captured the images. To reduce this issue, several
+captures are made of each visit point, and the most frequent
+count by the PDI method is considered.
+In conclusion, in order to evaluate the whole method,
+25 scenarios were carried out for counting fruit, including
+peppers, eggplants and tomatoes. The box plot presented in
+Figure 10 shows the accuracy of the fruit count, measured
+as the percentage difference between the result returned and
+the correct number of fruits. It can be seen that the accuracy
+in counting all three fruits was excellent. Note that of the
+75 simulations, there were only 8 outliers, which may have
+been caused by flaws in the UAV’s image capture.
+(a) Mosaic of the images captured by the UAV of the beds.
+(b) PDI hits and misses when counting the fruit.
+Fig. 9.
+Visual evaluation of the image processing.
+440
+Authorized licensed use limited to: Makerere University Library. Downloaded on October 30,2026 at 16:52:58 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 10.
+Box-plot of fruit counting percentage difference during the 25
+simulations.
+IV. CONCLUDING REMARKS
+This work presented a proposed solution for counting fruit
+in greenhouses using UAVs. The solution was evaluated in
+simulated scenarios. Initially, we employed a TSP Simu-
+lated Annealing-based heuristic to optimize UAV trajectory,
+ensuring comprehensive bed coverage with near-optimal
+efficiency. Subsequently, Digital Image Processing (DIP)
+techniques were deployed for fruit counting, encompassing
+depth slicing, bounding box application, color segmentation,
+and element enumeration. The precision of DIP was assessed
+across diverse scenarios, showcasing remarkable accuracy in
+quantifying peppers, eggplants, and tomatoes.
+The proposed solution discussed here highlights oppor-
+tunities to refine the routing algorithm and the simulation
+process as a whole. Specifically, the analysis of path planning
+using the Simulated Annealing algorithm reveals potential
+areas for optimizing UAV trajectory planning. Identifying in-
+efficiencies in certain routes calculated by the Simulated An-
+nealing algorithm allows for adjustments aimed at increasing
+overall efficiency and accuracy. In addition, the evaluation of
+the image processing techniques employed for fruit counting
+identifies areas where improvements can be implemented,
+especially in terms of fruit identification based on color. After
+all, discrepant fruit count values suggest possible challenges
+in image capture and processing. In essence, these findings
+contribute significantly to the continuous improvement and
+optimization of UAV performance in fruit counting tasks in
+agricultural environments.
+ACKNOWLEDGMENT
+The authors thank CNPq - Conselho Nacional de De-
+senvolvimento Cient´ıfico e Tecnol´ogico, an agency of the
+Brazilian Ministry of Science, Technology, Innovations and
+Communications, and FAPEMIG - Fundac¸˜ao de Amparo
+`a Pesquisa do Estado de Minas Gerais, for the support
+given to this research. Mr. Vasconcelos also thanks CAPES
+- Coordenac¸˜ao de Aperfeic¸oamento de Pessoal de N´ıvel
+Superior, for the scholarship granted to him, which allowed
+him to dedicate all his time to the Doctor studies.
+REFERENCES
+[1] R. Chaurasia and V. Mohindru, “Unmanned aerial vehicle (uav): A
+comprehensive survey,” Unmanned Aerial Vehicles for Internet of
+Things (IoT) Concepts, Techniques, and Applications, pp. 1–27, 2021.
+[2] L. R. d. Amaral, C. Zerbato, R. G. d. Freitas, M. R. Barbosa J´unior,
+and I. O. P. d. S. Sim˜oes, “Uav applications in agriculture 4.0,” Revista
+Ciˆencia Agronˆomica, vol. 51, 2021.
+[3] M. F. Aslan, A. Durdu, K. Sabanci, E. Ropelewska, and S. S. G¨ultekin,
+“A comprehensive survey of the recent studies with uav for precision
+agriculture in open fields and greenhouses,” Applied Sciences, vol. 12,
+no. 3, p. 1047, 2022.
+[4] P. Velusamy, S. Rajendran, R. K. Mahendran, S. Naseer, M. Shafiq,
+and J.-G. Choi, “Unmanned aerial vehicles (uav) in precision
+agriculture: Applications and challenges,” Energies, vol. 15, no. 1, p.
+217, 2021. [Online]. Available: https://doi.org/10.3390/en15010217
+[5] P. C. Pop, O. Cosma, C. Sabo, and C. P. Sitar, “A comprehensive
+survey on the generalized traveling salesman problem,” European
+Journal of Operational Research, 2023. [Online]. Available: https:
+//doi.org/10.1016/j.ejor.2023.07.022
+[6] O. Cheikhrouhou and I. Khoufi, “A comprehensive survey on the
+multiple traveling salesman problem: Applications, approaches and
+taxonomy,” Computer Science Review, vol. 40, p. 100369, 2021.
+[Online]. Available: https://doi.org/10.1016/j.cosrev.2021.100369
+[7] S. Kirkpatrick, C. D. Gelatt Jr, and M. P. Vecchi, “Optimization by
+simulated annealing,” science, vol. 220, no. 4598, pp. 671–680, 1983.
+[Online]. Available: https://doi.org/10.1126/science.220.4598.671
+[8] C. C. Skiscim and B. L. Golden, “Optimization by simulated an-
+nealing: A preliminary computational study for the tsp,” Institute of
+Electrical and Electronics Engineers (IEEE), Tech. Rep., 1983.
+[9] E.-G. Talbi, Metaheuristics, ser. Wiley Series on Parallel and Dis-
+tributed Computing.
+Hoboken, NJ: Wiley-Blackwell, Jun. 2009.
+[10] H. Pham and Q.-C. Pham, “A new approach to time-optimal path
+parameterization based on reachability analysis,” IEEE Transactions
+on Robotics, vol. 34, no. 3, pp. 645–659, 2018.
+441
+Authorized licensed use limited to: Makerere University Library. Downloaded on October 30,2026 at 16:52:58 UTC from IEEE Xplore.  Restrictions apply. 
