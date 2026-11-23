@@ -4,6 +4,7 @@ Tectonic memakai XeTeX, dan fon Times Type 1 (ptmr8t) yang dipakai IEEEtran tida
 memuat banyak karakter Unicode (misalnya č, ř, tanda pisah Unicode). Karena itu
 metadata dari Crossref dan nama penulis diubah ke perintah aksen LaTeX.
 """
+import re
 import unicodedata
 
 KHUSUS = {
@@ -25,6 +26,16 @@ AKSEN = {
     "̌": "v", "̆": "u", "̧": "c", "̊": "r", "̄": "=",
     "̇": ".", "̨": "k", "̋": "H", "̣": "d",
 }
+
+
+EM_DASH = re.compile(r"\s*(?:—|―|---)\s*")
+
+
+def tanpa_em_dash(judul):
+    """Judul tanpa em dash: satu tanda menjadi titik dua (atau spasi sebelum angka), dua tanda atau lebih menjadi tanda hubung."""
+    if len(EM_DASH.findall(judul)) >= 2:
+        return EM_DASH.sub("-", judul)
+    return EM_DASH.sub(lambda m: " " if judul[m.end():m.end() + 1].isdigit() else ": ", judul)
 
 
 def ke_latex(teks):

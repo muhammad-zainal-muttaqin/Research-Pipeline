@@ -18,7 +18,7 @@ import csv
 import re
 from pathlib import Path
 
-from latex_teks import ke_latex  # noqa: F401  (dipakai skrip lain yang mengimpor modul ini)
+from latex_teks import ke_latex, tanpa_em_dash  # noqa: F401  (dipakai skrip lain yang mengimpor modul ini)
 
 ROOT = Path(__file__).resolve().parents[2]
 MAT = ROOT / "literature/scopus-2026-09/topik/bukti/matriks_bukti.csv"
@@ -182,7 +182,7 @@ def daftar_kajian():
 
     def baris(r, status, kelompok, sebab, c1):
         return {"status": status, "group": KATEGORI.get(kelompok, ""), "exclusion_reason": sebab,
-                "first_author": r["first_author"], "year": r["year"], "title": r["title"],
+                "first_author": r["first_author"], "year": r["year"], "title": tanpa_em_dash(r["title"]),
                 "source": r["source"], "doi": r["doi"],
                 "association_mechanism": nama_mekanisme(r["mekanisme"]) if c1 else "",
                 "acquisition": AKUISISI.get(r["akuisisi_manual"], "Not stated") if c1 else "",
