@@ -1,19 +1,19 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 893 kajian korpus `main6` yang PDF-nya tersedia, dari 893 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 894 kajian korpus `main6` yang PDF-nya tersedia, dari 894 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 248 | 248 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 155 | 155 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 156 | 156 |
 | C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
 | R | Tinjauan terdahulu | 113 | 113 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 893 | 893 |
+| | **Jumlah** | 894 | 894 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (248)
 
@@ -268,7 +268,7 @@ Katalog ini memuat 893 kajian korpus `main6` yang PDF-nya tersedia, dari 893 kaj
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 | 2012 | Wang Q. | Design of crop yield estimation system for apple orchards using computer vision | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 | [PDF](pdf/wang2012design.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (155)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (156)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -370,6 +370,7 @@ Katalog ini memuat 893 kajian korpus `main6` yang PDF-nya tersedia, dari 893 kaj
 | 2021 | Akiva P. | AI on the bog: Monitoring and evaluating cranberry crop risk | Proceedings 2021 IEEE Winter Conference on Applications of Computer Vision Wacv 2021 | [PDF](pdf/akiva2021ai.pdf) | [DOI](https://doi.org/10.1109/wacv48630.2021.00254) |
 | 2021 | Behera S.K. | Fruits yield estimation using Faster R-CNN with MIoU | Multimedia Tools and Applications | [PDF](pdf/behera2021fruits.pdf) | [DOI](https://doi.org/10.1007/s11042-021-10704-7) |
 | 2021 | Buayai P. | End-to-End Automatic Berry Counting for Table Grape Thinning | IEEE Access | [PDF](pdf/buayai2021end.pdf) | [DOI](https://doi.org/10.1109/access.2020.3048374) |
+| 2021 | Li Z. | Yield Estimation Method of Apple Tree Based on Improved Lightweight YOLOv5 | Smart Agriculture | [PDF](pdf/li2021yield.pdf) | [DOI](https://doi.org/10.12133/j.smartag.2021.3.2.202105-sa005) |
 | 2021 | Luo L. | Grape berry detection and size measurement based on edge image processing and geometric morphology | Machines | [PDF](pdf/luo2021grape.pdf) | [DOI](https://doi.org/10.3390/machines9100233) |
 | 2021 | Massah J. | Design, development, and performance evaluation of a robot for yield estimation of kiwifruit | Computers and Electronics in Agriculture | [PDF](pdf/massah2021design.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106132) |
 | 2021 | Mirhaji H. | Fruit detection and load estimation of an orange orchard using the YOLO models through simple approaches in different imaging and illumination conditions | Computers and Electronics in Agriculture | [PDF](pdf/mirhaji2021fruit.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106533) |
