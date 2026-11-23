@@ -1,4 +1,4 @@
-# AGENTS.md — Panduan Kerja Agen
+# AGENTS.md: Panduan Kerja Agen
 
 Berlaku untuk semua agen (Claude Code, Codex, dan lainnya). `CLAUDE.md` hanya
 mengimpor berkas ini. Nomor bagian dirujuk berkas lain (terutama §3, §7, dan
@@ -343,7 +343,7 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
   8. Matriks bukti masuk naskah sebagai tabel sintesis (satu baris per kajian),
      bukan hanya CSV terpisah.
 
-## 8. Log Eksperimen — Wajib
+## 8. Log Eksperimen (Wajib)
 
 Setiap temuan eksperimen dicatat ke `experiments/EKSPERIMEN.md` dalam giliran
 yang sama dengan selesainya eksperimen, lalu di-commit.
@@ -365,7 +365,7 @@ yang sama dengan selesainya eksperimen, lalu di-commit.
   diacak ulang. Berkas split memakai jalur absolut `/workspace/SawitMVC/...`
   (`experiments/code/REPRODUCE.md`).
 
-## 9. Keputusan yang Mengikat — Jangan Ditawar Ulang
+## 9. Keputusan yang Mengikat: Jangan Ditawar Ulang
 
 1. **Tuning sudah habis dijalankan.** Jangan menyarankan tuning hyperparameter
    dan jangan meminta bukti angka plafonnya.
@@ -378,8 +378,8 @@ yang sama dengan selesainya eksperimen, lalu di-commit.
 Diagnosis yang disepakati:
 
 - Bottleneck ada di **detektor**, bukan counter.
-- Kegagalan terbelah dua: **(A) geometris** — B4 kecil, tertanam, atau tertutup
-  pelepah, tempat depth relevan; **(B) fotometrik** — ambiguitas kematangan
+- Kegagalan terbelah dua: **(A) geometris**: B4 kecil, tertanam, atau tertutup
+  pelepah, tempat depth relevan; **(B) fotometrik**: ambiguitas kematangan
   antarkelas, yang tidak ditolong depth. Kelas paling ambigu adalah **B2**; AP
   rendah B4 adalah kegagalan deteksi.
 - `class_mismatch` nol dari 7.328 tandan (E-001) adalah pemeriksa integritas
@@ -492,7 +492,7 @@ tetap dalam tiga panjang.
 | M5 | Learned association | learned association | Learned |
 | V, D, S, T, 1 | acquisition design | video along a path; discrete views; 3D scan; revisits over time; a single view | Video; Discrete views; 3D scan; Revisits; Single view |
 | C1–C5, R, T | tujuh kelompok | multi-observation studies; single-view counting studies; oil-palm studies; single-image class-wise counting studies; depth and 3D sensing studies; earlier reviews; methods papers from outside agriculture | sama |
-| RQ1–RQ4, G1–G5 | (1)–(4) dan (i)–(v) | dirujuk dengan isinya | — |
+| RQ1–RQ4, G1–G5 | (1)–(4) dan (i)–(v) | dirujuk dengan isinya | tidak ada |
 
 - Kunci kueri Q1–Q9 hanya dipakai sebagai penghubung tabel kueri dan Lampiran B.
 - Satu istilah untuk satu konsep. Keluarga kategori selalu "association
@@ -894,7 +894,7 @@ dibaca dari teks lengkap (penuh) atau hanya abstrak.
 Bagian ini adalah acuan gaya untuk menulis ulang setiap berkas di
 `literature/entries/` (korpus lama 182). Setiap penulis, termasuk subagen, membaca
 §6 dan bagian ini sampai selesai sebelum menulis. Tujuan penulisan ulang: mengubah lembar telaah yang telegrafik
-menjadi **bab bergaya buku teks** — runtut, lengkap, dan dapat dipahami pembaca yang
+menjadi **bab bergaya buku teks**, yaitu runtut, lengkap, dan dapat dipahami pembaca yang
 belum mengenal topiknya.
 
 ### 14.1 Peran dan Alur Kerja
@@ -904,7 +904,7 @@ Satu penulis menangani **satu berkas entri** (satu makalah). Urutan kerja wajib:
 1. Baca §6 dan bagian ini sampai selesai.
 2. Baca berkas entri lama yang ditugaskan. Ambil darinya: kunci BibTeX, identitas
    makalah (judul, penulis, tahun, venue), tema klaster, dan tautan akses. **Isi
-   pembahasannya jangan dipertahankan** — tulis ulang sepenuhnya.
+   pembahasannya jangan dipertahankan**; tulis ulang sepenuhnya.
 3. Riset sumber primer:
    - Buka tautan arXiv/DOI pada berkas lama; baca abstrak dan, bila
      tersedia, halaman HTML makalah.
@@ -921,32 +921,32 @@ Satu penulis menangani **satu berkas entri** (satu makalah). Urutan kerja wajib:
 
 Sepuluh bagian `##` berikut, dengan judul persis seperti tertulis:
 
-1. `## Metadata Ringkas` — tabel dua kolom: Kunci BibTeX, Judul asli, Penulis,
+1. `## Metadata Ringkas`: tabel dua kolom: Kunci BibTeX, Judul asli, Penulis,
    Tahun, Venue, Tema.
-2. `## Tautan Akses` — bullet tautan (arXiv/DOI/Scholar) dari berkas lama.
-3. `## Gambaran Umum` — 1–2 paragraf: apa makalah ini, masalah apa yang dipecahkan,
+2. `## Tautan Akses`: bullet tautan (arXiv/DOI/Scholar) dari berkas lama.
+3. `## Gambaran Umum`: 1–2 paragraf: apa makalah ini, masalah apa yang dipecahkan,
    apa hasil utamanya. Ditulis sehingga pembaca yang hanya membaca bagian ini tetap
    mendapat inti bab.
-4. `## Latar Belakang: Masalah yang Ingin Dipecahkan` — kondisi bidang sebelum
+4. `## Latar Belakang: Masalah yang Ingin Dipecahkan`: kondisi bidang sebelum
    makalah ini ada; kekurangan pendekatan sebelumnya yang spesifik; mengapa masalah
    itu penting. Rujuk bab terdahulu bila relevan.
-5. `## Ide Utama` — gagasan inti makalah dalam bentuk paling sederhana yang benar
+5. `## Ide Utama`: gagasan inti makalah dalam bentuk paling sederhana yang benar
    secara teknis. Jelaskan intuisi mekanis (apa masuk, apa keluar, apa yang berubah),
    bukan metafora.
-6. `## Cara Kerja Langkah demi Langkah` — bagian terpanjang (±40–50% isi bab).
+6. `## Cara Kerja Langkah demi Langkah`: bagian terpanjang (±40–50% isi bab).
    Uraikan mekanisme secara berurutan; gunakan `###` per komponen/tahap. Setiap
    istilah teknis dijelaskan saat pertama muncul. Gunakan contoh numerik konkret.
    Bila arsitekturnya sukar dipahami dari teks (mis. aliran data antar-komponen,
    perbandingan dengan pipeline pendahulu), sertakan satu diagram ASCII.
-7. `## Eksperimen dan Hasil` — apa yang diuji, pada data apa, dibandingkan dengan
+7. `## Eksperimen dan Hasil`: apa yang diuji, pada data apa, dibandingkan dengan
    apa; angka hasil utama beserta interpretasinya.
-8. `## Kelebihan dan Keterbatasan` — prosa seimbang; keterbatasan yang merupakan
+8. `## Kelebihan dan Keterbatasan`: prosa seimbang; keterbatasan yang merupakan
    analisis penulis bab (bukan pernyataan penulis makalah) ditandai dengan frasa
    seperti "dari sisi rekayasa, ..." atau "secara konseptual, ...".
-9. `## Kaitan dengan Bab Lain` — narasi kesinambungan: bab ini mewarisi apa dari
+9. `## Kaitan dengan Bab Lain`: narasi kesinambungan: bab ini mewarisi apa dari
    bab mana, dan memengaruhi bab mana; sertakan tautan relatif. Minimal merujuk
    satu bab sebelumnya dalam silsilahnya bila ada.
-10. `## Poin untuk Sitasi` — kunci BibTeX; ringkasan 2–3 kalimat yang aman dikutip
+10. `## Poin untuk Sitasi`: kunci BibTeX; ringkasan 2–3 kalimat yang aman dikutip
     dalam tinjauan pustaka; catatan angka/klaim yang perlu diverifikasi ke naskah
     asli sebelum sitasi formal (wajib untuk makalah sangat baru).
 
@@ -981,7 +981,7 @@ Sepuluh bagian `##` berikut, dengan judul persis seperti tertulis:
   Bullet hanya untuk enumerasi murni (daftar komponen, daftar hasil); penjelasan
   konsep wajib berbentuk paragraf.
 - **Setiap istilah teknis dijelaskan saat pertama muncul**, dalam 1–2 kalimat
-  definisi langsung. Tidak boleh ada jargon yang dipakai tanpa penjelasan —
+  definisi langsung. Tidak boleh ada jargon yang dipakai tanpa penjelasan,
   termasuk nama metode lain yang dirujuk (mis. bila menyebut FPN, jelaskan satu
   kalimat apa itu FPN).
 - **Contoh numerik konkret** untuk memperjelas mekanisme, misalnya: "pada citra
@@ -1014,7 +1014,7 @@ Sepuluh bagian `##` berikut, dengan judul persis seperti tertulis:
 ### 14.6 Contoh Bab Jadi
 
 Contoh bab yang sudah memenuhi seluruh kaidah: `literature/entries/001 - 2016 - You Only Look
-Once (YOLOv1) - Fondasi RGB.md`. Baca berkas tersebut sebagai acuan bentuk akhir —
+Once (YOLOv1) - Fondasi RGB.md`. Baca berkas tersebut sebagai acuan bentuk akhir;
 perhatikan panjang bagian, cara istilah diperkenalkan, dan cara angka diinterpretasi.
 Tirukan polanya pada bab yang ditugaskan, dengan isi yang sepenuhnya dari makalah
 tugas Anda.

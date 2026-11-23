@@ -38,8 +38,8 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Judul disaring | 5.723 |
 | Dikeluarkan pada tahap judul | 4.578 |
 | Dinilai kelayakannya dari judul dan abstrak | 1.145 |
-| — dengan abstrak | 891 |
-| — hanya judul, sumber, dan ringkasan TLDR | 254 |
+| Di antaranya dengan abstrak | 891 |
+| Di antaranya hanya judul, sumber, dan ringkasan TLDR | 254 |
 | Dikeluarkan pada tahap kelayakan abstrak | 132 |
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |

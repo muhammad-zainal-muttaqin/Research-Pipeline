@@ -1,10 +1,10 @@
-# Technologies for forecasting tree fruit load and harvest timing—from ground, sky and time
+# Technologies for forecasting tree fruit load and harvest timing: from ground, sky and time
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `anderson2021technologies` |
-| Judul asli | Technologies for forecasting tree fruit load and harvest timing—from ground, sky and time |
+| Judul asli | Technologies for forecasting tree fruit load and harvest timing: from ground, sky and time |
 | Penulis | Anderson, Nicholas Todd; Walsh, Kerry Brian; Wulfsohn, Dvoralai |
 | Tahun | 2021 |
 | Venue | Agronomy |

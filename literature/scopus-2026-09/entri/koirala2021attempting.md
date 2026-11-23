@@ -1,10 +1,10 @@
-# Attempting to estimate the unseen—correction for occluded fruit in tree fruit load estimation by machine vision with deep learning
+# Attempting to estimate the unseen: correction for occluded fruit in tree fruit load estimation by machine vision with deep learning
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `koirala2021attempting` |
-| Judul asli | Attempting to estimate the unseen—correction for occluded fruit in tree fruit load estimation by machine vision with deep learning |
+| Judul asli | Attempting to estimate the unseen: correction for occluded fruit in tree fruit load estimation by machine vision with deep learning |
 | Penulis | Koirala, Anand; Walsh, Kerry B.; Wang, Zhenglin |
 | Tahun | 2021 |
 | Venue | Agronomy |

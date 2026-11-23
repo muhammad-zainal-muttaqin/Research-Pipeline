@@ -17,14 +17,14 @@ korpus:
 
 | Tujuan | Buka ini |
 |---|---|
-| Memeriksa korpus naskah `main6` | [`scopus-2026-09/`](scopus-2026-09/README.md) — [`PROTOKOL.md`](scopus-2026-09/PROTOKOL.md), [`QUERY.md`](scopus-2026-09/QUERY.md), matriks bukti `topik/bukti/matriks_bukti.csv` |
+| Memeriksa korpus naskah `main6` | [`scopus-2026-09/`](scopus-2026-09/README.md): [`PROTOKOL.md`](scopus-2026-09/PROTOKOL.md), [`QUERY.md`](scopus-2026-09/QUERY.md), matriks bukti `topik/bukti/matriks_bukti.csv` |
 | Mengerjakan verifikasi `main6` | [`scopus-2026-09/verifikasi/`](scopus-2026-09/verifikasi/README.md), lalu [`TUGAS.md`](scopus-2026-09/verifikasi/TUGAS.md) |
-| Membaca ringkasan satu makalah | [`entries/`](entries/) — cari di [`INDEX.md`](entries/INDEX.md) (urut nomor) atau [`INDEX-TAHUN.md`](entries/INDEX-TAHUN.md) (per tahun dan tema); untuk `main6`, [`scopus-2026-09/entri/`](scopus-2026-09/entri/) (788 berkas) |
-| Membaca sintesis lintas makalah | [`synthesis.md`](synthesis.md) — tayang juga di Ruang Baca situs |
-| Mencari teks lengkap korpus lama | [`extracted/`](extracted/) — satu berkas `.md` per makalah |
-| Melihat entri yang ditahan | [`withheld/`](withheld/) — 20 entri tanpa PDF sumber |
-| Melihat bahan rujukan luar | [`references/`](references/) — PDF baseline SawitMVC dan permintaan revisi dosen pembimbing |
-| Melihat artikel contoh gaya tinjauan | [`example/`](example/) — dirujuk `AGENTS.md` §12 |
+| Membaca ringkasan satu makalah | [`entries/`](entries/): cari di [`INDEX.md`](entries/INDEX.md) (urut nomor) atau [`INDEX-TAHUN.md`](entries/INDEX-TAHUN.md) (per tahun dan tema); untuk `main6`, [`scopus-2026-09/entri/`](scopus-2026-09/entri/) (788 berkas) |
+| Membaca sintesis lintas makalah | [`synthesis.md`](synthesis.md): tayang juga di Ruang Baca situs |
+| Mencari teks lengkap korpus lama | [`extracted/`](extracted/): satu berkas `.md` per makalah |
+| Melihat entri yang ditahan | [`withheld/`](withheld/): 20 entri tanpa PDF sumber |
+| Melihat bahan rujukan luar | [`references/`](references/): PDF baseline SawitMVC dan permintaan revisi dosen pembimbing |
+| Melihat artikel contoh gaya tinjauan | [`example/`](example/): dirujuk `AGENTS.md` §12 |
 
 ## Isi folder
 
@@ -35,7 +35,7 @@ korpus:
 | `withheld/` | 20 entri yang ditahan karena PDF sumber tidak tersedia |
 | `synthesis.md` | Sintesis lintas makalah korpus lama |
 | `extracted/` | Teks lengkap terekstrak dari PDF korpus lama |
-| `pdf/` | PDF sumber korpus lama — **tidak masuk Git** karena terlalu besar |
+| `pdf/` | PDF sumber korpus lama, **tidak masuk Git** karena terlalu besar |
 | `references/` | PDF baseline SawitMVC (*Data in Brief* 2026); `revisi-dosen-2026-07-23/` berisi delapan permintaan revisi dosen (`Chat.txt`) dan laporan konvensi delapan tinjauan CEA |
 | `example/` | Artikel contoh yang dirujuk panduan gaya |
 
@@ -45,7 +45,7 @@ di tag Git `arsip-pra-rapi-2026-11-18`.
 
 ## Catatan
 
-- Nama berkas di `entries/` bersifat **load-bearing** — diparse oleh `site/build.js`.
+- Nama berkas di `entries/` bersifat **load-bearing**: diparse oleh `site/build.js`.
   Format: `NNN - YYYY - Judul singkat - Tema.md`. Jangan mengubah nama berkas.
 - Angka **182** adalah invarian korpus lama (lihat `AGENTS.md` §4). Angka
   `main6` hanya bersumber dari `scopus-2026-09/`.

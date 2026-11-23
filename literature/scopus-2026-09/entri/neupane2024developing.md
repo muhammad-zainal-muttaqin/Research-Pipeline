@@ -1,10 +1,10 @@
-# Developing Machine Vision in Tree-Fruit Applications—Fruit Count, Fruit Size and Branch Avoidance in Automated Harvesting
+# Developing Machine Vision in Tree-Fruit Applications: Fruit Count, Fruit Size and Branch Avoidance in Automated Harvesting
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `neupane2024developing` |
-| Judul asli | Developing Machine Vision in Tree-Fruit Applications—Fruit Count, Fruit Size and Branch Avoidance in Automated Harvesting |
+| Judul asli | Developing Machine Vision in Tree-Fruit Applications: Fruit Count, Fruit Size and Branch Avoidance in Automated Harvesting |
 | Penulis | Neupane, Chiranjivi; Walsh, Kerry B.; Goulart, Rafael; Koirala, Anand |
 | Tahun | 2024 |
 | Venue | Sensors |

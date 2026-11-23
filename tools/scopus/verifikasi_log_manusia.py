@@ -10,6 +10,7 @@ import csv, re
 from pathlib import Path
 
 from kode_bukti import KODE, muat_keputusan
+from latex_teks import tanpa_em_dash
 from verifikasi_istilah import AKU, EKS, KEL, KLS, LOK, MEK, MET, REF, TUGAS, YN, kelompok
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -201,7 +202,7 @@ def artikel(key):
     if key == 'kang2022accurate':
         return 'Kang H. (2022). Accurate Fruit Localisation for Robotic Harvesting using High Resolution LiDAR-Camera Fusion'
     r = rec.get(key) or tamb.get(key)
-    return f"{r['first_author'].strip()} ({r['year']}). {r['title']}" if r else key
+    return f"{r['first_author'].strip()} ({r['year']}). {tanpa_em_dash(r['title'])}" if r else key
 
 
 def kalimat(s):

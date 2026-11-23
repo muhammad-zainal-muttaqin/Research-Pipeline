@@ -1,10 +1,10 @@
-# Management Information Systems for Tree Fruit—1: A Review
+# Management Information Systems for Tree Fruit 1: A Review
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `dhonju2024managementb` |
-| Judul asli | Management Information Systems for Tree Fruit—1: A Review |
+| Judul asli | Management Information Systems for Tree Fruit 1: A Review |
 | Penulis | Dhonju, Hari Krishna; Walsh, Kerry Brian; Bhattarai, Thakur |
 | Tahun | 2024 |
 | Venue | Horticulturae |

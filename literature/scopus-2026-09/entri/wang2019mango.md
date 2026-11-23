@@ -1,10 +1,10 @@
-# Mango fruit load estimation using a video based MangoYOLO—Kalman filter—hungarian algorithm method
+# Mango fruit load estimation using a video based MangoYOLO-Kalman filter-hungarian algorithm method
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `wang2019mango` |
-| Judul asli | Mango fruit load estimation using a video based MangoYOLO—Kalman filter—hungarian algorithm method |
+| Judul asli | Mango fruit load estimation using a video based MangoYOLO-Kalman filter-hungarian algorithm method |
 | Penulis | Wang, Zhenglin; Walsh, Kerry; Koirala, Anand |
 | Tahun | 2019 |
 | Venue | Sensors Switzerland |

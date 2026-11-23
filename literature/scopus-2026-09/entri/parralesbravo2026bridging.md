@@ -1,10 +1,10 @@
-# Bridging Two Worlds: Sensor Technologies and AI for Fruit Detection in Latin America and Beyond—A Scoping Review
+# Bridging Two Worlds: Sensor Technologies and AI for Fruit Detection in Latin America and Beyond: A Scoping Review
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `parralesbravo2026bridging` |
-| Judul asli | Bridging Two Worlds: Sensor Technologies and AI for Fruit Detection in Latin America and Beyond—A Scoping Review |
+| Judul asli | Bridging Two Worlds: Sensor Technologies and AI for Fruit Detection in Latin America and Beyond: A Scoping Review |
 | Penulis | Parrales-Bravo, Franklin; Gracia-Chinga, Joan; Jad\'an-Guerrero, Janio; Vasquez-Cevallos, Leonel; Cevallos-Torres, Lorenzo; Lopezdominguez-Rivas, Leili |
 | Tahun | 2026 |
 | Venue | Computers |

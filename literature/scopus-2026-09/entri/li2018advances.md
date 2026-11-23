@@ -1,10 +1,10 @@
-# Advances in non-destructive early assessment of fruit ripeness towards defining optimal time of harvest and yield prediction—a review
+# Advances in non-destructive early assessment of fruit ripeness towards defining optimal time of harvest and yield prediction: a review
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `li2018advances` |
-| Judul asli | Advances in non-destructive early assessment of fruit ripeness towards defining optimal time of harvest and yield prediction—a review |
+| Judul asli | Advances in non-destructive early assessment of fruit ripeness towards defining optimal time of harvest and yield prediction: a review |
 | Penulis | Li, Bo; Lecourt, Julien; Bishop, Gerard |
 | Tahun | 2018 |
 | Venue | Plants |

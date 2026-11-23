@@ -14,6 +14,8 @@ import re
 from collections import Counter
 from pathlib import Path
 
+from latex_teks import tanpa_em_dash
+
 ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature" / "scopus-2026-09"
 MATRIKS = KORPUS / "topik" / "bukti" / "matriks_bukti.csv"
@@ -75,7 +77,7 @@ def main():
         a("|---|---|---|---|---|---|")
         for r in g:
             doi = f"[DOI](https://doi.org/{r['doi']})" if r["doi"] else ""
-            a(f"| {r['year']} | {sel(r['first_author'])} | {sel(r['title'])} | {sel(r['source'])} | "
+            a(f"| {r['year']} | {sel(r['first_author'])} | {sel(tanpa_em_dash(r['title']))} | {sel(r['source'])} | "
               f"[PDF](pdf/{r['key']}.pdf) | {doi} |")
         a("")
     OUT.write_text("\n".join(L), encoding="utf-8", newline="\n")

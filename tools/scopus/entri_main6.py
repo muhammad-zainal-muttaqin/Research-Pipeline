@@ -16,6 +16,8 @@ import re
 import sys
 from pathlib import Path
 
+from latex_teks import tanpa_em_dash
+
 ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature" / "scopus-2026-09"
 MATRIKS = KORPUS / "topik" / "bukti" / "matriks_bukti.csv"
@@ -52,9 +54,9 @@ def sel(t):
 
 
 def kepala(r, penulis):
-    L = [f"# {sel(r['title'])}", "", "## Metadata Ringkas", "| Field | Nilai |", "|---|---|",
+    L = [f"# {sel(tanpa_em_dash(r['title']))}", "", "## Metadata Ringkas", "| Field | Nilai |", "|---|---|",
          f"| Kunci BibTeX | `{r['key']}` |",
-         f"| Judul asli | {sel(r['title'])} |",
+         f"| Judul asli | {sel(tanpa_em_dash(r['title']))} |",
          f"| Penulis | {sel(penulis.get(r['key']) or r['first_author'])} |",
          f"| Tahun | {r['year']} |",
          f"| Venue | {sel(r['source'])} |",

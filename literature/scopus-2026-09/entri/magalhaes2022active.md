@@ -1,10 +1,10 @@
-# Active Perception Fruit Harvesting Robots — A Systematic Review
+# Active Perception Fruit Harvesting Robots: A Systematic Review
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `magalhaes2022active` |
-| Judul asli | Active Perception Fruit Harvesting Robots — A Systematic Review |
+| Judul asli | Active Perception Fruit Harvesting Robots: A Systematic Review |
 | Penulis | Magalh\~aes, Sandro Augusto; Moreira, Ant\'onio Paulo; Santos, Filipe Neves dos; Dias, Jorge |
 | Tahun | 2022 |
 | Venue | Journal of Intelligent and Robotic Systems Theory and Applications |

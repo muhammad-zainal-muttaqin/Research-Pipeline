@@ -1,10 +1,10 @@
-# Intelligent Fruit Yield Estimation for Orchards Using Deep Learning Based Semantic Segmentation Techniques—A Review
+# Intelligent Fruit Yield Estimation for Orchards Using Deep Learning Based Semantic Segmentation Techniques: A Review
 
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
 | Kunci BibTeX | `maheswari2021intelligent` |
-| Judul asli | Intelligent Fruit Yield Estimation for Orchards Using Deep Learning Based Semantic Segmentation Techniques—A Review |
+| Judul asli | Intelligent Fruit Yield Estimation for Orchards Using Deep Learning Based Semantic Segmentation Techniques: A Review |
 | Penulis | Maheswari, Prabhakar; Raja, Purushothaman; Apolo-Apolo, Orly Enrique; P\'erez-Ruiz, Manuel |
 | Tahun | 2021 |
 | Venue | Frontiers in Plant Science |
