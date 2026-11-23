@@ -471,9 +471,33 @@ cara menulis.
   `tectonic`. Baris "Review Article" ditulis di dalam `\title`.
 - Sitasi penulis-tahun (`natbib` `authoryear`, gaya `cas-model2-names`).
   Tautan berwarna `#1A6FB5`.
-- Semua gambar memakai gaya `tools/scopus/gaya_gambar.py` (huruf STIX seperti
-  teks, satu palet, label panel "(a) ...") dan dimuat tanpa skala
-  (`\includegraphics{F..}` tanpa `width`), sehingga ukuran huruf sama di semua gambar.
+- Gambar dibuat skrip dan memakai gaya bersama `tools/scopus/gaya_gambar.py`.
+  Gambar baru mengimpor modul itu; huruf, ukuran, dan warna tidak ditulis
+  langsung di skrip gambar.
+  - **Ukuran cetak.** Gambar disimpan selebar tempatnya di halaman dan dimuat
+    tanpa skala (`\includegraphics{F..}` tanpa `width`). Lebar paling besar
+    6,84 in untuk naskah dan 6,30 in untuk gambar yang juga dimuat bahan
+    tambahan; `simpan()` menolak gambar yang lebih lebar.
+  - **Huruf.** STIX, sama dengan teks naskah: 7 pt untuk label, sumbu, dan
+    legenda; 6,5 pt hanya untuk isi yang rapat (angka sel, isi kotak); 8 pt
+    untuk judul panel.
+  - **Panel.** Judul panel "(a) Isi panel", rata kiri, huruf kapital hanya di
+    awal. Legenda tanpa bingkai, di bawah panel bila menutupi data. Label sumbu
+    miring ditulis satu baris. Sumbu log memakai angka biasa (5, 10, 100).
+  - **Warna dengan arti tetap** (palet Okabe-Ito, aman untuk buta warna):
+    mekanisme asosiasi selalu `WARNA_MEK`/`WARNA_GABUNGAN` (misalnya tracking
+    biru, geometri hijau); kelompok kajian selalu `WARNA_KAT`; deret utama
+    biru (`AKSEN`), deret kedua jingga (`AKSEN2`), pembanding atau "tidak ada"
+    abu-abu; semua peta panas memakai peta warna biru (`PETA_WARNA`). Warna
+    tidak dipakai untuk menghias.
+  - **Diagram.** Kotak bertepi gelap tipis dengan sudut membulat yang sama; isi
+    putih, abu-abu muda untuk kotak keluar atau sekunder, biru muda (`SOROT`)
+    untuk kotak yang menjadi pokok gambar.
+  - **Bahasa.** Semua teks di gambar berbahasa Inggris dan memakai istilah
+    naskah (§12.2). Label raster dari sumber luar ditulis ulang, bukan
+    disalin sebagai gambar.
+  - Gambar dibuat hanya bila teks memerlukannya: gambar menyajikan angka atau
+    gagasan yang sudah ditulis di naskah dan tidak membawa klaim baru.
 - Judul gambar "Fig. N." dan judul tabel "Table N" tebal; tabel memakai
   `booktabs` dengan garis horizontal saja.
 - Rujukan dalam teks ditulis `Fig.~\ref`, `Table~\ref`, `Section~\ref`.
