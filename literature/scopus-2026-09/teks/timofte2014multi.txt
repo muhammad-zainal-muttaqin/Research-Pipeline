@@ -1,0 +1,1602 @@
+Machine Vision and Applications
+DOI 10.1007/s00138-011-0391-3
+SPECIAL ISSUE PAPER
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+Radu Timofte · Karel Zimmermann · Luc Van Gool
+Received: 29 October 2010 / Revised: 31 July 2011 / Accepted: 15 November 2011
+© Springer-Verlag 2011
+Abstract
+Several applications require information about
+street furniture. Part of the task is to survey all trafﬁc signs.
+This has to be done for millions of km of road, and the exer-
+cise needs to be repeated every so often. We used a van with
+eight roof-mounted cameras to drive through the streets and
+took images every meter. The paper proposes a pipeline for
+the efﬁcient detection and recognition of trafﬁc signs from
+such images. The task is challenging, as illumination con-
+ditions change regularly, occlusions are frequent, sign posi-
+tions and orientations vary substantially, and the actual signs
+are far less similar among equal types than one might expect.
+We combine 2D and 3D techniques to improve results beyond
+the state-of-the-art, which is still very much preoccupied with
+single view analysis. For the initial detection in single frames,
+we use a set of colour- and shape-based criteria. They yield
+a set of candidate sign patterns. The selection of such candi-
+dates allows for a significant speed up over a sliding window
+approach while keeping similar performance. A speedup is
+also achieved through a proposed efﬁcient bounded evalu-
+ation of AdaBoost detectors. The 2D detections in multiple
+views are subsequently combined to generate 3D hypotheses.
+A Minimum Description Length formulation yields the set
+of 3D trafﬁc signs that best explains the 2D detections. The
+paper comes with a publicly available database, with more
+than 13,000 trafﬁc signs annotations.
+R. Timofte (B) · L. Van Gool
+ESAT-PSI/IBBT, Katholieke Universiteit Leuven,
+Leuven, Belgium
+e-mail: Radu.Timofte@esat.kuleuven.be
+L. Van Gool
+e-mail: Luc.VanGool@esat.kuleuven.be
+Present Address:
+K. Zimmermann
+CMP, Czech Technical University in Prague, Prague, Czech Republic
+e-mail: zimmerk@cmp.felk.cvut.cz
+Keywords
+Trafﬁc sign recognition · Computer
+vision-based mobile mapping · Multi-view analysis ·
+Minimum description length · Integer linear programming
+1 Introduction
+Mobile mapping is used ever more often, e.g. for the crea-
+tion of 3D city models for navigation, or to turn old paper
+maps into digital databases. Several of those applications
+need the locations and types of the trafﬁc signs along the
+roads, see Fig. 1. The paper describes an efﬁcient pipeline
+for the detection and recognition of such signs, from mobile
+mapping data.
+Over the last decade, the computer vision community
+has largely turned towards the recognition of object clas-
+ses, rather than speciﬁc patterns like trafﬁc signs. However,
+it would be a mistake to believe that their recognition is not
+extremely challenging. To be useful, both false positive and
+false negative rates have to be very low. That is why currently
+much of this work is still carried out by human operators.
+There are all the traditional problems of variations in light-
+ing, background, pose, and of occlusions by other objects,
+see Fig. 2a. In addition, these signs are often not as precisely
+standardized as one would expect (this also depends on the
+country; our dataset was acquired in Belgium), see Fig. 2b.
+The trafﬁc sign detection problem is traditionally solved
+by one of the following approaches:
+(i)
+The selective extraction of windows of interest, fol-
+lowed by their classiﬁcation [3,14,17,19].
+(ii)
+Exhaustive sliding window based classiﬁcation [1,21,
+22].
+Approach (i) exploits the saliency trafﬁc signs exhibit by
+design. A small number of interest regions is selected in
+123
+
+R. Timofte et al.
+Fig. 1 3D mapped trafﬁc signs in a reconstructed scene
+the images, through fast and cheap methods. These interest
+regions are then subjected to a more sophisticated classiﬁca-
+tion. Unfortunately, such approach risks to overlook trafﬁc
+signs if their assumed saliency has been compromised. See
+Fig. 12 for some examples.
+Approach (ii) considers all regions or ‘windows’ in the
+image. As the number of candidate windows is huge, the
+classiﬁcation process easily becomes intractable [22]. Addi-
+tional constraints like minimum and maximum window sizes
+help to prune that number, at the expense of the number of
+times the same sign can be detected in image sets of the type
+we use. Typically, a cascaded classiﬁcation is applied [1],
+such that more time is invested in the more promising win-
+dows and the vast majority can again be discarded quickly.
+A single sign often results in multiple detections in over-
+lapping windows, such that a non-maximum suppression is
+needed as a post-processing step.
+In this paper, we contribute to the trafﬁc sign detection
+problem in the following ways:
+Contribution 1: Observing that approaches (i) and (ii) have
+complementary strengths, we propose their combined use.
+Contribution 2: The candidate window selection in approach
+(i) is usually rather ad-hoc, with thresholds manually chosen.
+We propose an off-line learning process which automatically
+selects features and corresponding thresholds.
+Contribution 3: We do not stop at single view detection and
+recognition, but add multi-view 3D localisation. Apart from
+the value of 3D localisation per se, the 3D analysis assists in
+weeding out false detections while keeping their subset that
+jointly best explain the observations in the different views.
+Fig. 2 Thewithin-classvariabilityandbetween-classsimilarityoftraf-
+ﬁc signs are high. The ﬁve ﬁrst rows show instances of the same class.
+The last two rows show trafﬁc signs from two distinct classes (ﬁrst 3
+columns vs. last 2 columns)
+Contribution 4: An efﬁcient bounded evaluation for linear
+Discrete AdaBoost-like classiﬁers [26] is proposed without
+trading off the performance.
+Contribution 5: Since there has been no publicly avail-
+able database which could serve as a statistically relevant
+benchmark, we make available such database, as des-
+cribed in Sect. 7.1 and found at http://homes.esat.kuleuven.
+be/~rtimofte/trafﬁc_signs/. It contains over 13,000 trafﬁc
+sign annotations, for more than 145,000 images taken on
+Belgian roads. The image resolution is 1,628×1,236 pixels.
+2 State-of-the-art
+2.1 Single view detection
+The results of trafﬁc sign detection and recognition thus far—
+often obtained under simpler conditions than in our experi-
+ments—testify to the high difﬁculty of the task.
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+Lafuente et al. [14] had 26% of false negatives for 3 false
+positives per image. Maldonado et al. [17] used image thres-
+holding followed by SVM classiﬁcation. They mention that
+every trafﬁc sign has been detected at least twice in a total
+of 5,000 video frames, with 22 false alarms. Detection rates
+per view are not given. In both these methods, thresholds
+are manually selected. Nunn et al. [21] showed that con-
+straining the search to road borders and an overhanging strip
+significantly reduces the number of false positives, while
+false negatives are at 3.8%. In this preselection step, they
+still found 16,494 false positives per image on average using
+that geometric restriction. All these systems were only tested
+on highways.
+The following systems have also been demonstrated off
+the highway. Pettersson et al. [22] restricted the detection to
+speed signs, stop signs and give-way signs. They got 10−4−
+10−5 false positive rates for 1% false negatives, but fail to
+mention the number of sub-windows per image. Moutarde
+et al. [19] reported no false positives at all in a 150 min
+long video, but with 11% of all trafﬁc signs left undetected.
+Ruta et al. [24] combine image colour thresholding and shape
+detection, achieving 6.2% false negatives. The number of
+false positives is not mentioned. Broggi et al. [3] proposed a
+system similar to [17] where the SVM is replaced by a neural
+network. No quantitative results are presented.
+Although some papers mention the possibility to track the
+trafﬁc signs, the actual analysis reported in all these papers
+is based on per-image detection. This is different for the fol-
+lowing papers, which consider fused recognition based on
+multiple detections, as in our case.
+In [1] a real-time system for circular trafﬁc signs is pro-
+posed that uses a sliding window method. A cascaded Ada-
+Boost detector is trained over Haar-like features deﬁned for
+each colour channel. The detections are tracked and fused
+for recognition. A 85% recognition rate is reported for one
+false positive in every 600 frames (640 × 480 pixel reso-
+lution). Ruta et al. in [25] propose a real-time circular traf-
+ﬁc sign recognition system that employs colour ﬁltering for
+red and blue, quad-tree based region of interest extraction,
+a Hough transform detector with conﬁdence-weighted mean
+shift reﬁnement, regression tracking based on learning afﬁne
+distortions over time for speciﬁc sign instances, and an Ada-
+Boost variant (SimBoost) for classiﬁcation. For 720 × 540
+pixels videos, they report 12 missclassiﬁed signs out of 85
+correct detected/tracked trafﬁc signs while not detecting 14
+signs and having 10 false detections.
+Results so far are not good enough to roll out such methods
+at a large, urban scale. Both the numbers of false positives
+and false negatives are too high, or methods are based on
+assumptions that no longer hold.
+Whereas the majority of the previous contributions work
+with a rather small subset of sign types, our system handles
+62 different types of signs. Moreover, the authors usually
+focus on highway images, whereas our dataset mainly con-
+tains images from smaller roads and streets. This poses a
+more challenging problem as signs tend to be smaller, have
+more often been smeared with graffiti or stickers, suffer more
+from occlusions, are often older, and are visible in fewer
+images. Also, several sign types never appear along high-
+ways.
+2.2 Multi-view detection
+Given the aforementioned limitations with single view meth-
+ods, it stands to reason to exploit the fact that, typically, a traf-
+ﬁc sign is visible in more than one image. Indeed, with the
+usual mobile mapping vans, multiple, synchronised images
+are taken a few times per second. This delivers such redun-
+dancy and, also, 3D information.
+In mainstream computer vision, approaches have recently
+emerged that try to exploit contextual information. A good
+example is to use the estimated position of the ground plane,
+thereby introducing a weak notion of 3D scene layout [11].
+This was found to be very beneﬁcial. In a similar vein, Wojek
+andSchiele[31] went further incouplingobject detectionand
+scene labeling approaches. Yet, these approaches still work
+from a single image. In a mobile mapping setting, a multi-
+view approach comes natural and can ease such contextual
+analysis through the explicit 3D information it provides.
+As a second strand of relevant research, some recent tech-
+niques have focused on detecting and recognizing object
+related subsets of 3D point clouds [4,10,20]. 3D informa-
+tion is combined with motion, colour, and other data. These
+systems, which have also been mainly targeting urban scene
+segmentation and labeling, show remarkable performance.
+Yet, smaller objects like road signs are among the more dif-
+ﬁcult ones to handle.
+It thus stands to reason to exploit information coming
+from multiple images. Both the high resolution available
+in each of those images and the 3D information that can
+be extracted from them, seem vital inputs. Our method is
+based on the combination and ﬁnal selection of detections
+in a single 3D space. Some earlier trafﬁc sign detection
+methods may have been aggregating detections from multi-
+ple views as well, but in different and less exacting ways.
+E.g. through tracking [1,23,25,27], grouping using GPS
+information, consistency checks in stereo camera imagery,
+and/or active vision with high-res regions of interest detected
+within a low-res camera image [12]. The redundant infor-
+mation coming from the different views is not compiled
+into a single 3D space, obtained from all views as in our
+approach.
+As a matter of fact, this begs the question what adding
+additional sensors like laser scanners could do. In [13] such
+an integrated mobile mapping system is described, but in the
+automatic mode, the false detection rate is still high and the
+123
+
+R. Timofte et al.
+localisation precision is not better than sub-meter. Adding
+laser scanning is no miracle cure per se. Before we describe
+our system in more detail, it is useful to also review litera-
+ture on the combination of multi-view based detection and
+tracking.
+Fleuret et al. [9] use a multi-view probabilistic occu-
+pancy map for people detection and tracking. They glob-
+ally optimize each individual trajectory separately over long
+sequences. In contrast, Leibe et al. [15] employ a glob-
+ally optimal solution for all detections and trajectories at
+once. The solution is given by a Minimum description length
+(MDL) formulation that inspired also our 3D solution. An
+important difference lies in the added value of ground plane
+and space occupancy constraints in their system, however.
+Neither are of such great help in our trafﬁc sign application.
+The signs are positioned at varying positions and their vol-
+umes are negligible.
+Similar challenges are faced by the mobile mapping sys-
+tem in [5], which was designed to ﬁnd streetlights. Like ours,
+this system employs multiple cameras mounted on a van,
+where 2D detections are used to generate 3D hypotheses and
+their validation is based on back-projection into the images.
+These authors did use a ground plane constraint and an occu-
+pancy map, but at the cost of making strong assumptions
+about the height above ground and the presence of rather
+thick poles on which the lamps are ﬁxed. The recent work
+from [28] uses the same settings as we do, for the 3D map-
+ping of manhole covers. The main assumption is that the
+manholes are lying on the ground and, thus, the images are
+projected onto the ground plane and the problem thereby is
+greatly simpliﬁed.
+We have to cover cases with signs also ﬁxed to structures
+like walls or bridges, at rather unpredictable heights. For the
+aforementioned reasons, we do not make use of these con-
+straints. Also, we formulate criteria for the optimal selection
+of the basic features (used for detection) and the resulting
+3D hypotheses. Moreover, our problem setting imposes the
+detection of far more object classes, which are typically of a
+smaller size.
+This paper is an extension to our previous work [29].
+It contains a more detailed description of the ideas and
+algorithms, a comparison with a standard sliding win-
+dow approach as well as with a state-of-the-art part-based
+approach [8], additional justiﬁcations of the design choices
+made, improved results, as well as the link to the published
+training and testing datasets.
+The structure of the remainder of the paper is as fol-
+lows. Section 3 ﬁrst gives an overview of the different steps
+taken by the system. Then, we focus on the most innovative
+aspects. Section 4 explains the initial selection of good can-
+didates within the individual images. Section 5 introduces an
+efﬁcient bounded evaluation of linear AdaBoost-like classi-
+ﬁers, which speeds up the system. Section 6 explains the
+MDL formulation for 3D trafﬁc sign localisation. Section 7
+describes the experimental setup and the results. Section 8
+discusses practical issues and comments on the generality of
+the system. Section 9 draws conclusions.
+3 Overview of the system
+Before starting with the description of how the trafﬁc signs
+are detected in the data, it is useful to give a bit more informa-
+tion about our data capturing procedure. Like for most large-
+scale surveying applications, a van with sensors is driven
+through the streets. In our case, it had eight cameras on its
+roof: two looking ahead, two looking back, two looking to the
+left, and two to the right. There was an overlap between the
+ﬁelds of view of neighbouring cameras. About every meter,
+each of the cameras simultaneously takes a 1,628 × 1,236
+image. The average speed of the van is ∼35 km/h. The
+cameras are internally calibrated and also their relative posi-
+tions are known. Structure-from-motion combined with GPS
+yields the ego-motion of the van.
+We do not propose on-line driver assistance but an off-
+line trafﬁc sign mapping system, performing optimization
+over the captured views. Only trafﬁc signs captured at a dis-
+tance of < 50 m are considered. The proposed system ﬁrst
+processes single images independently, keeping the num-
+ber of false negatives (FN—the number of missed trafﬁc
+signs) very low and the number of false positives (FP—
+the number of accepted background regions) reasonable.
+Single-view trafﬁc sign detections in conjunction with the
+multi-view scene geometry subsequently allows for a global
+optimization. This optimization simultaneously performs a
+3D localisation and reﬁnement. Since we deal with hundreds
+of thousands of high-resolution images the approach is to
+quickly throw out most of the background, and to then invest
+increasing amounts of time on whatever patterns survive pre-
+vious steps.
+We now sketch the different steps of the single-view and
+multi-view processing pipelines. The next two sections then
+give a more detailed account of these pipelines, resp.
+The single-view detection phase consists of the following
+steps:
+(1) Candidate extraction—very fast preprocessing step,
+where an optimized combination of simple (i.e. computation-
+ally cheap), adjustable extraction methods selects bounding
+boxes with possible trafﬁc signs. This step requires an auto-
+matic off-line learning stage, where an appropriate subset of
+features and corresponding decision rules is selected. They
+should yield very high detection rate (FN very low), while
+keeping the number of false positives in check. This part of
+the pipeline is described in more detail in Sect. 4.
+(2) Detection—Extracted candidates are veriﬁed further by
+a binary classiﬁer which ﬁlters out remaining background
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+Fig. 3 Haar-like features used in our implementation
+regions. It is based on the well known Viola and Jones [30]
+Discrete AdaBoost classiﬁer [26]. The 6 Haar-like patterns
+used are shown in Fig. 3. Detection is performed by cas-
+cades of AdaBoost classiﬁers, followed by an SVM operat-
+ing on normalized RGB channels, pyramids of Histogram
+of Oriented Gradients (HOGs) [2] and AdaBoost-selected
+Haar-like features. The detection time is reduced by using
+an efﬁcient bounded evaluation of the AdaBoost classiﬁers,
+further explained in Sect. 5.
+(3) Recognition—Six one-against-all SVM classiﬁers select
+one of the six basic trafﬁc sign subclasses (triangle-up, trian-
+gle-down, circle-blue, circle-red, rectangle and diamond) for
+the different candidate trafﬁc signs. They work on the RGB
+colour channels normalized by the intensity variance.
+The multi-view phase consists of the following steps:
+(4) Multi-view hypothesis generation—We search for possi-
+ble correspondences among the ﬁnal, single-view candidates
+in the different views. The search is restricted to a volume
+with a predeﬁned radius in 3D space. Every geometrically
+and visually consistent pair is used to create a 3D hypothe-
+sis. Geometric consistency amounts to checking the position
+of the back-projected 3D hypothesis against the 2D image
+candidates. Visual consistency gives a higher weight to pairs
+which are more probable to be of the same basic shape.
+(5) Multi-view MDL hypothesis pruning—The MDL princi-
+ple is used to select the subset of 3D hypotheses which best
+explains the overall set of 2D (i.e. single-view) candidates.
+A by-product of the MDL optimization is quite a clean set of
+2D candidates corresponding to each particular 3D hypothe-
+sis. These candidates allow for 3D hypothesis position reﬁne-
+ment. Usually, steps (4) and (5) are iterated. More details are
+given in Sect. 6.
+(6)Multi-viewsigntyperecognition—Thecollectedsetof2D
+candidates for each 3D hypothesis is classiﬁed by an SVM
+classiﬁer. These classiﬁcations then jointly vote on the ﬁnal
+type assigned to the hypothesis.
+4 Single-view candidate extraction
+The simplest extraction method often used for trafﬁc sign
+detectionis extractionof connectedcomponents fromathres-
+holded image, an idea already used in [3,17]. The principle
+is outlined in Fig. 4. The thresholded image is obtained from
+a colour image, with colour channels (IR, IG, IB), by appli-
+cation of a colour threshold T = (t, a, b, c)⊤:
+I (T ) =
+
+1 a · IR + b · IG + c · IB ≥t
+0 otherwise
+(1)
+Original
+Thresholded
+Connected
+Extracted
+image
+image I (T )
+components
+bound . boxes
+Fig. 4 Colour-based extraction method for threshold T = (0.5, 0.2,
+−0.4, 1.0)⊤
+Occlusion
+Occlusion
+Peeled
+Dirty
+Fig. 5 Not threshold separable trafﬁc signs. There are still trafﬁc signs
+which are not well locally separable from background; therefore shape-
+based extraction is used
+Authors often manually select two to ﬁve thresholds,
+which are expected to extract all trafﬁc signs. However,
+we experimentally observed that under variable illumination
+conditions and in the presence of a complex background such
+extraction method is insufﬁcient.
+Since there typically is no single threshold performing
+well by itself, it is necessary to combine regions selected by
+different thresholds T = {T1, T2, . . .}, in the sense of adding
+regions (OR-ing operation). Then, regions passed on by any
+threshold are going to the next stage, i.e. detection. The more
+thresholds are used the lower FN can be made but the higher
+FP risks to get, and the higher the computational cost will be.
+Partially occluded, peeled or dirty trafﬁc signs also should
+pass the colour test. Therefore, this cannot be made too
+restrictive. Examples are shown in Fig. 5. That is why we
+also employ shape information to further reﬁne the candi-
+dates.
+Section 4.1 explains how the set of colour thresholds are
+learned and how, starting from those, the colour-based candi-
+dates are extracted. Section 4.2 then describes a shape-based
+Hough transform. This takes the borders of the colour-based
+candidates as input.
+4.1 Colour-based candidate extraction
+Given thousands of possible colour thresholds, we search for
+the optimal subset T of such thresholds, given some crite-
+rion. Since for most interesting such criteria the problem is
+NP-complete, we formulate our search as an Integer Linear
+Programming problem. We have experimentally found that
+ﬁnding the real optimum takes several hours, but that ILP,
+due to the sparsity of the constraints, yields a viable solution
+within minutes.
+123
+
+R. Timofte et al.
+Original
+Extracted
+Bounding
+Rescaled
+image
+region
+box
+bound. box
+Fig. 6 Demonstration of the extended threshold. The object is not
+well locally separable from the background, because bricks have a
+colour similar to that of the red triangular boundary. Therefore the
+inner white part is extracted and the resulting bounding box is rescaled
+T = (0.1, −0.433, −0.250, 0.866, 1.6, 1.6)⊤(colour ﬁgure online)
+The most straightforward criterion is to search for a trade-
+off between FP and FN.
+T ∗= arg min
+T
+(FP(T ) + κ1 · FN(T )),
+(2)
+where FP(T ) stands for the number of false positives and
+FN(T ) for the number of false negatives, resp., of the selected
+subset of thresholding operations T measured on a training
+set. The real number κ1 is a relative weighting factor. In order
+to avoid overﬁtting and also to keep the method sufﬁciently
+fast, we introduce an additional constraint on the cardinality
+card(T ) of the set of selected thresholds. This can be either
+a hard constraint card(T ) < ω0 or a soft constraint as in:
+T ∗= arg min
+T
+(FP(T ) + κ1 · FN(T ) + κ2 · card(T ))
+(3)
+We achieved better results with the soft constraint, but impos-
+ing a hard constraint may be necessary if the running time
+is an issue. Since accuracy, deﬁned as the average overlap
+between ground truth bounding boxes with extracted bound-
+ing boxes, is important, we also add a term which increases
+the penalty for inaccurate extractions:
+T ∗= arg min
+T
+(FP(T ) + κ1 · FN(T )
++ κ2 · card(T ) −κ3 · accuracy(T ))
+(4)
+Scalars κ1, κ2 and κ3 are learned parameters which we
+estimate by cross-validation. Reformulations of problems (2,
+3, 4) into the Integer Linear Programming form are described
+in the Appendix.
+Occasionally it happens that the contour of the trafﬁc
+sign cannot be separated from the background due to col-
+our similarity. See for example Fig. 6, where the rim of the
+sign is too similar in colour to the background. Fortunately,
+many trafﬁc signs have also some inner contours (e.g. the
+white inner part of the sign in Fig. 6, can be separated rather
+easily). This inner part can often deﬁne the trafﬁc sign’s
+outline with sufﬁcient accuracy. We therefore introduce the
+extended threshold
+T = (t, a, b, c
+  
+T
+, sr, sc)⊤
+(5)
+Original
+Extracted
+Hough
+Reﬁned
+image
+region
+accumulator
+bound. box
+Fig. 7 Shape-based extraction principle. The border of the colour-
+based extracted region (blue) votes for different shapes in a Hough
+accumulator. The green bounding box corresponds to the maximum
+(colour ﬁgure online)
+which consists of the original threshold T and vertical resp.
+horizontal scaling factors (sr, sc) to be applied to the bound-
+ing box which is extracted with the original threshold. Such
+extended threshold—in the sequel simply referred to as
+threshold—can reveal a trafﬁc sign, even if its rim poses
+problems.
+Changing illumination poses another problem to thres-
+holding. One could try to adapt the set of thresholds to the
+illumination conditions, but it is better to add robustness to
+the thresholding method itself. We adjust the threshold to
+be locally stable in the sense of maximally stable extremal
+regions (MSER) [18]. Instead of directly using the bounding
+box as extracted by the learned threshold (t, a, b, c, sr, sc),
+we use bounding boxes from MSERs detected within the
+range [(t −ϵ, a, b, c, sr, sc); (t + ϵ, a, b, c, sr, sc)], where ϵ
+is a parameter of the method. Since MSERs themselves are
+deﬁned by a stability parameter Δ, this ‘TMSER’ method is
+parametrized by two parameters (ϵ, Δ).
+4.2 Shape-based candidate extraction
+Trafﬁc signs are meant to be well distinguishable by both
+their colour and shape. Each of the above thresholds (with
+scaling and TMSER extensions) let pass a series of connected
+components, i.e. regions (usually thousands per image). To
+these regions we now apply an additional shape-ﬁlter, akin
+to the generalized Hough transformation. The principle is
+outlined in Fig. 7 and several examples are shown in Fig. 10.
+In general the image shapes of the signs will be afﬁnely
+transformed versions of the actual shapes. Using the gener-
+alized Hough transformation in its traditional form would
+require to detect every single shape in 5D (or even 6D)
+Hough accumulator spaces. Apart from the computational
+load involved, working in such vast spaces is almost guaran-
+teed to fail. Instead, we learn fuzzy templates which incor-
+porate small afﬁne transformations and shape variations and
+we determine explicitly only the position and scale in a 3D
+Hough accumulator.
+Themoststraightforwardfuzzytemplatescouldbelearned
+as a probability distribution of boundaries of colour-based
+extracted regions for speciﬁc signs. Such approach, however,
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+Fig. 8 Threshold-speciﬁc fuzzy templates. Selected subset {23, 12,
+28, 32} from 44 fuzzy-templates (colour ﬁgure online)
+wouldrequireasmanytemplatesastherearedifferentshapes.
+A more parsimonious use of templates is possible, however.
+Since the learned thresholds (5) are usually specialized for
+some speciﬁc basic shapes of trafﬁc signs, we learn thresh-
+old-speciﬁc fuzzy templates, which allow the system to try
+only one template per extracted boundary. Figure 8 gives
+examples. For each threshold, we ﬁrst collect boundaries of
+extracted regions which yield correct bounding boxes. Then
+the scale is normalized (aspect ratio is preserved) and the
+probability distribution of the shapes extracted by the thresh-
+old is computed. Eventually, the fuzzy template is estimated
+as the point reﬂection of the probability distribution, because
+voting in the Hough accumulator requires the point-reﬂected
+shape. For example, the second fuzzy template in Fig. 8
+corresponds mainly to trafﬁc signs which are circular or
+upward-pointing triangular, whence the downward-pointing
+triangular part of the template (in addition to the circular
+part).
+When a boundary is extracted by a threshold, the thresh-
+old-speciﬁc fuzzy template is used to compute its general-
+ized Hough transformation. A bounding box corresponding
+to the maximum in the three dimensional Hough accumula-
+tor (2 positions and 1 scale) is reported if the maximum is
+sufﬁciently high. The role of the shape selection step mainly
+consists of selecting a sub-window from a colour-deﬁned
+bounding box, with the right shape enclosed. In order to avoid
+replacement of correctly extracted bounding by a bounding
+box corresponding to a small sub-boundary which has more
+exact shape than the original one, the original bounding box
+is also kept.
+5 Efﬁcient bounded evaluation of AdaBoost classiﬁers
+Here we show a simple way to speed up the evaluation of lin-
+ear combinations of the form used in our Discrete AdaBoost
+classiﬁer implementation.
+The result of the AdaBoost algorithm is a ‘strong’ classi-
+ﬁer constructed as a linear combination
+f (x) =
+L
+
+t=1
+αtht(x)
+(6)
+of L ‘simple’‘weak’ binary classiﬁers/features ht(x) : X →
+{−1, +1}, where αt are the weights and X is the space
+(image) from where x is sampled. The thresholded decision
+of the ﬁnal classiﬁer is
+H(x) = sign{ f (x) −θ}
+(7)
+where θ is the threshold.
+Since the values of ht have upper and lower bounds, the
+partial sums of terms in (6) are also bounded. Let ht = +1
+and ht = −1 be the upper and lower bounds for ht. We
+observe that in order to evaluate H(x), we do not have to
+compute all ht, but we can stop after computing s terms if
+s
+
+t=1
+αtht(x) +
+L
+
+t=s+1
+αtht(x) < θ
+(8)
+implying that f (x) lies below the threshold θ even if all the
+remaining terms (s + 1, . . . , L) are at their upper bounds.
+Also, we can stop after s terms if
+s
+
+t=1
+αtht(x) +
+L
+
+t=s+1
+αtht(x) > θ
+(9)
+in which case f (x) would be above the threshold θ even
+if all the remaining terms (s + 1, . . . , L) are at their lower
+bounds.
+The sums for upper and lower bounds do not depend on
+the actual value of ht(x) and are precomputed.
+By dropping the evaluation of the whole linear combina-
+tion and considering the bounded intervals we already get a
+decrease in computation time for our AdaBoost cascades of
+20% up to 30%.
+If we ﬁrst evaluate the terms that contribute the most we
+get a further computation time reduction. The terms that have
+the strongest inﬂuence on f (x) are those with the largest
+values for αt(ht(x) −ht(x)).
+Since the weights, the upper and lower bounds are known
+and ﬁxed in our case, we can ﬁrst sort the terms in descending
+order according to their αt(ht(x) −ht(x)) values (or just αt
+values in our case), and afterwards compute the partial sums
+for the worst and most favorable cases. By sorting ﬁrst, we
+experimentally obtain a decrease in computation time of up
+to 40%.
+Another way of exploiting the linear combinational nature
+of our classiﬁers is to employ the training material and to
+extract frequencies for each term for each particular value
+or value interval. Thus, the evaluation order will be given
+by using these frequencies coming from the training mate-
+rial, and the computation time reduction would be obtained
+along with an estimated probability. This idea is not explored
+here.
+Note that the methods applied here have no impact on the
+decision values of the considered classiﬁers but only (in gen-
+eral) improve the computational time. Also, similar methods
+are applicable to other classiﬁers based on a linear combina-
+tion of local, weak decisions.
+123
+
+R. Timofte et al.
+6 Multiple-view MDL 3D optimization
+Single-view detection and recognition is just a preprocessing
+stage, and the ﬁnal decision results from global optimiza-
+tion over multiple views, based on the minimum description
+length principle (MDL). Given the set of images, single-view
+detections, camera positions and calibrations, MDL searches
+for the smallest possible set of 3D hypotheses which sufﬁ-
+ciently explains all detected bounding boxes. In other words,
+if a set of detected bounding boxes satisﬁes some geometri-
+cal and visual constraints, then all of these bounding boxes
+are explainable by one 3D trafﬁc sign. Next, we explain how
+MDL is used for that purpose.
+We start by generating an overcomplete set of hypotheses:
+For every single 2D detection we collect every geometrically
+and visually consistent correspondence in another image and
+use this pair to generate a 3D hypothesis, see Fig. 9. Geomet-
+rical consistency means that the corresponding detection lies
+on the epipolar line for the camera pair. Visual consistency
+means that their recognized subclass types are the same. This
+step, of course, generates a high number of 3D hypotheses,
+including false positives and multiple, close but seemingly
+different 3D reconstructions for the same sign (3D recon-
+structions are generated from image pairs). The following
+MDL optimization selects the simplest subset which best
+explains the 2D detections. For some further explanation,
+see Fig. 9, right.
+For each 3D hypothesis we will have a 3D position of the
+centre of the trafﬁc sign, its ﬁtted plane and thus an orien-
+tation (and sense), and estimated probabilities to belong to
+each of basic shapes. For a speciﬁc hypothesis h we gather
+the set of supporting 2D candidates which have a coverage1
+with the 2D projection of h above 0.05 and for which the
+candidate camera and the hypothesis are facing each other
+(rather than the camera observing the backside of the sign),
+at < 50 m. Let the set of 2D candidates be Ch.
+In order to deﬁne the MDL optimization problem, we
+ﬁrst compute savings (in coding length) for every single 3D
+hypothesis h as follows:
+Sh ∼Sd −k1Sm −k2Se
+(10)
+where Sd is the part of the hypothesis which is explained
+by the supporting candidates (12), i.e. a weighted sum of
+coverages as explained shortly. Sm is the cost of coding the
+model itself (a constant penalty in our case), while Se repre-
+sents those parts that are not explaining the given hypothesis
+(13), and k1, k2 are weights (as in [15]). For each candidate
+c we have a 2D projection of h, whence the coverage Oc,h
+of the projected h and the candidate c. The coverage assures
+independence of the size of supporting candidates. The esti-
+mated probability that the candidate explains the hypothesis
+1 Coverage is the ratio between the intersection and the union of areas.
+Fig. 9 MDL principle—the corresponding pairs generate 3D hypoth-
+eses, from which can be picked up (green) a subset of 5 (left) or the
+best/smallest subset of 3 (right) in the MDL sense that explains the 2D
+detections (colour ﬁgure online)
+is taken as the maximum of the probabilities of them sharing
+a speciﬁc basic shape:
+p(c, h) =
+max
+t∈{△,▽,◦,□,♦} pt(c)pt(h)
+(11)
+Sd =
+
+c∈Ch
+Oc,h p(c, h)
+(12)
+Se =
+
+c∈Ch
+(1 −Oc,h)p(c, h)
+(13)
+We assume that one candidate can explain only one hypoth-
+esis. Interaction between any two hypotheses hi and h j that
+get support from shared candidates C = Chi
+ Ch j should
+be subtracted and is given by
+Shi,h j =
+
+c∈C
+min
+t∈{i, j}(Sdt (c) −k2Set (c))
+(14)
+where Sdt (c) and Set (c) are constrained to the contribution
+of c for ht
+Leonardis et al. [16] have shown that if only pairwise
+interactions are considered, then the integer quadratic prob-
+lem (IQP) formulation gives the optimal set of models:
+max
+n
+nT Sn,
+S =
+⎡
+⎢⎣
+s11 · · · s1M
+...
+...
+...
+sM1 · · · sM M
+⎤
+⎥⎦
+(15)
+Here, n = [n1, n2, . . . , nM]T is a vector of indicator vari-
+ables, 1 for accepted and 0 otherwise. S is the interaction
+matrix with sii being the savings, sii = Shi , while the others
+are representing the interaction costs between two hypoth-
+eses hi and h j, si j = s ji = −0.5Shi,h j . The restriction to
+pairwise interactions does not fully cater for situations where
+more than two hypotheses affect the same image area.
+7 Experiments
+7.1 Ground truth data
+We have collected ground truth data used for this paper. This
+database, the Belgian Trafﬁc Signs Dataset (BelgiumTS),
+is publicly available at: http://homes.esat.kuleuven.be/~
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+Table 1 Belgian Trafﬁc Signs Dataset (BelgiumTS)
+BelgiumTS
+TS annot.
+Distinct TSs
+Other images
+Training
+8,851
+3,020
+16,045 non-TSs
+2D Testing
+4,593
+1,545
+583 non-TSs
+3D Testing
+1,625
+552
+121,632
+Total
+13,444
+4,565
+16,628 non-TSs
+To the trafﬁc sign (TS) annotations corresponds a number of physi-
+cally distinct TS. On average we have three views/annotations for each
+physical TS. 3D Testing contains the TS annotations along with the
+image/frame sequences where those appeared, and each image is pro-
+vided with camera parameters and pose. The TS annotations from 3D
+Testing form a subset of 2D Testing. non-TS stands for images without
+trafﬁc sign annotations
+rtimofte/trafﬁc_signs/. The dataset contains 13,444 trafﬁc
+sign annotations in 9,006 still images corresponding to 4,565
+physically distinct trafﬁc signs visible at < 50 m from the
+camera. The dataset includes challenging samples as shown
+in Fig. 2.
+Table 1 summarises the most important information about
+this dataset. It is split into different subsets, corresponding
+to the rows in the table. For each subset, we indicate the
+number of trafﬁc sign annotations (2nd column), the number
+of different signs these correspond to (3rd column), and the
+number of number of ‘background’ images without trafﬁc
+signs (4th column).
+The ﬁrst row describes the Training subset. The annota-
+tions therein have been used to train for trafﬁc sign detec-
+tion, segmentation, and recognition. As negative examples,
+we use 16,045 ‘background’ images, which contain no trafﬁc
+signs. The 2D Testing subset was used for the validation of
+the detection. Images were handpicked, so that the majority
+contains trafﬁc signs. Again, a number of background images
+without any signs were added. The 3D Testing subset con-
+tains continuous sequences of images (8 camera images per
+meter of road), i.e. with lots more images in between those
+where trafﬁc signs are visible. This dataset was used for the
+full pipeline of detection, recognition, and localisation. The
+3D Testing trafﬁc sign annotations form a subset to those for
+2D Testing. Yet, in total it contains many more images than
+2D Testing, i.e. 121,632 images from the eight cameras. All
+of these come with camera poses and internal calibrations.
+To ease the use of the dataset for classiﬁcation benchmark-
+ing, we provide a subset called BelgiumTSC (Belgium TS
+for Classiﬁcation) with 4,591 cropped training samples and
+2,534 cropped testing samples. These correspond to the orig-
+inal BelgiumTS Training and 2D Testing parts but restricted
+to only 62 trafﬁc sign types as used also in this work.
+7.2 Single-view evaluation
+The Training part of BelgiumTS (Table 1) is used for learning
+the suitable candidate extraction methods as well as for train-
+ing the AdaBoost cascades and the SVM classiﬁers. To learn
+the SVM classiﬁer, Statistical Pattern Recognition Toolbox2
+is used. The 2D Testing part is used for assessing the perfor-
+mance. Our current method has only been trained for 62 traf-
+ﬁc signs classes. As a result, the number of used annotations
+in testing drops to 2,571, corresponding to 859 physically
+distinct trafﬁc signs.
+The detection and extraction errors (Table 2) are evalu-
+ated according to two criteria: either demanding detection
+every time a sign appears (FN-BB), or only demanding it is
+detected at least once (FN-TS). On average, a sign is visible
+in about three views. When False Negatives are mentioned
+in the literature, it is usually FN-TS which is meant, where
+the number of views per sign is often even higher (highway
+conditions). We considered a detection to be successful if the
+coverage ≥0.65, which approximately corresponds to the
+shift of a 20×20 bounding box by 2 pixels in both directions.
+Note that some of our detected signs are quite small, with
+the smallest 11 × 10. Approximately 25% of non-extracted
+bounding boxes were smaller than 17×17, most of the others
+were either taken under oblique angles and/or were visually
+corrupted (e.g. covered by a sticker, heavily occluded, etc.).
+Table 2 shows results of both the candidate extraction
+(still with an appreciable number of FP, see ﬁrst four rows)
+and the ﬁnal detection (i.e. candidate extraction followed
+by AdaBoost detector and SVM, see last two rows). The
+ROC curve in Table 2 compares the FN-BB/FN-TS achiev-
+able with our pure colour-based extraction method to that
+with our combined (colour+TMSER+shape)-based extrac-
+tion method. The shape extraction significantly increases the
+number of false positives (see for example 4th row in the
+table). The reason for is that we keep both the original col-
+our bounding boxes and add all bounding boxes that reﬂect
+a good shape match. Combined extraction lowers FN, how-
+ever. Figure 10 shows trafﬁc signs that could not be detected
+completely with the colour thresholds, but which could then
+still be extracted based on their shape.
+7.3 Sliding window comparison
+We compare the pipeline outlined so far with a sliding win-
+dow approach. For the latter, we train Discrete AdaBoost
+cascades directly on sampled subwindows from the Train-
+ing data (see Table 1). The parameters for sliding window
+are: 350 pixels minimum window size, four aspect ratios—
+(0.5, 0.75, 1.0, 1.25), 6.67% shift and 1.15 scaling factor.
+Under these conditions the number of processed windows
+per 1,628 × 1,236 image is higher than 12 million. For test-
+ing we use the same 2D Testing dataset (Table 1). For the
+features, Haar-like masks are computed on HSI channels, as
+before.
+2 http://cmp.felk.cvut.cz/cmp/software/stprtool/.
+123
+
+R. Timofte et al.
+Table 2 Summary of achieved
+results in single-view detection
+Meaning of the above used
+abbreviations is the following
+colour means method described
+in Sect. 4.1, TMSER stands for
+TMSER(ϵ, Δ) =
+TMSER(0.1, 0.2), shape is
+Sect. 4.2. FN-BB means false
+negative with respect to
+bounding boxes, FN-TS means
+false negative with respect to
+trafﬁc signs. The graph depicts
+the detection performance for
+two candidate extraction
+settings: Extr1 and Extr4
+FN-TS
+FN-BB
+FP per
+[%]
+#/859
+[%]
+#/2571
+2MP img
+Extr1 (colour)
+0.7
+6
+1.1
+29
+3,281.8
+Extr2 (colour+TMSER)
+0.7
+6
+1.1
+28
+3,741.7
+Extr3 (colour+shape)
+0.5
+4
+0.7
+17
+5,206.2
+Extr4 (colour+TMSER+shape)
+0.5
+4
+0.7
+17
+5,822.0
+Det + Extr1
+2.3
+20
+4.0
+103
+2
+Det + Extr4
+1.9
+16
+3.2
+82
+2
+0.01
+0.1
+1
+2
+0
+2
+4
+6
+8
+10
+12
+14
+accepted backgrounds per 2MP image
+missed traffic signs [%]
+ 
+ 
+BB:det+extr1
+TS:det+extr1
+BB:det+extr4
+TS:det+extr4
+Fig. 10 Shape-based extractable but colour threshold inseparable traf-
+ﬁc signs—the ground truth is delineated by a red rectangle, the best
+shape-based detection is shown in yellow and the best colour-based one
+in green (colour ﬁgure online)
+The Matlab/C++ scripts ran weeks for training all the cas-
+cades for the sliding window approach. Compared to this, the
+days of training for the original pipeline looks modest. We
+trained cascades for each subclass of trafﬁc signs: triangle-
+up (28 stages cascade), triangle-down (27 stages), circle-blue
+(26 stages), circle-red (23 stages), rectangle (23 stages) and
+diamond (25 stages).
+The output of the cascades is processed further by a SVM
+classiﬁer that uses Haar-like features, pyramids of HOGs
+and pixels in RGB space. All features are variance normal-
+ized and mean subtracted and then concatenated into a single
+feature vector, which serves as input to a linear SVM.
+Figure 11 shows the performance of the sliding window
+approach, of the Det+Extr1 pipeline (Table 2), and of their
+combination. The 2D Testing set has been used. The slid-
+ing window approach outperforms the Det+Extr1 pipeline
+for low numbers of FN or FP, both for the BB and TS crite-
+ria. Nevertheless, if we allow for higher FN or FP (which is
+the case, as the 3D analysis prunes away most single view
+errors), then the Det+Extr1 pipeline is better in terms of TS
+detections. The performance can be improved by combining
+the sliding window and the Det+Extr1 pipelines. Their out-
+puts are combined, all put through a linear SVM, and then
+selected by thresholding their conﬁdences. Figure 12 shows
+cases that could be detected by one pipeline but not the other.
+Thus, if the computation time is not crucial, running both
+approaches is advantageous. In our single-core/single-thread
+implementations, the Det+Extr1 pipeline is about 50 times
+faster than the sliding window pipeline. The Det+Extr1 pipe-
+line achieves about two frames per second.
+7.4 Part-based model comparison
+Here we compare with the state-of-the-art generic object
+classdetectorofFelzenszwalbetal.[8].Thisdiscriminatively
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+0.01
+0.1
+1
+2
+0
+2
+4
+6
+8
+10
+12
+14
+accepted backgrounds per 2MP image
+missed traffic signs [%]
+BB:det+extr1
+TS:det+extr1
+BB:sliding window
+TS:sliding window
+BB:combined (sliding window & det+extr1)
+TS:combined (sliding window & det+extr1)
+BB:part−based models (Felzenszwalb)
+TS:part−based models (Felzenszwalb)
+Fig. 11 Comparison with state-of-the-art methods—Detection plots
+for every time a sign appears (BB—bounding box level), or only
+demanding it is detected at least once (TS—trafﬁc sign level). In blue
+one ﬁnds results for the main pipeline presented in this paper. The
+results for the alternative sliding window approach are shown in red.
+Green shows results for their combined use. The combined perfor-
+mance is better than the sliding window approach and our proposed
+approach with Extr1 extraction setting taken alone. In cyan is the result
+of the generic part-based model system from Felzenszwalb et al. [8]
+(colour ﬁgure online)
+trained part-based model detector is the top performer of
+PASCAL VOC Challenge 2009 [6].
+The system relies on discriminative training with partially
+labeled data. The authors combine a margin-sensitive
+approach for data-mining hard negative examples with a
+formalism called latent SVM which is a reformulation of
+MI-SVM in terms of latent variables. A latent SVM is semi-
+convex and the training problem becomes convex once latent
+information is speciﬁed for the positive examples. This leads
+to an iterative training algorithm that alternates between ﬁx-
+ing latent values for positive examples and optimizing the
+latent SVM objective function. The HOGs are the basic
+features employed by this method.
+For a fair comparison, we use the publicly available
+scripts. We train on the Training part of BelgiumTS (see
+Table 1) a model with ﬁve components which correspond to
+the basic shapes of the trafﬁc signs. The 2D Testing material
+is used for assessing the performance.
+Figure 11 shows how this part-based model detector com-
+pares with our proposed systems. The poorer performance
+when compared with our specialized systems is believed to
+come from the fact that this approach is a generic one and
+works on HOG features. The running time compares to the
+sliding window approach for 2Mpxl images. The cascaded
+version from the same authors [7] is expected to provide the
+same accuracy and an up to 20 times speedup, but the system
+is still far from realtime performance. Thus our Det+Extr1
+  Missed  detections:
+  Detected only by sliding window:
+Detected only by det+extr1:
+(c)
+(b)
+(a)
+Fig. 12 Complementarity of sliding window and the proposed
+approach. Shown are samples where both methods fail (a) and where
+one method fails but the other one is successful (b, c), at the same
+threshold level
+pipeline exhibits better accuracy and is much faster than the
+part-based models variants considered here.
+7.5 Multi-view evaluation
+In this section, we report on the multi-view results. More-
+over, in the single-view case we only paid attention to the
+detection of trafﬁc signs, not yet to their recognition or local-
+isation. Here we will also cover these topics. The inclusion
+of correct localisation within 3 m in X-Y-Z within the criteria
+explains why some of the scores go down with respect to the
+single-view case. Most of the incorrectly 3D localised trafﬁc
+signs were detected in at least one view.
+We evaluate our multi-view pipeline, based on Det+Extr1
+single-view processing, on the four image sets of the 3D
+Testing part of BelgiumTS (see Table 1). The evaluation is
+restricted to a subset of 62 trafﬁc sign classes. These include
+all regular signs, but exclude direction indicators with text.
+A breakdown of the test data per class, along with its achieved
+performance, is shown in Fig. 13. The results are sum-
+marized in Table 3. The operating point was selected to
+123
+
+R. Timofte et al.
+30/31/31
+23/23/24
+20/20/20
+17/17/18
+18/18/18
+15/15/17
+19/21/24
+11/11/12
+11/11/11
+8/8/8
+8/8/8
+7/8/8
+6/6/6
+3/3/5
+5/5/5
+5/5/5
+5/5/5
+4/5/5
+4/4/4
+4/4/4
+4/4/4
+4/4/4
+4/4/4
+4/5/6
+3/3/3
+3/3/3
+2/2/3
+3/3/3
+3/3/4
+1/2/2
+2/2/2
+2/2/2
+2/2/2
+24/24/24
+0/0/2
+2/2/2
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+1/1/1
+Fig. 13 Breakdown of the trafﬁc sign class occurrence and perfor-
+mance in the test data. The information is provided for each class as
+a/b/c, where a–the number of distinct signs from the class correctly 3D
+localised and recognised, b–the number of distinct signs from the class
+correctly 3D localised and c–the number of distinct signs from the class
+that appears in the test data
+Table 3 Summary of 3D achieved results
+#
+No. frames
+No. TSs
+3D Localised
+FP
+Recognised TS
+TS (%)
+(%)
+1
+8 × 3,001
+99
+94 (95.0)
+3
+90 (95.7)
+2
+8 × 6,201
+87
+83 (96.5)
+7
+81 (97.6)
+3
+8 × 2,001
+47
+44 (93.6)
+2
+43 (97.7)
+4
+8 × 4,001
+86
+83 (96.5)
+8
+81 (97.6)
+
+8 × 15,204
+319
+304 (95.30)
+20
+285 (97.04)
+Localised TS means correctly located trafﬁc signs in 3D space, FP
+stands for false positives in 3D and Recognised TS are the 3D recog-
+nition results with respect to the located 3D TS
+minimize FP at better than 95% correct localisation. This
+could be shifted towards a better localisation rate at the cost
+of more FP (see Fig. 14 for false detections). Figure 15 shows
+samples of missed trafﬁc signs (i.e. not detected, misplaced
+or wrongly classiﬁed). The main causes are occlusions, a
+weak conﬁdence coming from the detection and/or few views
+where a sign is visible. The average accuracy of localisation
+Fig. 14 False positives
+Fig. 15 Not detected (a, b), misplaced (c), or wrongfully classiﬁed
+(d, e) trafﬁc signs
+(distance between the 3D position according to the ground
+truth and the 3D reconstructed trafﬁc sign) is 26 cm. 90% of
+the located trafﬁc signs are reconstructed within 50 cm from
+the ground truth, but we have also three trafﬁc signs that are
+reconstructed at more than 1.5 m.
+The recognition results are summarized in the last column
+of Table 3. The overall classiﬁcation rate is 97% with 95.30%
+accurately 3D-localised trafﬁc signs. In comparison, Ruta
+et al. [25] achieve 85% classiﬁcation rate with 86% trafﬁc
+signs detected, on a smaller dataset but using a realtime sys-
+tem with only a single front camera and exploiting tracking.
+8 Discussion
+Having introduced our system and the experiments that we
+perform, we now discuss topics such as trading off perfor-
+mance for speed, practical aspects and the generality of the
+approach, and driver assistance/real-time applications.
+8.1 Performance versus speed
+The performance/speed tradeoff is an often returning topic.
+We considered a processing time of 2 fps (operating on
+2Mpixel images) to be sufﬁcient if a very high detection rate
+(>95%) of close-by trafﬁc signs (within 50 m) and a very
+low false detections per image (<2) could be warranted. Our
+experiments corroborated that using a multi-view/3D analy-
+sis helps a lot in pruning the false detections while getting
+very high 3D localisation rates. This is another observation
+to keep in mind when putting together a ﬁnal system.
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+Given the above, deploying a det+extr1 pipeline (see
+Sect. 7) makes sense. This proved to yield a speed of 2 fps at
+a level of 96% detection rate and 2 false positives per image
+(see Table 2), in line with our goals. Combined with the
+multi-view/3D analysis MDL optimization we exceed 95%
+accurate 3D localisation rate (see Table 3) with very few false
+positives (20 in 8 × 15,204 recorded frames). These results
+are quite satisfactory given that our system working without
+any human supervision.
+In all steps we could trade speed off for better performance
+in localisation. This is doable by using more basic threshold
+methods in the segmentation step or combining with comple-
+mentary sliding window and/or part-based model approaches
+(see Fig. 11). Also, if an human operator is post-ﬁltering the
+results then we could allow more false positives at image
+level (for per image detection) and at the trafﬁc sign level (for
+3D localisation), which would improve the mapping perfor-
+mance.
+8.2 Generality
+The results in this paper have been presented with a partic-
+ular application in mind and using a speciﬁc setup. Yet, the
+proposed methods as well as the overall pipeline lend them-
+selves to applications in different contexts and with different
+imagery. For instance, the optimisation for picking the best
+thresholds has a general formulation (see Sect. 4). Parame-
+ters like κ1,2,3 can be adapted based on training data. The
+number of annotations, the ratio between false positives and
+negatives, and the precision of segmentation can be used to
+set parameters. Thereafter, parameter settings can be ﬁne-
+tuned further on the basis of cross-validation with sets of
+parameters in their close vicinity. The initial setting takes a
+few hours, while cross-validating tens of settings would take
+a few days, however.
+Ourcamerasyieldedsubstantiallydifferentcolours.More-
+over, the illumination conditions vary a lot (e.g. strong sun-
+light, shadows). In the absence of a colour normalization
+and/or illumination compensation of the input images, as in
+our case, the segmentation thresholding criteria seem capa-
+ble of largely making up for this. We have also experimented
+with imagery of lower quality (also taken in Belgium, from
+a different type of mobile mapping van) and the drop in seg-
+mentation performance was less severe than anticipated, with
+exactly the same thresholding criteria. Note that if a differ-
+ent country would be involved, then certainly the detection
+and recognition need to be retrained, as the signs will be
+somewhat different.
+8.3 Real-time applications
+Our mapping system has always been intended for off-line
+processing, mainly because our structure-from-motion runs
+offline and has to be applied prior to the trafﬁc sign part.
+Indeed, it yields the necessary camera poses, needed for the
+image fusion and 3D localisation. Otherwise, there clearly is
+on-line potential. The det+extr1 pipeline (see Sect. 7) works
+at 2 fps on 2 Mpixel images and at 16 fps on 640 ×480 pixel
+images (VGA resolution). The running time increases line-
+arly with the number of pixels. A speed of 16 fps is already
+within the range for driver assistance. On the other hand, for
+the automated mapping of trafﬁc signs, there is no critical
+need for on-line processing and it is better to make the most
+out of the collected data in order to increase the precision
+(e.g. after driving by the same spot multiple times, which
+often happens for crossroads where many of the trafﬁc signs
+are to be found).
+This said, we have experimented with driver assistance
+as well, for which we proposed a slightly modiﬁed version
+of our pipeline [23,27]. Typically only one camera can be
+used in such case. Yet, still one can combine frame level
+detection/recognition with 3D pose tracking. We obtained a
+recognition performance per image level of about 97%, using
+a linear SVM with pyramidal HOG features LDA-projected
+to a 61-dimensional subspace. The trafﬁc sign recognition at
+track level was about 100% in the experiments and we had
+almost no false detections or missed trafﬁc signs.
+9 Conclusions
+Trafﬁc sign recognition is a challenging problem. We have
+proposed a multi-view scheme, which combines 2D and 3D
+analysis. Following a principle of spending little time on the
+bulk of the data, and keeping a more reﬁned analysis for the
+promising parts of the images, the proposed system com-
+bines efﬁciency with good performance. One contribution of
+the paper is the integer linear optimisation formulation for
+selecting the optimal candidate extraction methods. The stan-
+dard sliding window approach is found to be complementary
+to the proposed detection based on fast extracted candidates,
+but much slower for similar performance. In case sufﬁcient
+time is available, it is useful to combine the proposed pipe-
+line with sliding windows. Our experiments show that the
+state-of-the-art part-based model [8] is slow and performs
+poorer than our proposed system. Another contribution is
+theefﬁcientboundedevaluationoflinearAdaBoost-likeclas-
+siﬁers which brings an important decrease in the computa-
+tional time. Another novelty is the MDL formulation for best
+describing the 2D detections with 3D reconstructed trafﬁc
+signs, without strongly relying on sign positions with respect
+to the ground plane. Moreover, our task includes accurate 3D
+localisation of the trafﬁc signs, which prior articles did not
+consider.
+In the future, we will research adding further semantic rea-
+soning about trafﬁc signs. They have different probabilities
+123
+
+R. Timofte et al.
+to appear at certain places relative to the road, and also the
+chances of them co-occurring differ substantially.
+Acknowledgments
+This work was supported by the Flemish IBBT-
+URBAN project and the European Commission FP7-231888-EUROPA
+project. The authors thank GeoAutomation for providing the images.
+Appendix
+Appendix details the way of transforming (2), (3) and (4)
+into the 0-1 Integer Linear Programming form. Solution of
+formulated problems are found via MOSEK optimisation
+toolbox3.
+Let us suppose we are given n positive samples and
+m different extraction methods (e.g. colour thresholding
+with given threshold). Every method correctly extracts (i.e.
+with sufﬁcient accuracy) some subset of positive samples.
+Denoting correctly extracted samples by ‘1’ and incorrectly
+extracted samples by ‘0’, each method is characterized by
+an n-dimensional extraction vector. We align these vectors
+row-wise into an n × m extraction matrix A. Introducing the
+binary m-dimensional vector T , where selected methods are
+again denoted by ‘1’ and not selected by ‘0’, the number of
+False Negatives from the subset of methods given by T cor-
+responds to the number of unsatisﬁed inequalities A·T ≥1n,
+where 1n denotes the n-dimensional column vector of ones.
+Hence, introducing an n-dimensional binary vector of slack
+variables ξ, the number of False Negatives is
+FN(T ) = min
+ξ
+1⊤
+n · ξ
+subj.to: A · T ≥1n −ξ,
+ξ ∈{0, 1}n.
+(16)
+Let us be given the m-dimensional real valued vector b
+containing the average number of False Positives for every
+method 1 . . . m. number of False Positives is estimated on
+trafﬁc-sign-free images from an urban environment. Then
+the average number of False Positives obtained using the
+subset of methods given by T is
+FP(T ) = b⊤· T
+(17)
+Substituting from (16), (17), yields ILP form of Prob-
+lem (2):
+T ∗= arg min
+T ,ξ κ1 · 1⊤
+n · ξ + b⊤· T
+subj.to: A · T ≥1n −ξ
+ξ ∈{0, 1}n, T ∈{0, 1}m.
+(18)
+3 http://www.mosek.com.
+Since card(T ) = 1⊤
+m · T , ILP form of Problem (3) is
+T ∗= arg min
+T
+κ11⊤
+n · ξ + (b⊤+ κ2 · 1⊤
+m) · T
+subj.to: A · T ≥1n −ξ
+ξ ∈{0, 1}n, T ∈{0, 1}m.
+(19)
+Finally, introducing the m-dimensional vector c with aver-
+age accuracy of every method, ILP form of Problem (4) is:
+T ∗= arg min
+T
+κ11⊤
+n · ξ + (b⊤+ κ2 · 1⊤
+m −κ3 · c⊤) · T
+subj.to: A · T ≥1n −ξ
+ξ ∈{0, 1}n, T ∈{0, 1}m.
+(20)
+References
+1. Bahlmann, C., Zhu, Y., Ramesh, V., Pellkofer, M., Koehler, T.:
+A system for trafﬁc sign detection, tracking, and recognition using
+color, shape, and motion information. In: IEEE Intelligent Vehicles
+Symposium (2005)
+2. Bosch, A., Zisserman, A., Munoz, X.: Representing shape with a
+spatial pyramid kernel. In: Proceedings of the 6th ACM interna-
+tional conference on Image and video retrieval, pp. 401–408. ACM
+Press, New York, NY, USA (2007)
+3. Broggi, A., Cerri, P., Medici, P., Porta, P., Ghisio, G.: Real time
+road signs recognition. In: Intelligent Vehicles Symposium, 2007
+IEEE, pp. 981–986 (2007)
+4. Brostow, G.J., Shotton, J., Fauqueur, J., Cipolla, R.: Segmenta-
+tion and recognition using structure from motion point clouds. In:
+European Conference on Computer Vision (2008)
+5. Doubek, P., Perdoch, M., Matas, J., Sochman, J.: Mobile mapping
+of vertical trafﬁc infrastructure. In: Proceedings of the 13th Com-
+puter Vision Winter Workshop, pp. 115–122. Slovenian Pattern
+Recognition Society, Ljubljana, Slovenia (2008)
+6. Everingham, M., Van Gool, L., Williams, C.K.I., Winn, J., Ziss-
+erman, A.: The PASCAL Visual Object Classes Challenge 2009
+(VOC2009) Results. http://www.pascal-network.org/challenges/
+VOC/voc2009/workshop/index.html
+7. Felzenszwalb, P.F., Girshick, R.B., McAllester, D.: Cascade object
+detection with deformable part models. In: IEEE Conference on
+Computer Vision and Pattern Recognition (CVPR) (2010)
+8. Felzenszwalb, P.F., Girshick, R.B., McAllester, D., Ramanan, D.:
+Object detection with discriminatively trained part based models.
+IEEE Trans. Pattern Anal. Mach. Intell. 32(9), 1627–1645 (2010)
+9. Fleuret, F., Berclaz, J., Fua, P.: Multicamera people tracking
+with a probabilistic occupancy map. IEEE Trans. Pattern Anal.
+Mach. Intell.30, (2), 267–282 (2008). http://ieeecomputersociety.
+org. doi:10.1109/TPAMI.2007.1174
+10. Golovinskiy, A., Kim, V.G., Funkhouser, T.: Shape-based recog-
+nition of 3d point clouds in urban environments. In: Proceedings
+of the 12th IEEE International Conference on Computer Vision.
+Kyoto, Japan (2009)
+11. Hoiem, D., Efros, A.A., Hebert, M.: Putting objects in perspective.
+In: IEEE Conference on Computer Vision and Pattern Recognition,
+vol. 2, pp. 2137–2144 (2006)
+12. Miura, J., Kanda, T., Shirai, Y.: An active vision system for real-
+time trafﬁc sign recognition. In: IEEE Conf. on Intelligent Trans-
+portation Systems (ITS), pp. 52–57 (2000)
+13. Kingston, T., Gikas, V., Laﬂamme, C., Larouche, C.: An integrated
+mobile mapping system for data acquisition and automated asset
+extraction. In: Proceedings of the 5th Mobile Mapping Technolo-
+gies Symposium. Padua, Italy (2007)
+123
+
+Multi-view trafﬁc sign detection, recognition, and 3D localisation
+14. Lafuente, S., Gil, P., Maldonado, R., López, F., Maldonado, S.:
+Trafﬁc sign shape classiﬁcation evaluation i: Svm using distance
+to borders. In: IEEE Intelligent Vehicles Symposium, pp. 654–658
+(2005)
+15. Leibe, B., Schindler, K., Cornelis, N.,
+Van Gool, L.: Coupled
+object detection and tracking from static cameras and moving
+vehicles. IEEE Trans. Pattern Anal. Mach. Intell. 30(10), 1683–
+1698 (2008)
+16. Leonardis, A., Gupta, A., Bajcsy, R.: Segmentation of range images
+as the search for geometric parametric models. Int. J. Comput. Vis.
+14(3), 253–277 (1995)
+17. Maldonado, S., Lafuente, S., Gil, P., Gómez, H., López,
+F.: Road-sign detection and recognition based on support vector
+machines. IEEE Trans. Intell. Transp. Syst. 8(2), 264–278 (2007)
+18. Matas, J., Chum, O., Urban, M., Pajdla, T.: Robust wide baseline
+stereo from maximally stable extremal regions. In: British Machine
+Vision Conference, vol. 1, pp. 384–393 (2002)
+19. Moutarde, F., Bargeton, A., Herbin, A., Chanussot, L.: Robust on-
+vehicle real-time visual detection of american and european speed
+limit signs, with a modular trafﬁc signs recognition system. In:
+IEEE Intelligent Vehicles Symposium, pp. 1122–1126 (2007)
+20. Munoz, D., Vandapel, N., Hebert, M.: Directional associative mar-
+kov network for 3-d point cloud classiﬁcation. In: 3D Data Pro-
+cessing Visualization and Transmission (2008)
+21. Nunn, C., Kummert, A., Muller-Schneiders, S.: A novel region of
+interest selection approach for trafﬁc sign recognition based on 3d
+modelling. In: IEEE Intelligent Vehicles Symposium, pp. 654–658
+(2008)
+22. Pettersson, N., Petersson, L., Andersson, L.: The histogram fea-
+ture—a resource-efﬁcient weak classiﬁer. In: IEEE Intelligent
+Vehicles Symposium, pp. 678–683 (2008)
+23. Prisacariu, V.A., Timofte, R., Zimmermann, K., Reid, I., Van Gool,
+L.J.: Integrating object detection with 3d tracking towards a bet-
+ter driver assistance system. In: 20th International Conference on
+Pattern Recognition, ICPR 2010, Istanbul, Turkey, pp. 3344–3347
+(2010)
+24. Ruta, A., Li, Y., Liu, X.: Towards real-time trafﬁc sign recogni-
+tion by class-speciﬁc discriminative features. In: British Machine
+Vision Conference (2007)
+25. Ruta, A., Porikli, F., Watanabe, S., Li, Y.: In-vehicle camera traf-
+ﬁc sign detection and recognition. Mach. Vis. Appl. 22(2), 359–
+375 (2011)
+26. Schapire, R.E., Freund, Y., Bartlett, P., Lee, W.S.: Boosting the
+margin: a new explanation for the effectiveness of voting meth-
+ods. Ann. Stat. 26(5), 1651–1686 (1998)
+27. Timofte, R., Prisacariu, V.A., Van Gool, L.J., Reid, I. : Chapter
+3.5: Combining trafﬁc sign detection with 3d tracking towards
+better driver assistance. In: Chen, C.H. (ed.) Emerging Topics in
+Computer Vision and its Applications., World Scientiﬁc Publish-
+ing, Cleveland (2011)
+28. Timofte, R., Van Gool, L.: Multi-view manhole detection, recogni-
+tion, and 3d localisation. In: 1st IEEE/ISPRS Workshop on Com-
+puter Vision for Remote Sensing of the Environment (CVRS) in
+conjunction with the 13th International Conference on Computer
+Vision (ICCV) (2011)
+29. Timofte, R., Zimmermann, K., Van Gool, L.: Multi-view trafﬁc
+sign detection, recognition, and 3d localisation. In: Proceedings of
+the IEEE Computer Society’s Workshop on Applications of Com-
+puter Vision (WACV). IEEE Computer Society, Snowbird, Utah,
+USA (2009)
+30. Viola, P., Jones, M.: Robust real-time face detection. In: IEEE
+International Conference on Computer Vision, vol. 2, pp. 747–757
+(2001)
+31. Wojek, C., Schiele, B.: A dynamic conditional random ﬁeld model
+for joint labeling of object and scene classes. In: European Confer-
+ence on Computer Vision, pp 733–747 (2008)
+Author Biographies
+Radu Timofte
+received his
+M.Sc. degree in Software Engi-
+neering from the University of
+Joensuu, Finland (2007) and
+his M.Eng. degree in Computer
+Engineering from the Techni-
+cal University of Iasi, Romania
+(2006). He worked as project
+researcher for the University of
+Joensuu (2006–2007) and the
+Czech Technical University in
+Prague, Czech Republic (2008).
+He is currently pursuing his
+Ph.D. degree at the Katholieke
+Universiteit Leuven, Belgium,
+under the supervision of prof. Luc Van Gool. His current research inter-
+est is in multi-view object class recognition.
+Karel Zimmermann
+received
+his Ph.D. degree in cybernet-
+ics from the Czech Techni-
+cal University in Prague, Czech
+Republic, in 2008. He was also
+with the Technological Educa-
+tion Institute of Crete (2001),
+with the Technical University of
+Delft (2002), with the Univer-
+sity of Surrey (2006), and as
+postdoctoral researcher with the
+Katholieke Universiteit Leuven
+(2008–2009). Since 2009 he has
+been a postdoctoral researcher at
+the Czech Technical University.
+He serves as a reviewer for major journals such as PAMI and confer-
+ences such as CVPR and ICCV. He received the best reviewer award at
+CVPR 2011, the CSKI prize for the best Ph.D. work in 2008, and the
+best student paper award at VISAPP 2011. His current research interests
+include learnable methods for tracking, detection and recognition.
+Luc Van Gool obtained his mas-
+ter and Ph.D. degrees in Electri-
+cal Engineering at the Katholieke
+Universiteit Leuven, Belgium, in
+1982 and 1991, respectively. He
+is a full professor for Com-
+puter Vision at both KU Leu-
+ven and ETH Zurich. With his
+two research labs, he focuses on
+object recognition, tracking and
+gesture analysis, and 3D acqui-
+sition and modeling. Luc Van
+Gool was a program chair of
+ICCV 2005, and general chair of
+ICCV 2011, and will act as GC
+of ECCV 2014. He is an editor-in-chief of Foundations and Trends in
+Computer Graphics and Vision. He is also the co-founder of the spin-
+off companies like Eyetronics, GeoAutomation, kooaba, Procedural,
+eSaturnus, and upicto. He received several best paper awards, including
+ICCV 1998, CVPR 2007, ACCV 2007, ICRA 2009, and BMVC 2011.
+123
