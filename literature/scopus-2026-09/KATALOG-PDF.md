@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 893 kajian korpus `main6` yang PDF-nya tersedia, dari 893 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 247 | 247 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 153 | 153 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 248 | 248 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 155 | 155 |
 | C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
-| R | Tinjauan terdahulu | 112 | 112 |
+| R | Tinjauan terdahulu | 113 | 113 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 889 | 889 |
+| | **Jumlah** | 893 | 893 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (247)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (248)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -122,6 +122,7 @@ Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kaj
 | 2024 | Hernandez B. | Multi-Object Tracking in Agricultural Applications using a Vision Transformer for Spatial Association | Computers and Electronics in Agriculture | [PDF](pdf/hernandez2024multi.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109379) |
 | 2024 | Ishizuka T. | Eggplant Detection and Counting Across the Entire Greenhouse Using Deep Learning and Motion Parallax | 10th IEEE International Smart Cities Conference Smart Cities Revolution for Mankind Isc2 2024 Proceedings | [PDF](pdf/ishizuka2024eggplant.pdf) | [DOI](https://doi.org/10.1109/isc260477.2024.11004199) |
 | 2024 | Kang R. | Toward Real Scenery: A Lightweight Tomato Growth Inspection Algorithm for Leaf Disease Detection and Fruit Counting | Plant Phenomics | [PDF](pdf/kang2024real.pdf) | [DOI](https://doi.org/10.34133/plantphenomics.0174) |
+| 2024 | Lou H. | Online target detection and fast localisation of citrus fruits in irregularly disturbed state | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/lou2024online.pdf) | [DOI](https://doi.org/10.11975/j.issn.1002-6819.202404120) |
 | 2024 | Magalhães S.A.C. | MonoVisual3DFilter: 3D tomatoes' localisation with monocular cameras using histogram filters | Robotica | [PDF](pdf/magalhaes2024monovisual3dfilter.pdf) | [DOI](https://doi.org/10.1017/s0263574724000936) |
 | 2024 | Matos G.P. | Tracking and Counting Apples in Orchards under Intermittent Occlusions and Low Frame Rates | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops | [PDF](pdf/matos2024tracking.pdf) | [DOI](https://doi.org/10.1109/cvprw63382.2024.00550) |
 | 2024 | Melnychenko O. | Intelligent Integrated System for Fruit Detection Using Multi-UAV Imaging and Deep Learning † | Sensors | [PDF](pdf/melnychenko2024intelligent.pdf) | [DOI](https://doi.org/10.3390/s24061913) |
@@ -267,7 +268,7 @@ Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kaj
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 | 2012 | Wang Q. | Design of crop yield estimation system for apple orchards using computer vision | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 | [PDF](pdf/wang2012design.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (153)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (155)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -303,6 +304,7 @@ Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kaj
 | 2025 | Ven J. | MangoSense: A time-series vision sensing dataset for mango tree segmentation and detection toward yield prediction | Computers and Electronics in Agriculture | [PDF](pdf/ven2025mangosense.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110524) |
 | 2025 | Vélez S. | Framework for smartphone-based grape detection and vineyard management using UAV-trained AI | Heliyon | [PDF](pdf/velez2025framework.pdf) | [DOI](https://doi.org/10.1016/j.heliyon.2025.e42525) |
 | 2025 | Xu D. | Improving passion fruit yield estimation with multi-scale feature fusion and density-attention mechanisms in smart agriculture | Computers and Electronics in Agriculture | [PDF](pdf/xu2025improving.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110958) |
+| 2025 | Xu W. | A Transfer Learning-Based Multimodal Model for Grape Detection and Counting | Smart Agriculture | [PDF](pdf/xu2025transfer.pdf) | [DOI](https://doi.org/10.12133/j.smartag.sa202504005) |
 | 2025 | Yang C. | Mask-GK: An efficient method based on mask Gaussian kernel for segmentation and counting of grape berries in field | Computers and Electronics in Agriculture | [PDF](pdf/yang2025mask.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110286) |
 | 2025 | Zeng T. | YOLO-FCAP: An improved lightweight object detection model based on YOLOv8n for citrus yield prediction in complex environments | Smart Agricultural Technology | [PDF](pdf/zeng2025yolo.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101590) |
 | 2025 | Zhou C. | MDE-DETR: multi-domain enhanced feature fusion algorithm for bayberry detection and counting in complex orchards | Frontiers in Plant Science | [PDF](pdf/zhou2025mde.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1711545) |
@@ -415,6 +417,7 @@ Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kaj
 | 2016 | Payne A.B. | Automating mango crop yield estimation | Acta Horticulturae | [PDF](pdf/payne2016automating.pdf) | [DOI](https://doi.org/10.17660/actahortic.2016.1130.87) |
 | 2016 | Silwal A. | A hierarchical approach to apple identification for robotic harvesting | Transactions of the Asabe | [PDF](pdf/silwal2016hierarchical.pdf) | [DOI](https://doi.org/10.13031/trans.59.11619) |
 | 2015 | Cheng H. | ANN model for apple yield estimation based on feature of tree image | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/cheng2015ann.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2015.01.003) |
+| 2015 | Cheng H. | Early yield estimation of 'Gala' apple trees using image processing combined with support vector machine | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/cheng2015early.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2015.03.002) |
 | 2015 | Font D. | Vineyard yield estimation based on the analysis of high resolution images obtained with artificial illumination at night | Sensors Switzerland | [PDF](pdf/font2015vineyard.pdf) | [DOI](https://doi.org/10.3390/s150408284) |
 | 2015 | Hung C. | A feature learning based approach for automated fruit yield estimation | Springer Tracts in Advanced Robotics | [PDF](pdf/hung2015feature.pdf) | [DOI](https://doi.org/10.1007/978-3-319-07488-7_33) |
 | 2015 | Syal A. | Apple fruit detection and counting using computer vision techniques | 2014 IEEE International Conference on Computational Intelligence and Computing Research IEEE Iccic 2014 | [PDF](pdf/syal2015apple.pdf) | [DOI](https://doi.org/10.1109/iccic.2014.7238364) |
@@ -731,7 +734,7 @@ Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kaj
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
 | 2013 | Hung C. | Orchard fruit segmentation using multi-spectral feature learning | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hung2013orchard.pdf) | [DOI](https://doi.org/10.1109/iros.2013.6697125) |
 
-## R: Tinjauan terdahulu (112)
+## R: Tinjauan terdahulu (113)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -783,6 +786,7 @@ Katalog ini memuat 889 kajian korpus `main6` yang PDF-nya tersedia, dari 889 kaj
 | 2025 | Xiao X. | Key Technologies for Machine Vision for Picking Robots: Review and Benchmarking | Machine Intelligence Research | [PDF](pdf/xiao2025key.pdf) | [DOI](https://doi.org/10.1007/s11633-024-1517-1) |
 | 2025 | Yang X. | Research progress on binocular stereo vision technology and its applications in smart agriculture | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/yang2025research.pdf) | [DOI](https://doi.org/10.11975/j.issn.1002-6819.202410177) |
 | 2024 | Azizi A. | Image processing and artificial intelligence for apple detection and localization: A comprehensive review | Computer Science Review | [PDF](pdf/azizi2024image.pdf) | [DOI](https://doi.org/10.1016/j.cosrev.2024.100690) |
+| 2024 | Chen M. | Orchard-Wide Visual Perception and Autonomous Operation of Fruit Picking Robots: A Review | Smart Agriculture | [PDF](pdf/chen2024orchard.pdf) | [DOI](https://doi.org/10.12133/j.smartag.sa202405022) |
 | 2024 | Chen Z. | Key Technologies for Autonomous Fruit- and Vegetable-Picking Robots: A Review | Agronomy | [PDF](pdf/chen2024key.pdf) | [DOI](https://doi.org/10.3390/agronomy14102233) |
 | 2024 | Dhonju H.K. | Management Information Systems for Tree Fruit–2: Design of a Mango Harvest Forecast Engine | Horticulturae | [PDF](pdf/dhonju2024management.pdf) | [DOI](https://doi.org/10.3390/horticulturae10030301) |
 | 2024 | Dhonju H.K. | Management Information Systems for Tree Fruit—1: A Review | Horticulturae | [PDF](pdf/dhonju2024managementb.pdf) | [DOI](https://doi.org/10.3390/horticulturae10010108) |
