@@ -43,7 +43,7 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan pada tahap kelayakan abstrak | 132 |
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
-| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 91 |
+| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 90 |
 | Dinilai dari teks lengkap (922 Scopus dan 5 metode lain) | 927 |
 | Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 18, E8 2) | 34 |
 | Total masuk peta (888 Scopus dan 5 metode lain) | 893 |
@@ -185,5 +185,5 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   punya teks di `teks/`. Enam PDF jurnal CSAM yang fonnya tanpa pemetaan
   Unicode (`guo2023real`, `tu2026passion`, `wang2024camellia`,
   `wu2025counting`, `xiao2024camellia`, `zhu2022identification`) dan empat PDF hasil pindaian atau dengan teks rusak
-  (`chen2017counting`, `cheng2021method`, `harmiansyah2024detection`, `xu2025three`) dibaca dengan OCR. Daftar PDF yang belum ada (91 laporan per 23 November 2026) tercantum di
+  (`chen2017counting`, `cheng2021method`, `harmiansyah2024detection`, `xu2025three`) dibaca dengan OCR. Teks lengkap `li2021yield` adalah terjemahan mesin berbahasa Inggris dari *postprint* ChinaXiv 202302.00205 yang diterbitkan ChinaRxiv, karena PDF penerbit berbayar dan PDF asli ChinaXiv menolak unduhan otomatis. Daftar PDF yang belum ada (90 laporan per 23 November 2026) tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.
