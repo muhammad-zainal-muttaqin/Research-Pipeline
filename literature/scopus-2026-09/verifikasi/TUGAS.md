@@ -3,15 +3,15 @@
 Diperbarui 23 November 2026. Ini satu-satunya daftar keputusan yang menunggu
 Anda.
 
-- [ ] **4.10 Dua puluh sembilan PDF yang baru diperoleh: masuk ke kelompok
+- [ ] **4.10 Tiga puluh enam PDF yang baru diperoleh: masuk ke kelompok
   mana, atau keluar?** PDF-nya ada di folder `../pdf/` dengan nama di bawah.
   Usul model dibuat dari teks lengkap; buka PDF untuk memeriksa. Setelah
   disetujui, keputusan ditulis ke `../topik/penyaringan/teks_lengkap.txt`
   (satu baris per kajian), dan setiap kajian yang masuk mendapat ringkasan di
   `../entri/`. Dampaknya angka naskah berubah. Bila semua usul diterima,
-  kajian yang dinilai dari teks lengkap naik dari 845 menjadi 874, yang
-  dikeluarkan naik dari 26 menjadi 28, dan peta naik dari 819 menjadi 846
-  kajian: C1 +3, C2 +9, C3 +6, C4 +1, C5 +7, dan R +1.
+  kajian yang dinilai dari teks lengkap naik dari 845 menjadi 881, yang
+  dikeluarkan naik dari 26 menjadi 28, dan peta naik dari 819 menjadi 853
+  kajian: C1 +3, C2 +9, C3 +9, C4 +1, C5 +10, dan R +2.
 
   **A. Pindah ke multi-pengamatan (C1).** Setiap
   kajian mendapat baris baru di `../topik/bukti/mekanisme_C1.txt` dan
@@ -76,6 +76,16 @@ Anda.
      "tidak disebut" menjadi "di kebun, posisi tandan tidak disebut", karena
      "data collection took place in an oil palm plantation located in
      Kalimantan".
+  9. Jailani dkk. 2024 (`jailani2024fresh.pdf`, idx 1698): lokasi dari
+     "tidak disebut" menjadi "di kebun, posisi tandan tidak disebut", karena
+     "5,042 images of oil palm fruits in plantation environment".
+  10. Purba dkk. 2024 (`purba2024comparison.pdf`, idx 1702): lokasi dari
+      "tidak disebut" menjadi "di kebun, posisi tandan tidak disebut", karena
+      "The dataset was collected directly from the oil palm plantation area
+      of PTPN IV Medan".
+  11. Naghipour dkk. 2024 (`naghipour2024yolo.pdf`, idx 1687): lokasi dari
+      "tidak disebut" menjadi "di pohon", karena "the FFB on the trees are
+      our focus". Sebagian citra (179 dari 500) diambil dari internet.
 
   **D. Masuk tanpa perubahan kode.**
   - Sawit (C3), kode lokasi tetap: Gunawan dkk. 2023 (tandan diputar 360°
@@ -91,13 +101,16 @@ Anda.
     kematangan, 200 citra dari Google).
   - Depth atau non-RGB (C5): da Silva dkk. 2024 (LiDAR, jeruk), Gong dkk.
     2022 (Kinect, tomat), Sato dkk. 2022 (RealSense, apel), Wang dkk. 2023
-    (RGB-D, apel), Xie dkk. 2023 (stereo), Yan dkk. 2024, *Detection in
-    Complex Scenes Using RGB and Depth Multimodal Feature Fusion* (pir), Ye
-    dkk. 2024 (depth monokular MiDaS dan rekonstruksi 3D tomat; tetap C5
-    walaupun depth-nya diestimasi dari citra RGB).
+    (RGB-D, apel), Xie dkk. 2023 (stereo), Fukuda dkk. 2024 (diameter apel,
+    RealSense), Hao dkk. 2024 (diameter tomat, kamera depth), Simini dkk.
+    2024 (posisi 3D buah dari satu pasang RGB-D per pohon), Yan dkk. 2024,
+    *Detection in Complex Scenes Using RGB and Depth Multimodal Feature
+    Fusion* (pir), Ye dkk. 2024 (depth monokular MiDaS dan rekonstruksi 3D
+    tomat; tetap C5 walaupun depth-nya diestimasi dari citra RGB).
   - Tinjauan terdahulu (R): Tang dkk. 2023, *Optimization strategies of
     fruit detection to overcome the challenge of unstructured background in
-    field orchard environment*.
+    field orchard environment*; Hidayat dkk. 2024, *Oil Palm Fruit Ripeness
+    Detection Technique* (19 artikel sawit).
 
 - [ ] **5.7 Bagian naskah yang hanya dapat diisi penulis.** Apakah sumber
   dana dan ucapan terima kasih sudah benar? Kerangkanya ada di akhir naskah,
