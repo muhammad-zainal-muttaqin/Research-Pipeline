@@ -13,7 +13,10 @@ pembaca tidak perlu menghafal kode. Nama kelompok (KATEGORI) dan alasan eksklusi
   dikeluarkan beserta alasannya (PRISMA 2020 butir 16b)
 
 Jalankan sesudah kode_bukti.py: python3 tools/scopus/tabel_lampiran.py
+Untuk daftar kajian main7 dengan sitasi dari PDF utama dan lampirannya:
+python3 tools/scopus/tabel_lampiran.py --daftar-kajian main7
 """
+import argparse
 import csv
 import re
 from pathlib import Path
@@ -25,7 +28,7 @@ MAT = ROOT / "literature/scopus-2026-09/topik/bukti/matriks_bukti.csv"
 TEMUAN = ROOT / "literature/scopus-2026-09/topik/bukti/temuan_C1.tsv"
 OUT = ROOT / "manuscript/source/main6-appendix-c1.tex"
 KORPUS = ROOT / "literature/scopus-2026-09"
-DAFTAR = ROOT / "manuscript/output/papers/main6-supplementary-studies.csv"
+PAPERS = ROOT / "manuscript/output/papers"
 KLAIM_TSV = ROOT / "literature/scopus-2026-09/topik/bukti/kepastian_klaim.tsv"
 OUT_KEPASTIAN = ROOT / "manuscript/source/main6-certainty.tex"
 KLAIM = {
@@ -163,22 +166,32 @@ def sel_dasar(r):
     return DASAR.get(v, "Abstract")
 
 
-def kunci_disitasi():
+def kunci_disitasi(naskah):
+    sumber = ROOT / "manuscript/source"
+    berkas = [sumber / f"{naskah}.tex"]
+    dibaca = set()
     kunci = set()
-    for p in (ROOT / "manuscript/source").glob("main6*.tex"):
-        for m in re.finditer(r"\\cite[a-z]*\*?(?:\[[^\]]*\])*\{([^}]*)\}", p.read_text(encoding="utf-8")):
+    while berkas:
+        p = berkas.pop()
+        if p in dibaca:
+            continue
+        dibaca.add(p)
+        isi = re.sub(r"(?<!\\)%[^\n]*", "", p.read_text(encoding="utf-8"))
+        for nama in re.findall(r"\\(?:input|include)\{([^}]+)\}", isi):
+            berkas.append((sumber / nama).with_suffix(".tex"))
+        for m in re.finditer(r"\\cite[a-z]*\*?\s*(?:\[[^\]]*\]\s*)*\{([^}]*)\}", isi):
             kunci.update(k.strip() for k in m.group(1).split(","))
     return kunci
 
 
-def daftar_kajian():
+def daftar_kajian(naskah="main6"):
     from kode_bukti import muat_teks_lengkap
     mat = list(csv.DictReader(open(MAT, encoding="utf-8")))
     kandidat = {int(r["idx"]): r for r in csv.DictReader(
         open(KORPUS / "topik/penyaringan/kandidat_abstrak.csv", encoding="utf-8"))}
     keluar = sorted((i, e) for i, (s, k, e) in muat_teks_lengkap(KORPUS / "topik").items()
                     if s == "dinilai" and k == "X")
-    alasan, urut, sitasi = dict(ALASAN), list(KATEGORI), kunci_disitasi()
+    alasan, urut, sitasi = dict(ALASAN), list(KATEGORI), kunci_disitasi(naskah)
 
     def baris(r, status, kelompok, sebab, c1):
         return {"status": status, "group": KATEGORI.get(kelompok, ""), "exclusion_reason": sebab,
@@ -191,11 +204,12 @@ def daftar_kajian():
     masuk = sorted(mat, key=lambda r: (urut.index(r["kode"]), r["first_author"].lower(), r["year"]))
     out = [baris(r, "Included", r["kode"], "", r["kode"] == "C1") for r in masuk]
     out += [baris(kandidat[i], "Excluded at full text", "", alasan[e], False) for i, e in keluar]
-    with open(DAFTAR, "w", encoding="utf-8", newline="") as f:
+    keluaran = PAPERS / f"{naskah}-supplementary-studies.csv"
+    with keluaran.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(out[0]), lineterminator="\n")
         w.writeheader()
         w.writerows(out)
-    print(len(masuk), "kajian masuk dan", len(keluar), "laporan dikeluarkan ->", DAFTAR)
+    print(len(masuk), "kajian masuk dan", len(keluar), "laporan dikeluarkan ->", keluaran)
 
 
 def kepastian(rows):
@@ -271,7 +285,7 @@ def main():
     kepala = r"""%% Dibuat otomatis oleh tools/scopus/tabel_lampiran.py; jangan disunting manual.
 \begin{footnotesize}
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}L{2.5cm}L{1.3cm}L{1.6cm}L{1.4cm}L{2.2cm}L{0.9cm}L{1.5cm}L{5.0cm}@{}}
+\begin{longtable}{@{}L{2.5cm}L{1.3cm}L{1.6cm}L{1.4cm}L{2.2cm}L{0.9cm}L{1.5cm}L{\dimexpr\linewidth-11.4cm-14\tabcolsep\relax}@{}}
 \caption{Detailed coding records of the %d multi-observation studies.}\label{tab:c1matrix}\\
 \toprule
 %s
@@ -294,4 +308,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--daftar-kajian", choices=("main6", "main7"))
+    naskah = parser.parse_args().daftar_kajian
+    if naskah:
+        daftar_kajian(naskah)
+    else:
+        main()

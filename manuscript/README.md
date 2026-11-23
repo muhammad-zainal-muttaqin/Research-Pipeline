@@ -7,9 +7,9 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 
 | Tujuan | Buka ini |
 |---|---|
-| Menyunting naskah kandidat aktif | [`source/main6-body.tex`](source/main6-body.tex) (driver `main6.tex`) |
-| Mengompilasi naskah | `cd manuscript/source && tectonic -Z search-path=../templates/els-cas-templates main6.tex`, lalu pindahkan PDF ke `output/papers/` |
-| Mengunduh PDF jadi | [`output/papers/main6.pdf`](output/papers/main6.pdf); bahan tambahan [`output/papers/main6-supplementary.pdf`](output/papers/main6-supplementary.pdf) (sumber `source/main6-supplementary.tex`, kompilasi dengan cara yang sama) |
+| Menyunting naskah kandidat aktif | [Badan `main7`](source/main7-body.tex) dan [driver LaTeX](source/main7.tex) |
+| Mengompilasi naskah | Dari `manuscript/source/`, jalankan `tectonic -Z search-path=../templates/els-cas-templates main7.tex`. Jalankan perintah yang sama untuk `main7-supplementary.tex`, lalu pindahkan kedua PDF ke `output/papers/` |
+| Membaca hasil | [Naskah utama](output/papers/main7.pdf), [bahan tambahan](output/papers/main7-supplementary.pdf), dan [daftar kajian](output/papers/main7-supplementary-studies.csv) |
 | Melihat gambar `main6` | [`figures/main6/`](figures/main6/) — F01–F12 (PDF, sebagian juga PNG), dibuat `tools/scopus/gambar_tinjauan.py`; simulator interaktif di `figures/main6/interaktif/` |
 | Melihat figur naskah 182 sumber dan laporan eksperimen | [`figures/`](figures/) — F01–F08, C01–C02, seri H/N/R yang dipakai `reports/*.tex` |
 | Membaca aturan gaya `main6` dan bentuk entri korpus lama | [`../AGENTS.md`](../AGENTS.md) §12 dan §14 |
@@ -20,10 +20,11 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 
 | Berkas | Isi | Status |
 |---|---|---|
-| `main6.tex` + `main6-body.tex` | *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories*. 788 kajian (783 dari Scopus, 5 dari luar pencarian; 237 multi-pengamatan), mekanisme asosiasi M0–M5; 45 halaman, 11 seksi, 2 lampiran, 9 gambar, 6 tabel. Bahan tambahan `main6-supplementary.tex`: 5 halaman, 3 gambar, 1 tabel | **Kandidat aktif** |
+| `main7.tex` + `main7-body.tex` | Sintesis berdasarkan kondisi pengambilan citra, cara menautkan buah, dan jenis rujukan hitung. Bahan tambahan memuat metode rinci, daftar periksa PRISMA 2020, dan tabel perbandingan | **Kandidat aktif pada cabang `main7`** |
+| `main6.tex` + `main6-body.tex` | Versi sebelumnya dengan korpus yang sama | Pembanding |
 | `main.tex` / `main-elsarticle.tex` + `evidence-body.tex` | Naskah asli 182 sumber (IEEEtran / Elsevier); PDF-nya ditautkan Ruang Baca | Stabil, jangan disunting |
 
-`main6` memakai `references6.bib` (dibuat `tools/scopus/buat_bib.py` dari
+`main6` dan `main7` memakai `references6.bib` (dibuat `tools/scopus/buat_bib.py` dari
 rekaman Scopus dan metadata Crossref; memuat lebih banyak rekaman daripada
 yang dikutip). Naskah 182 sumber dan laporan eksperimen memakai
 `references.bib` (219 rekaman). Iterasi `main2`–`main5v3` dihapus pada 18
@@ -46,6 +47,8 @@ November 2026 dan tetap dapat dibuka di tag Git `arsip-pra-rapi-2026-11-18`.
 - Hanya `tectonic` yang tersedia; `latexmk` dan `pdflatex` tidak terpasang.
 - `main6-angka.tex`, `main6-appendix-c1.tex`, `main6-appendix-queries.tex`, `references6.bib`, dan
   `figures/main6/F*` adalah keluaran `tools/scopus/`; jangan disunting tangan.
-  Jalankan ulang skripnya bila data korpus berubah.
+  Jalankan ulang skripnya bila data korpus berubah. Daftar kajian untuk
+  versi `main7` dibuat dari akar repo dengan
+  `python3 tools/scopus/tabel_lampiran.py --daftar-kajian main7`.
 - `reports.tex` dikompilasi dari folder `reports/`:
   `cd manuscript/reports && tectonic reports.tex`.

@@ -31,9 +31,9 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 | Menjalankan ulang E-021 | [Panduan reproduksi](experiments/code/REPRODUCE.md) |
 | Menemukan skrip dan bukti hasil | [Peta skrip](experiments/code/README.md) |
 | Membaca sintesis literatur | [Sintesis lintas makalah](literature/synthesis.md) |
-| Membaca naskah *review* terkini | [`main6.pdf`](manuscript/output/papers/main6.pdf), sumber [`main6-body.tex`](manuscript/source/main6-body.tex) |
+| Membaca naskah *review* terkini | [`main7.pdf`](manuscript/output/papers/main7.pdf), sumber [`main7-body.tex`](manuscript/source/main7-body.tex) |
 | Mengerjakan verifikasi `main6` (tugas peninjau) | [Verifikasi](literature/scopus-2026-09/verifikasi/README.md), lalu [daftar tugas](literature/scopus-2026-09/verifikasi/TUGAS.md) |
-| Memeriksa korpus dan protokol tinjauan `main6` | [Korpus Scopus 2026-09](literature/scopus-2026-09/README.md), [protokol](literature/scopus-2026-09/PROTOKOL.md), [kueri](literature/scopus-2026-09/QUERY.md), [788 ringkasan per kajian](literature/scopus-2026-09/entri/) |
+| Memeriksa korpus dan protokol tinjauan `main6` | [Korpus Scopus 2026-09](literature/scopus-2026-09/README.md), [protokol](literature/scopus-2026-09/PROTOKOL.md), [kueri](literature/scopus-2026-09/QUERY.md), [Ringkasan per kajian](literature/scopus-2026-09/entri/) |
 | Membaca aturan gaya naskah `main6` | [`AGENTS.md`](AGENTS.md) §12 |
 | Menyusun naskah | [README naskah](manuscript/README.md) |
 
