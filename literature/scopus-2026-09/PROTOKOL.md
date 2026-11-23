@@ -184,6 +184,6 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   kajian itu yang dinilai pada tahap teks lengkap. Setiap PDF di `pdf/`
   punya teks di `teks/`. Lima PDF jurnal CSAM yang fonnya tanpa pemetaan
   Unicode (`guo2023real`, `tu2026passion`, `wang2024camellia`,
-  `wu2025counting`, `zhu2022identification`) dan tiga PDF hasil pindaian atau dengan teks rusak
-  (`chen2017counting`, `harmiansyah2024detection`, `xu2025three`) dibaca dengan OCR. Daftar PDF yang belum ada (98 laporan per 23 November 2026) tercantum di
+  `wu2025counting`, `zhu2022identification`) dan empat PDF hasil pindaian atau dengan teks rusak
+  (`chen2017counting`, `cheng2021method`, `harmiansyah2024detection`, `xu2025three`) dibaca dengan OCR. Daftar PDF yang belum ada (96 laporan per 23 November 2026) tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.
