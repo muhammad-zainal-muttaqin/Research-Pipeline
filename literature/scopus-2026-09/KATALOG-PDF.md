@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 878 kajian korpus `main6` yang PDF-nya tersedia, dari 878 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 243 | 243 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 151 | 151 |
-| C3 | Pencitraan TBS kelapa sawit | 131 | 131 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 34 | 34 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 104 | 104 |
-| R | Tinjauan terdahulu | 107 | 107 |
-| T | Metode yang dapat dipindahkan dari luar pertanian | 83 | 83 |
-| | **Jumlah** | 853 | 853 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 244 | 244 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 152 | 152 |
+| C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 35 | 35 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 106 | 106 |
+| R | Tinjauan terdahulu | 109 | 109 |
+| T | Metode yang dapat dipindahkan dari luar pertanian | 85 | 85 |
+| | **Jumlah** | 878 | 878 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (243)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (244)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -56,6 +56,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2025 | Akella A. | Deep Learning-Based Coconut Ripeness Classification and Yield Estimation using YOLO and Kalman Filtering | 2025 International Conference on Sensors and Related Networks Sennet 2025 Special Focus on Digital Healthcare 64220 | [PDF](pdf/akella2025deep.pdf) | [DOI](https://doi.org/10.1109/sennet64220.2025.11136053) |
 | 2025 | Ariza-Sentís M. | Comparative analysis of single-view and multiple-view data collection strategies for detecting partially-occluded grape bunches: Field trials | Journal of Agriculture and Food Research | [PDF](pdf/arizasentis2025comparative.pdf) | [DOI](https://doi.org/10.1016/j.jafr.2025.101736) |
 | 2025 | Cao D. | Research on Apple Detection and Tracking Count in Complex Scenes Based on the Improved YOLOv7-Tiny-PDE | Agriculture Switzerland | [PDF](pdf/cao2025research.pdf) | [DOI](https://doi.org/10.3390/agriculture15050483) |
+| 2025 | Chandra G.R. | Fruit Detection and Counting Using Deep Learning | Proceedings of the IEEE International Conference Image Information Processing | [PDF](pdf/chandra2025fruit.pdf) | [DOI](https://doi.org/10.1109/iciip68302.2025.11346118) |
 | 2025 | Checola G. | Apple phenotyping using deep learning and 3D depth analysis: An experimental study on fruitlet sizing during early development | Smart Agricultural Technology | [PDF](pdf/checola2025apple.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.100964) |
 | 2025 | Cho S.H. | A case study on the integration of a snapshot hyperspectral field-portable imager solving fruit quality assessment | Proceedings of SPIE the International Society for Optical Engineering | [PDF](pdf/cho2025case.pdf) | [DOI](https://doi.org/10.1117/12.3042114) |
 | 2025 | Dong Z. | Fruit detection and yield estimation in Camellia oleifera based on improved YOLOv8 and ByteTrack algorithm | Smart Agricultural Technology | [PDF](pdf/dong2025fruit.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101435) |
@@ -263,7 +264,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 | 2012 | Wang Q. | Design of crop yield estimation system for apple orchards using computer vision | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 | [PDF](pdf/wang2012design.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (151)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (152)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -290,6 +291,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2025 | Jin T. | Enhanced deep learning model for apple detection, localization, and counting in complex orchards for robotic arm-based harvesting | Smart Agricultural Technology | [PDF](pdf/jin2025enhanced.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.100784) |
 | 2025 | Kahya E. | Predicting Grain Count and Weight of Grape Clusters by Image Processing with Deep Learning | Applied Fruit Science | [PDF](pdf/kahya2025predicting.pdf) | [DOI](https://doi.org/10.1007/s10341-025-01333-7) |
 | 2025 | Khedkar M. | OrangeFruitNet: A Dataset and On-device Real Time YOLO-based Framework for Orange Fruit Detection and Yield Estimation in Orchard Environments | International Journal of Intelligent Engineering and Systems | [PDF](pdf/khedkar2025orangefruitnet.pdf) | [DOI](https://doi.org/10.22266/ijies2025.1231.67) |
+| 2025 | Li X. | SYL-YOLOv8n: A lightweight and robust detector for peach recognition and yield estimation in complex orchards | Journal of Food Measurement and Characterization | [PDF](pdf/li2025syl.pdf) | [DOI](https://doi.org/10.1007/s11694-025-03664-1) |
 | 2025 | Li Z. | In-field blueberry fruit phenotyping with a MARS-PhenoBot and customized BerryNet | Computers and Electronics in Agriculture | [PDF](pdf/li2025field.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110057) |
 | 2025 | Liu X. | GAE-YOLO: a lightweight multimodal detection framework for tomato smart agriculture with edge computing | Frontiers in Plant Science | [PDF](pdf/liu2025gae.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1712432) |
 | 2025 | Liu Z. | Test-Time Adaptation of a Multi-Class Object Localization and Size Estimation Framework for Smart Agriculture Applications | Cognitive Computation | [PDF](pdf/liu2025test.pdf) | [DOI](https://doi.org/10.1007/s12559-025-10488-0) |
@@ -419,7 +421,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2013 | Yamamoto K. | Detection and counting of intact tomato fruits on tree using image analysis and machine learning methods | Conference Proceeding 5th International Conference Tae 2013 Trends in Agricultural Engineering 2013 | [PDF](pdf/yamamoto2013detection.pdf) |  |
 | 2012 | Ye X. | Fruit yield estimation through multispectral imaging | Advances in Citrus Nutrition | [PDF](pdf/ye2012fruit.pdf) | [DOI](https://doi.org/10.1007/978-94-007-4171-3_30) |
 
-## C3: Pencitraan TBS kelapa sawit (131)
+## C3: Pencitraan TBS kelapa sawit (147)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -440,9 +442,17 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2026 | Wu J. | Oil Palm Fruit Maturity Classification Algorithm Based on LAB Dual-Branch Feature Fusion | Applied Sciences Switzerland | [PDF](pdf/wu2026oil.pdf) | [DOI](https://doi.org/10.3390/app16147292) |
 | 2026 | Yunita F. | Optimization of the EfficientNet-Swin Transformer Hybrid Model with Dynamic Attention and Multi-task Learning for Accurate Palm Fruit Classification | International Journal of Intelligent Engineering and Systems | [PDF](pdf/yunita2026optimization.pdf) | [DOI](https://doi.org/10.22266/ijies2026.0131.10) |
 | 2025 | Chotikawanid P. | Optimizing an Object Detection Algorithm for Detecting Oil Palm Fruit Bunches and Their Ripeness | Applied Computational Intelligence and Soft Computing | [PDF](pdf/chotikawanid2025optimizing.pdf) | [DOI](https://doi.org/10.1155/acis/6263757) |
+| 2025 | Chowdhury A.K. | Comparative Study of Different YOLO Variants for Ripeness Detection of Palm Oil Fresh Fruit Bunches | 2025 IEEE 6th International Conference in Robotics and Manufacturing Automation Roma 2025 | [PDF](pdf/chowdhury2025comparative.pdf) | [DOI](https://doi.org/10.1109/roma66616.2025.11155279) |
+| 2025 | Cindra J.A. | Utilization of Machine Learning in Identifying Oil Palm Fruit Ripeness to Enhance the Efficiency of Oil Palm Plantations | 2025 4th International Conference on Digital Transformation and Applications Icdxa 2025 | [PDF](pdf/cindra2025utilization.pdf) | [DOI](https://doi.org/10.1109/icdxa69105.2025.11329640) |
+| 2025 | Desandros A. | Interpretable Model for Oil Palm Fruit Ripeness Level Classification | Proceedings 7th International Conference on Informatics Multimedia Cyber and Information System Icimcis 2025 | [PDF](pdf/desandros2025interpretable.pdf) | [DOI](https://doi.org/10.1109/icimcis68501.2025.11327346) |
+| 2025 | Fadillah A. | Enhanced Palm Oil Image Quality Using RGF-ESRGAN Architecture | Proceedings 7th International Conference on Informatics Multimedia Cyber and Information System Icimcis 2025 | [PDF](pdf/fadillah2025enhanced.pdf) | [DOI](https://doi.org/10.1109/icimcis68501.2025.11327377) |
 | 2025 | Goh J.Y. | Outdoor RGB and Point Cloud Depth Dataset for Palm Oil Fresh Fruit Bunch Ripeness Classification and Localization | Scientific Data | [PDF](pdf/goh2025outdoor.pdf) | [DOI](https://doi.org/10.1038/s41597-025-04953-6) |
+| 2025 | Hakim Nasir M.N. | Loose Oil Palm Fruitlet Detection Using YOLOv8 Nano Model By Layer Freezing Training for Better Accuracy with Small Dataset | Rcar 2025 IEEE International Conference on Real Time Computing and Robotics | [PDF](pdf/hakim2025loose.pdf) | [DOI](https://doi.org/10.1109/rcar65431.2025.11139587) |
+| 2025 | Hamzah A. | AI-Driven Delta Robot System for Automated Loose Fruitlet Collection | 2025 11th International Conference on Robotics and Artificial Intelligence Icrai 2025 | [PDF](pdf/hamzah2025ai.pdf) | [DOI](https://doi.org/10.1109/icrai68431.2025.11396727) |
 | 2025 | Hutapea R.R. | COMPARISON OF PALM OIL FRUIT RIPENESS DETECTION AND CLASSIFICATION METHODS USING DEEP LEARNING | Icic Express Letters Part B Applications | [PDF](pdf/hutapea2025comparison.pdf) | [DOI](https://doi.org/10.24507/icicelb.16.07.797) |
 | 2025 | Indrabayu | A Cascading of YOLOv8 and Random Forest Regression in Oil Palm Fresh Fruit Bunch Mass Estimation System using Unmanned Aerial Vehicle Imagery | International Journal on Informatics Visualization | [PDF](pdf/indrabayu2025cascading.pdf) | [DOI](https://doi.org/10.62527/joiv.9.6.3137) |
+| 2025 | Izzatina A.R. | Knowledge Distillation for Efficient Ordinal Classification of Oil Palm Ripeness Level | 2025 15th International Conference on Information and Communication Technology and System AI for the Now and Next Delivering Solutions and Driving Vision Icts 2025 | [PDF](pdf/izzatina2025knowledge.pdf) | [DOI](https://doi.org/10.1109/icts67612.2025.11369518) |
+| 2025 | Kiet V.M. | A Study of Oil Palm Fruit Ripeness Using YOLOv8 for Smart Agriculture Applications | Is3c 2025 International Symposium on Computer Consumer and Control | [PDF](pdf/kiet2025study.pdf) | [DOI](https://doi.org/10.1109/is3c65361.2025.11131089) |
 | 2025 | Kurniawan R. | Advancing palm oil fruit ripeness classification using transfer learning in deep neural networks | Bulletin of Electrical Engineering and Informatics | [PDF](pdf/kurniawan2025advancing.pdf) | [DOI](https://doi.org/10.11591/eei.v14i2.8651) |
 | 2025 | Kurniawan R. | Classification of palm oil fruit ripeness based on AlexNet deep Convolutional Neural Network | Sinergi Indonesia | [PDF](pdf/kurniawan2025classification.pdf) | [DOI](https://doi.org/10.22441/sinergi.2025.1.019) |
 | 2025 | Laddawong P. | Federated Learning for Grading Oil Palm Fruit Ripeness in the Oil Palm Industry | Applied Computational Intelligence and Soft Computing | [PDF](pdf/laddawong2025federated.pdf) | [DOI](https://doi.org/10.1155/acis/9241523) |
@@ -452,10 +462,18 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2025 | Noordin N.H. | Real-time FFB ripeness detection using IoT-enabled YOLOv8n on Raspberry Pi 4 edge devices for precision agriculture | Journal of Mechatronics Electrical Power and Vehicular Technology | [PDF](pdf/noordin2025real.pdf) | [DOI](https://doi.org/10.55981/j.mev.2025.1220) |
 | 2025 | Puttinaovarat S. | Innovative Flood Impact Monitoring and Harvest Analysis in Oil Palm Plantations Utilizing Geographic Information Systems and Deep Learning | Agriengineering | [PDF](pdf/puttinaovarat2025innovative.pdf) | [DOI](https://doi.org/10.3390/agriengineering7020044) |
 | 2025 | Said W.Z.W. | Optimization of Artificial Neural Networks using Genetic Algorithm for Palm Fruit Ripeness Classification | Journal of Advanced Research Design | [PDF](pdf/said2025optimization.pdf) | [DOI](https://doi.org/10.37934/ard.127.1.6783) |
+| 2025 | Santoso L. | SE-SMOTE: Latent-Space Oversampling for Long-Tailed Oil Palm Fruit Classification | 2025 15th International Conference on Information and Communication Technology and System AI for the Now and Next Delivering Solutions and Driving Vision Icts 2025 | [PDF](pdf/santoso2025se.pdf) | [DOI](https://doi.org/10.1109/icts67612.2025.11369614) |
 | 2025 | Setiawan D. | Detection of Oil Palm Fruit Ripeness through Image Feature Optimization using Convolutional Neural Network Algorithm | International Journal on Informatics Visualization | [PDF](pdf/setiawan2025detection.pdf) | [DOI](https://doi.org/10.62527/joiv.9.2.2687) |
+| 2025 | Srithai N. | Ripeness Classification of Fresh Oil Palm Using Deep Learning | Proceedings Ieecon 2025 2025 13th International Electrical Engineering Congress Carbon Neutrality Challenges and Solutions Based on Sustainable Power of Nature | [PDF](pdf/srithai2025ripeness.pdf) | [DOI](https://doi.org/10.1109/ieecon64081.2025.10987902) |
 | 2025 | Suharjito | Oil Palm Fruits Dataset in Plantations for Harvest Estimation Using Digital Census and Smartphone | Scientific Data | [PDF](pdf/suharjito2025oil.pdf) | [DOI](https://doi.org/10.1038/s41597-025-05227-x) |
+| 2025 | Sukma E. | Integration of Single Shot Multibox Detector and Single Scale Retinex in Detecting Oil Palm Fruit Bunches in Low Light Conditions | 2025 IEEE International Conference on Artificial Intelligence and Mechatronics Systems Aims 2025 | [PDF](pdf/sukma2025integration.pdf) | [DOI](https://doi.org/10.1109/aims66189.2025.11229503) |
 | 2025 | Tang T.Y. | Markerless Feature-Registration-Based Image Processing Framework for Oil Palm Fresh Fruit Bunch Robotic Harvester | Proceedings of SPIE the International Society for Optical Engineering | [PDF](pdf/tang2025markerless.pdf) | [DOI](https://doi.org/10.1117/12.3057866) |
+| 2025 | Warni E. | Comparative Analysis of Series YOLO Models for Loose Fruits Palm Oil Detection: A Comprehensive Performance Evaluation | International Conference on Wireless Networks and Mobile Communications Wincom | [PDF](pdf/warni2025comparative.pdf) | [DOI](https://doi.org/10.1109/wincom65874.2025.11313397) |
+| 2025 | Warni E. | Harnessing YOLO for Loose Fruits Detection: Boosting Productivity in Palm Oil Plantations | Icadeis 2025 2025 International Conference on Advancement in Data Science E Learning and Information System Integrating Data Science and Information System Proceeding | [PDF](pdf/warni2025harnessing.pdf) | [DOI](https://doi.org/10.1109/icadeis65852.2025.10933352) |
+| 2025 | Zaman B. | A Hybrid Approach for Handling Occlusion in UAV Images of Fresh Oil Palm Fruit Bunches Based on Computer Vision | Proceedings International Seminar on Intelligent Technology and Its Applications Isitia | [PDF](pdf/zaman2025hybrid.pdf) | [DOI](https://doi.org/10.1109/isitia66279.2025.11137494) |
+| 2024 | Bakar J.A. | Color-Based Ripeness Classification of Oil Palm Fresh Fruit Bunches Using Convolution Neural Networks and Data Augmentation | 2024 IEEE 7th International Conference on Electronics and Communication Engineering Icece 2024 | [PDF](pdf/bakar2024color.pdf) | [DOI](https://doi.org/10.1109/icece63871.2024.10976938) |
 | 2024 | Bonet I. | Deep Learning Model to Predict the Ripeness of Oil Palm Fruit | International Conference on Agents and Artificial Intelligence | [PDF](pdf/bonet2024deep.pdf) | [DOI](https://doi.org/10.5220/0012434600003636) |
+| 2024 | Goh J.Y. | Vision Language Models for Oil Palm Fresh Fruit Bunch Ripeness Classification | 2024 IEEE 8th International Conference on Signal and Image Processing Applications Icsipa 2024 | [PDF](pdf/goh2024vision.pdf) | [DOI](https://doi.org/10.1109/icsipa62061.2024.10686009) |
 | 2024 | Harmiansyah | Detection of new oil palm fruit bunches based on deep learning | Iop Conference Series Earth and Environmental Science | [PDF](pdf/harmiansyah2024detection.pdf) | [DOI](https://doi.org/10.1088/1755-1315/1379/1/012003) |
 | 2024 | Hidayat M.R. | Establishing a Standard Operating Procedure (SOP) for Palm Oil Plantation FFB Image Capture: Utilizing YOLOv8 for Counting and Ripeness Classification | 2024 6th International Conference on Cybernetics and Intelligent System Icoris 2024 | [PDF](pdf/hidayat2024establishing.pdf) | [DOI](https://doi.org/10.1109/icoris63540.2024.10903724) |
 | 2024 | Hutapea R.R. | Palm Fruit Ripeness Detection and Counting Using YOLOv8 Algorithm in PTPN IV Medan North Sumatera Indonesia | 2024 6th International Conference on Cybernetics and Intelligent System Icoris 2024 | [PDF](pdf/hutapea2024palm.pdf) | [DOI](https://doi.org/10.1109/icoris63540.2024.10903790) |
@@ -555,7 +573,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2012 | Hudzari R.M. | Simulation and modeling application in agricultural mechanization | Modelling and Simulation in Engineering | [PDF](pdf/hudzari2012simulation.pdf) | [DOI](https://doi.org/10.1155/2012/381239) |
 | 2012 | Mohamad F. | Exploiting suitable color model for ripeness identification | Proceedings of the 2012 International Conference on Image Processing Computer Vision and Pattern Recognition Ipcv 2012 | [PDF](pdf/mohamad2012exploiting.pdf) |  |
 
-## C4: Atribut kelas disertai pencacahan dari citra tunggal (34)
+## C4: Atribut kelas disertai pencacahan dari citra tunggal (35)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -566,6 +584,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2026 | Soto M. | Monocular Estimation of Grape Berry Size (Caliber) Distributions Using Geometry-Aware Representations and Structured Prediction | Applied Sciences Switzerland | [PDF](pdf/soto2026monocular.pdf) | [DOI](https://doi.org/10.3390/app16126225) |
 | 2026 | Tang Q. | FGfuse-Net: A frequency guided dual-branch fusion model for multi-stage maturity tomato detection and counting | Smart Agricultural Technology | [PDF](pdf/tang2026fgfuse.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.102194) |
 | 2026 | Yanyachi P.R. | Avocado Detection System on a UAV with YOLOv8 Image Processing | IEEE Access | [PDF](pdf/yanyachi2026avocado.pdf) | [DOI](https://doi.org/10.1109/access.2026.3687453) |
+| 2025 | Carandang M.J.C. | Yield Quantification of Morus Serrata Fruit Stages Using YOLOv8-Based Identification | Computer Systems and Technologies 26th International Conference Compsystech 2025 Proceedings | [PDF](pdf/carandang2025yield.pdf) | [DOI](https://doi.org/10.1109/compsystech65493.2025.11137042) |
 | 2025 | Chiu M.C. | Remote Assessment of Size, Ripeness, and Count of Fruits in Orchard Greenhouse | Sensors and Materials | [PDF](pdf/chiu2025remote.pdf) | [DOI](https://doi.org/10.18494/sam5915) |
 | 2025 | Deng B. | DEVELOPMENT AND PRELIMINARY EVALUATION OF A YOLO-BASED FRUIT COUNTING AND MATURITY EVALUATION MOBILE APPLICATION FOR BLUEBERRIES | Applied Engineering in Agriculture | [PDF](pdf/deng2025development.pdf) | [DOI](https://doi.org/10.13031/aea.16247) |
 | 2025 | Geng H. | Apple estimation and recognition in complex scenes using YOLO v8 | Peerj Computer Science | [PDF](pdf/geng2025apple.pdf) | [DOI](https://doi.org/10.7717/peerj-cs.3116) |
@@ -594,7 +613,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2017 | Lal S. | Identification and counting of mature apple fruit based on BP feed forward neural network | Proceedings of 2017 3rd IEEE International Conference on Sensing Signal Processing and Security Icsss 2017 | [PDF](pdf/lal2017identification.pdf) | [DOI](https://doi.org/10.1109/ssps.2017.8071621) |
 | 2017 | Ramos P.J. | Automatic fruit count on coffee branches using computer vision | Computers and Electronics in Agriculture | [PDF](pdf/ramos2017automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.03.010) |
 
-## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (104)
+## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (106)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -617,9 +636,11 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2025 | Liu X. | The apple detection method based on multimodal features | Plos One | [PDF](pdf/liu2025apple.pdf) | [DOI](https://doi.org/10.1371/journal.pone.0334911) |
 | 2025 | Qu H. | Citrus fruit diameter estimation in the field using monocular camera | Biosystems Engineering | [PDF](pdf/qu2025citrus.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2025.02.012) |
 | 2025 | Rong J. | RTMFusion: An enhanced dual-stream architecture algorithm fusing RGB and depth features for instance segmentation of tomato organs | Measurement Journal of the International Measurement Confederation | [PDF](pdf/rong2025rtmfusion.pdf) | [DOI](https://doi.org/10.1016/j.measurement.2024.115484) |
+| 2025 | Tan D.G. | Apple Diameter Measurement from RGB Images Using ORCNN and Calibrated Monocular Depth | Proceedings 7th International Conference on Informatics Multimedia Cyber and Information System Icimcis 2025 | [PDF](pdf/tan2025apple.pdf) | [DOI](https://doi.org/10.1109/icimcis68501.2025.11327435) |
 | 2025 | Upadhyaya P. | Smartphone-based 3D imaging for canopy and berry cluster volume estimation in wine grapes | Smart Agricultural Technology | [PDF](pdf/upadhyaya2025smartphone.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101592) |
 | 2025 | Von Hirschhausen L.S. | AppleGrowthVision: A Large-Scale Stereo Dataset for Phenological Analysis, Fruit Detection, and 3D Reconstruction in Apple Orchards | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops | [PDF](pdf/von2025applegrowthvision.pdf) | [DOI](https://doi.org/10.1109/cvprw67362.2025.00541) |
 | 2025 | Wang Y. | TPDNet: Triple phenotype deepen networks for monocular 3D object detection of melons and fruits in fields | Plant Phenomics | [PDF](pdf/wang2025tpdnet.pdf) | [DOI](https://doi.org/10.1016/j.plaphe.2025.100048) |
+| 2025 | Yang M. | An RGB-D Multi-modal Apple Recognition and Instance Segmentation Method for Orchard Harvesting | Proceedings of 2025 2nd International Symposium on AI and Cybersecurity Isaics 2025 | [PDF](pdf/yang2025rgb.pdf) | [DOI](https://doi.org/10.1109/isaics66888.2025.11350135) |
 | 2025 | Yi W. | RTFVE-YOLOv9: Real-time fruit volume estimation model integrating YOLOv9 and binocular stereo vision | Computers and Electronics in Agriculture | [PDF](pdf/yi2025rtfve.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110401) |
 | 2025 | Zhu K. | Foundation model-based apple ripeness and size estimation for selective harvesting | Computers and Electronics in Agriculture | [PDF](pdf/zhu2025foundation.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110407) |
 | 2024 | Ambrus B. | Field-grown tomato yield estimation using point cloud segmentation with 3D shaping and RGB pictures from a field robot and digital single lens reflex cameras | Heliyon | [PDF](pdf/ambrus2024field.pdf) | [DOI](https://doi.org/10.1016/j.heliyon.2024.e37997) |
@@ -703,7 +724,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
 | 2013 | Hung C. | Orchard fruit segmentation using multi-spectral feature learning | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hung2013orchard.pdf) | [DOI](https://doi.org/10.1109/iros.2013.6697125) |
 
-## R: Tinjauan terdahulu (107)
+## R: Tinjauan terdahulu (109)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -732,6 +753,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2026 | Ye R. | Advances in Perception, Autonomous Operation, and Collaborative Systems for Smart Orchard Robots | Applied Sciences Switzerland | [PDF](pdf/ye2026advancesb.pdf) | [DOI](https://doi.org/10.3390/app16168046) |
 | 2026 | Zhang Q. | A Review of Crop Attribute Detection for Agricultural Harvesting Machinery | Agronomy | [PDF](pdf/zhang2026review.pdf) | [DOI](https://doi.org/10.3390/agronomy16100973) |
 | 2025 | Goh J.Y. | Fresh Fruit Bunch Ripeness Classification Methods: A Review | Food and Bioprocess Technology | [PDF](pdf/goh2025fresh.pdf) | [DOI](https://doi.org/10.1007/s11947-024-03483-0) |
+| 2025 | Gong X. | Fruit Detection Methods Based on Deep Learning in Agricultural Planting: A Systematic Literature Review | IEEE Access | [PDF](pdf/gong2025fruit.pdf) | [DOI](https://doi.org/10.1109/access.2025.3573364) |
 | 2025 | Huang Y. | A review of visual perception technology for intelligent fruit harvesting robots | Frontiers in Plant Science | [PDF](pdf/huang2025review.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1646871) |
 | 2025 | Li S. | A Review of Optical-Based Three-Dimensional Reconstruction and Multi-Source Fusion for Plant Phenotyping | Sensors | [PDF](pdf/li2025reviewb.pdf) | [DOI](https://doi.org/10.3390/s25113401) |
 | 2025 | Li Z. | Process, challenges and solutions of fruit 3D reconstruction: A review | Computers and Electronics in Agriculture | [PDF](pdf/li2025process.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.111068) |
@@ -746,6 +768,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2025 | Rojas Santelices I. | Artificial Vision Systems for Fruit Inspection and Classification: Systematic Literature Review | Sensors | [PDF](pdf/rojas2025artificial.pdf) | [DOI](https://doi.org/10.3390/s25051524) |
 | 2025 | Rosbi M. | A PICTURE OF RIPENESS: INVESTIGATING IMAGE-BASED TECHNIQUES FOR OIL PALM FRUIT GRADING | Journal of Oil Palm Research | [PDF](pdf/rosbi2025picture.pdf) | [DOI](https://doi.org/10.21894/jopr.2024.0015) |
 | 2025 | Shi X. | Advances in Object Detection and Localization Techniques for Fruit Harvesting Robots | Agronomy | [PDF](pdf/shi2025advances.pdf) | [DOI](https://doi.org/10.3390/agronomy15010145) |
+| 2025 | Sutriani L. | YOLO in Palm Oil Detection: A Bibliometric and SLR Analysis | 2025 2nd International Conference on Information System and Information Technology Icisit 2025 | [PDF](pdf/sutriani2025yolo.pdf) | [DOI](https://doi.org/10.1109/icisit66233.2025.11402971) |
 | 2025 | Tan Y. | A Review of Research on Fruit and Vegetable Picking Robots Based on Deep Learning | Sensors | [PDF](pdf/tan2025review.pdf) | [DOI](https://doi.org/10.3390/s25123677) |
 | 2025 | Unigarro C. | Artificial Neural Networks for Image Processing in Precision Agriculture: A Systematic Literature Review on Mango, Apple, Lemon, and Coffee Crops | Informatics | [PDF](pdf/unigarro2025artificial.pdf) | [DOI](https://doi.org/10.3390/informatics12020046) |
 | 2025 | Wang W. | Research Progress and Development Trend of Visual Detection Methods for Selective Fruit Harvesting Robots | Agronomy | [PDF](pdf/wang2025research.pdf) | [DOI](https://doi.org/10.3390/agronomy15081926) |
@@ -815,12 +838,13 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2015 | Gongal A. | Sensors and systems for fruit detection and localization: A review | Computers and Electronics in Agriculture | [PDF](pdf/gongal2015sensors.pdf) | [DOI](https://doi.org/10.1016/j.compag.2015.05.021) |
 | 2013 | Whalley J. | Applications of image processing in viticulture: A review | Proceedings 20th International Congress on Modelling and Simulation Modsim 2013 | [PDF](pdf/whalley2013applications.pdf) |  |
 
-## T: Metode yang dapat dipindahkan dari luar pertanian (83)
+## T: Metode yang dapat dipindahkan dari luar pertanian (85)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
 | 2026 | Adžemović M. | Deep learning-based multi-object tracking: a comprehensive survey from foundations to state-of-the-art | Visual Computer | [PDF](pdf/adzemovic2026deep.pdf) | [DOI](https://doi.org/10.1007/s00371-026-04607-7) |
 | 2026 | Akshatha K.R. | From detection to identity preservation: A pipeline–scenario–protocol–readiness review of datasets for visual multi-person tracking and re-identification | Visual Computer | [PDF](pdf/akshatha2026detection.pdf) | [DOI](https://doi.org/10.1007/s00371-026-04700-x) |
+| 2026 | Das P. | Surveillance to self-driving: a comprehensive review of object detection and tracking paradigms | Iran Journal of Computer Science | [PDF](pdf/das2026surveillance.pdf) | [DOI](https://doi.org/10.1007/s42044-025-00387-w) |
 | 2026 | Fierro-Silva C.J. | Recent Advances in Multi-Camera Computer Vision for Industry 4.0 and Smart Cities: A Systematic Review | Algorithms | [PDF](pdf/fierrosilva2026recent.pdf) | [DOI](https://doi.org/10.3390/a19040249) |
 | 2026 | Javadi Moghadam A. | Video-Based 3D Reconstruction: A Review of Photogrammetry and Visual SLAM Approaches | Journal of Imaging | [PDF](pdf/javadi2026video.pdf) | [DOI](https://doi.org/10.3390/jimaging12030128) |
 | 2026 | Munsif M. | Multi Camera Connected Vision System with Multi View Analytics: A Comprehensive Survey | IEEE Internet of Things Journal | [PDF](pdf/munsif2026multi.pdf) | [DOI](https://doi.org/10.1109/jiot.2026.3702682) |
@@ -832,6 +856,7 @@ Katalog ini memuat 853 kajian korpus `main6` yang PDF-nya tersedia, dari 853 kaj
 | 2025 | Li S. | A Review of Multi-Object Tracking in Recent Times | Iet Computer Vision | [PDF](pdf/li2025reviewc.pdf) | [DOI](https://doi.org/10.1049/cvi2.70010) |
 | 2025 | Liu S. | A Survey of 3D Reconstruction: The Evolution from Multi-View Geometry to NeRF and 3DGS | Sensors | [PDF](pdf/liu2025survey.pdf) | [DOI](https://doi.org/10.3390/s25185748) |
 | 2025 | Ravi N. | SAM 2: SEGMENT ANYTHING IN IMAGES AND VIDEOS | 13th International Conference on Learning Representations Iclr 2025 | [PDF](pdf/ravi2025sam.pdf) |  |
+| 2025 | Song B. | 3D Reconstruction based on multi-view stereo in the deep learning era: a survey and comparison of methods | Visual Computer | [PDF](pdf/song20253d.pdf) | [DOI](https://doi.org/10.1007/s00371-025-04184-1) |
 | 2025 | Xu C. | Deep learning techniques for Video Instance Segmentation: A survey | Pattern Recognition | [PDF](pdf/xu2025deep.pdf) | [DOI](https://doi.org/10.1016/j.patcog.2025.111763) |
 | 2025 | Zhao L. | Advancements and Challenges in Deep Learning-Based Person Re-Identification: A Review | Electronics Switzerland | [PDF](pdf/zhao2025advancements.pdf) | [DOI](https://doi.org/10.3390/electronics14224398) |
 | 2024 | Deng L. | Deep learning in crowd counting: A survey | Caai Transactions on Intelligence Technology | [PDF](pdf/deng2024deep.pdf) | [DOI](https://doi.org/10.1049/cit2.12241) |
