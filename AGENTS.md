@@ -471,6 +471,9 @@ cara menulis.
   `tectonic`. Baris "Review Article" ditulis di dalam `\title`.
 - Sitasi penulis-tahun (`natbib` `authoryear`, gaya `cas-model2-names`).
   Tautan berwarna `#1A6FB5`.
+- Semua gambar memakai gaya `tools/scopus/gaya_gambar.py` (huruf STIX seperti
+  teks, satu palet, label panel "(a) ...") dan dimuat tanpa skala
+  (`\includegraphics{F..}` tanpa `width`), sehingga ukuran huruf sama di semua gambar.
 - Judul gambar "Fig. N." dan judul tabel "Table N" tebal; tabel memakai
   `booktabs` dengan garis horizontal saja.
 - Rujukan dalam teks ditulis `Fig.~\ref`, `Table~\ref`, `Section~\ref`.
