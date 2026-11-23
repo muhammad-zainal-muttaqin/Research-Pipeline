@@ -25,7 +25,8 @@ LOK = {'POHON': 'di pohon', 'TANAH': 'di tanah/TPH', 'PABRIK': 'pabrik/laborator
        'CAMPUR': 'di pohon dan di tanah', 'KEBUN': 'di kebun, posisi tandan tidak disebut',
        'WEB': 'internet atau set data publik', '?': 'tidak disebut'}
 REF = {'pohon': 'hitungan tangan di pohon', 'panen': 'hasil panen', 'packhouse': 'hitungan di packhouse',
-       'anotasi': 'foto/video beranotasi', 'tidak ada': 'tidak ada pembanding'}
+       'anotasi': 'foto/video beranotasi', 'tidak ada': 'tidak ada pembanding',
+       'tidak disebut': 'ada pembanding, tetapi cara memperolehnya tidak disebut'}
 MET = {'hitung': 'galat hitungan', 'identitas': 'metrik identitas (MOTA/IDF1/HOTA)', 'deteksi': 'metrik deteksi',
        'tidak ada': 'tidak ada'}
 MOD = {'RGB': 'kamera warna (RGB)', 'MSI': 'multispektral', 'HSI': 'hiperspektral', 'TERMAL': 'termal',
