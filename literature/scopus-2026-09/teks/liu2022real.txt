@@ -1,0 +1,1629 @@
+  第38 卷   第14 期                        农 业 工 程 学 报                                Vol.38  No.14 
+  154   2022 年     7 月          Transactions of the Chinese Society of Agricultural Engineering           Jul. 2022       
+ 
+基于RGB-D 相机的脐橙实时识别定位与分级方法 
+刘德儿1，朱  磊1，冀炜臻2，廉  悦1 
+（1. 江西理工大学土木与测绘工程学院，赣州 341000；2. 北京师范大学遥感科学国家重点实验室，北京 100875） 
+ 
+摘  要：为实现脐橙采摘机器人对脐橙果实进行实时识别、定位和分级采摘的需求，该研究提出了一种基于RGB-D 相机
+数据的脐橙果实实时识别、定位及分级的OrangePointSeg 算法。首先利用微软最新消费级深度相机（Azure Kinect DK）
+采集脐橙果实的RGB-D 数据，建立脐橙果实实例分割数据集及增强数据集。然后通过改进YOLACT 算法对脐橙果实进
+行实时分割并生成实例掩膜，与配准后的深度图裁剪得到果实深度点云，再利用最小二乘法进行脐橙果实外形拟合，得
+到其相机坐标系下质心坐标及半径。试验结果表明，在果实识别阶段，改进YOLACT 算法在该数据集上的检测速度为
+44.63 帧/s，平均精度为31.15%。在果实定位阶段，1 400～2 000 点云数量时的拟合时间为1.99 ms，定位误差为0.49 cm，
+拟合出的半径均方根误差为0.43 cm，体积均方根误差为52.6 mL，在大于800 点云数量和拍摄距离1 m 以内时，定位误
+差均在0.46 cm 以内。最后通过引入并行化计算，OrangePointSeg 的总体处理速度为29.4 帧/s，能够较好地实现精度与速
+度的平衡，利于实际应用和工程部署。该研究成果可推广至其他类似形态学特征的果实识别中，为果园的智能化管理提
+供行之有效的技术支撑。 
+关键词：图像识别；机器人；RGB-D；实例分割；深度点云；YOLACT；RANSAC；最小二乘拟合 
+doi：10.11975/j.issn.1002-6819.2022.14.018 
+中图分类号：TP274           文献标志码：A           文章编号：1002-6819(2022)-14-0154-12 
+刘德儿，朱磊，冀炜臻，等. 基于RGB-D 相机的脐橙实时识别定位与分级方法[J]. 农业工程学报，2022，38(14)：154-165.    
+doi：10.11975/j.issn.1002-6819.2022.14.018    http://www.tcsae.org 
+Liu De'er, Zhu Lei, Ji Weizhen, et al. Real-time identification, localization, and grading method for navel oranges based on 
+RGB-D camera[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2022, 38(14): 
+154-165. (in Chinese with English abstract)    doi：10.11975/j.issn.1002-6819.2022.14.018    http://www.tcsae.org 
+ 
+0  引  言  
+在中国赣南地区每年种植的脐橙产量高达百万吨，
+种植面积已达世界第一，然而脐橙采摘仍大多使用传统
+人工采摘的方式，劳动强度大且效率低[1]。探索更为高效
+的果园采摘方式是提升脐橙种植业发展的关键，近年来基
+于机器视觉技术的果实采摘机器人得到了广泛应用[2-4]。
+消费级RGB-D 相机具有价格低、深度图成像速度快且质
+量高等特点，广泛应用于采摘机器人视觉系统中，采摘
+机器人通过安装在末端执行器上的RGB-D 相机，可以快
+速的同时获取当前视角下的彩色与深度信息，比纯视觉
+方案具备更优秀的环境感知能力[5-8]。 
+目前针对RGB-D 数据的果实目标识别、定位的常用
+方法有麦春艳等[9]利用融合RGB 信息的深度点云，通过
+R-G 色差阈值分割分离出苹果果实点云，再通过随机一致
+性（Random Sample Consensus，RANSAC）方法进行果
+实形状拟合；李寒等[10]利用RGB 信息通过颜色阈值获得
+番茄果实轮廓，通过SOM-K-Means 方法对裁剪出的番茄
+果实深度图进行聚类分割。尽管这些方式都能很好的适
+用于简单或者单一果实的识别结果，但没有充分利用
+                                                          
+收稿日期：2022-03-08    修订日期：2022-07-03 
+基金项目：国家自然科学基金项目（41361077， 41561085）；江西省自然科
+学基金项目（20202BAB202025）。 
+作者简介：刘德儿，博士，教授，研究方向为激光点云处理与计算机视觉。
+Email：landserver@163.com 
+RGB-D 信息，对于复杂环境或者多果实目标，存在特征
+设计难度大，泛化及鲁棒性差，运算量大导致难以满足
+实时性要求等问题。赵辉等[11]利用深度学习方法，通过
+改进U-Net 网络进行矮砧苹果语义分割，提高了在复杂
+环境下识别精度，但是语义分割并不能得到单个果实点
+云，生成的点云还需进一步聚类，才能通过渐近一致性
+（Progressive Sample Consensus，PROSAC）算法拟合果
+实外形，大量的点云计算对设备算力要求高。Wang 等[12]
+利用YOLACT 算法对工件进行实时实例分割，将实例信
+息与深度图融合，可以直接生成目标实例化深度点云，
+基本上达到了实时检测的，但并没有进一步获取工件的
+外形信息做过多研究。 
+当前国内外学者使用RGB-D 数据对果实识别和定位
+有着充分的研究，但都过多集中于检测精度研究上，缺
+少对于该类算法速度的研究。采摘机器人多以嵌入式计
+算设备为主，忽视了设备算力大小，导致算法运行效率
+低。未系统性的针对端到端的果实识别技术进行精度和
+速度的平衡进行相关研究。同时，自然环境下果实生长
+具有复杂性和随机性，导致果实外形、成熟度并不一致，
+缺少对果实优劣的判定机制，从而缺失了智能化分级采
+摘这一步骤，限制了智能采摘机器人在实际采摘过程中
+更多的采摘方法的应用[13-14]。 
+针对上述问题，该研究以构建脐橙果实实时识别定位
+与分级的算法为目标任务，首先使用微软消费级深度相机
+Azure Kincet DK 作为数据采集设备，获得高质量的RGB-D
+
+第14 期 
+刘德儿等：基于RGB-D 相机的脐橙实时识别定位与分级方法 
+ 
+155 
+数据，自建脐橙实例分割数据集并开源。提出一种高效的
+果实检测算法框架OrangePointSeg，该算法基于改进
+YOLACT 实例分割算法和最小二乘点云拟合算法，实现在
+复杂自然环境中对脐橙果实进行实时的识别、定位和分级。
+试验设置各种场景检验算法的鲁棒性，同时在各阶段加入
+其他算法对比，以评估该各阶段算法的性能与速度。 
+1  材料与方法 
+1.1  数据集构建 
+1.1.1  数据样本采集 
+稳定、高质量的原始数据将利于构建高标准的数据
+集，为获得高质量的RGB-D 数据，使用Azure Kinect DK
+深度相机进行数据采集。该相机为微软最新推出的基于
+飞行时间（Time of Flight，ToF）的深度相机（图1 所示）。
+其较上一代Kinect 具有更高的硬件规格，全新的深度传
+感器拥有更高的调制频率和深度精度，全局快门可以改
+善日光下的拍摄性能，在果园等复杂光照环境实现高效
+3D 测距。该相机在宽视角和非下采样模式下500～
+3 500 mm 内的深度距离误差在0.5 cm 以内[15]，基本上覆
+盖采摘机器臂的工作空间，满足果实采摘的定位精度需
+求。本试验数据采集工作在Windows 10 平台上进行，通
+过Azure Kinect SDK 提供的API 进行编程，同步获取
+RGB 图像与深度图像。 
+ 
+1.RGB 相机  2.深度相机  3.红外发射器 
+1.RGB camera  2.Depth camera  3.Infrared radiation emitters 
+图1  Azure Kinect DK 深度相机参数示意图 
+Fig.1  Parameters of Azure Kinect DK depth camera 
+ 
+数据采集地点位于江西省赣州市南康区龙回镇新店里
+俊萍果业岐岭脐橙种植基地，具体见图2 所示。由于Azure 
+Kincet DK 相机采用红外光编码的时差法进行测距法，直射
+太阳光会对深度数据产生大量的噪声[16]，因此选择采集时
+间为2021 年11 月10 日15:00-17:00。在果园里随机挑选不
+同的果树，从不同的角度使用宽视角非装箱模式模拟机械
+臂工作的方式，进行数据采集。试验共采集了48 组RGB-D
+数据。为了获得果实形状数据，使用游标卡尺测量脐橙果
+实的最大直径和最小直径；使用排水法测量脐橙的体积；
+使用激光测距仪测量果实相对于相机传感器的真实距离。 
+1.1.2  脐橙果实实例分割数据集构建与增强 
+针对目前缺少果实实例分割数据集的情况，本试验
+自建COCO 风格的脐橙实例分割数据集，命名为
+Navel_Orange_Datasets2021。使用Labelme 软件进行标
+注，生成json 格式标签文件，再使用labelme2coco 脚本
+将其转换为COCO json 格式。考虑到机械臂采摘的可实
+施性，通过人工辨别遮挡率的方式，将其分为两类进行
+标注：第一类为Novel orange，该分类属于无遮挡或遮挡
+率较低的情况，即少量枝叶轻微遮挡或果实少量重叠
+（图 3a），对机械臂的采摘动作产生的影响较小。第二类
+为Novel orange covered，该分类中的果实则存在被枝叶
+遮挡较多的情况（图3b），该情况可能会影响采摘动作，
+因此需要先识别出来，以便对后续的采摘策略作进一步
+细分。剩下的枝叶遮挡严重、或大量粘连的果实，因其
+机械臂无法自主完成采摘，需要进行人工采摘，此类未
+参加标注。绿色未成熟脐橙果实未标注，不参与
+YOLACT-Fruit 的训练，因此在网络推理时不会识别此类
+果实，进而实现初步的分级。 
+ 
+1.Azure Kinect 深度相机  2.高精度激光测距仪  3.数据采集电脑 
+1.Azure Kinect depth camera  2.High precision laser rangefinder  3.Data 
+acquisition computer 
+图2  数据采集示意图 
+Fig.2  Schematic diagram of data acquisition 
+ 
+ 
+a. 无遮挡或遮挡较少 
+a. No or less occlusion 
+b. 遮挡较多 
+b. More occlusion 
+图3  数据集果实分类案例图 
+Fig.3  Fruit classification case diagram in dataset 
+ 
+Azure kinect DK 的彩色相机分辨率为1 920×1 080
+（像素），过大的图像尺寸将不利于模型的训练。因此将
+原始的48 张高分辨率大范围彩色图片通过编写随机裁剪
+函数的方式将其裁剪为512×512（像素）分辨率小尺寸图
+像，共生成242 张。 
+考虑到获取的彩色图像数据难以覆盖所有场景，因
+此为降低自然环境下数据获取过程中受到干扰的影响，
+提高模型的鲁棒性和泛化能力[17]，对数据集进行数据增
+强处理。该研究试验使用OpenCV 的几何类变换算法，
+对图像进行旋转、尺度变化。增加了样本果实位置属性，
+丰富了空间特征，使得神经网络在检测目标时能够注重
+位置信息，有利于生成高质量掩膜。使用imagecorruptions
+库中颜色变换类增强算法，改变图像的亮度（过曝、欠
+
+农业工程学报（http://www.tcsae.org）                                2022 年   
+ 
+156 
+曝）、对比度、饱和度及脉冲噪声和运动模糊来达到数
+据集增强的目的。其中亮度变化模拟光照变化，增加了
+数据集中果实目标的亮度属性，通过训练使模型受光照
+条件的影响减少，有利于提高模型在野外自然光环境工
+作的稳定性。通过低对比度和低饱和度，弱化目标果实
+的色彩和纹理属性，强化模型对果实颜色特征的敏感度。
+通过引入脉冲噪声，模拟相机硬件本身电磁干扰的情况，
+在果实目标图像上增加了许多无用的高频信息，经过大
+量的训练可以使模型中的神经网络屏蔽这些无用的高频
+特征。通过添加运动模糊，模拟机械臂快速运动时的振
+动，亦或是由于相机快门速度过慢产生的画面模糊问题，
+这会模糊果实目标的边界信息，添加适度的干扰，能够
+强化神经网络对果实边界的特征提取。 
+增强后的图像共2 178 幅，70%划分为训练集，30%作
+为验证集。所有图像共包含8 712 个样本。样本中属于无遮
+挡或遮挡少分类的数量为4 682，属于被遮挡分类的数量为
+4 030，数据集样本分布情况见表1 所示。图4 为部分数据
+集增强后的预览图。该数据集可为其他果实实例分割提供
+参考，数据集已开源，下载地址：https://github.com/r7ay/ 
+Novel-Orange-Datasets2021。 
+表1  Navel_Orange_Datasets2021 数据集样本详情 
+Table 1  Details of Navel_Orange_Datasets2021 
+类别 
+Category 
+样本数量 
+Number of samples 
+远景小目标样本数量 
+Number of samples of 
+long-range small targets 
+无遮挡或遮挡少的脐橙 
+No or less covered novel 
+orange 
+4 682 
+2 106 
+被遮挡的脐橙 
+Covered novel orange  
+4 030 
+1 862 
+ 
+ 
+ 
+a. 原始图像 
+a. Original image 
+b. 尺度变化 
+b. Scaling 
+c. 过曝 
+c. Overexposure 
+ 
+ 
+d. 脉冲噪声 
+d. Impulse noise 
+e. 低饱和度 
+e. Low saturation 
+f. 动态模糊 
+f. Dynamic blur 
+ 
+ 
+g. 欠曝 
+g. Underexposure 
+h. 低对比度 
+h. Low contrast 
+i. 旋转 
+i. Rotating 
+图4  Novel_Orange_Datasets2021 部分图片预览 
+Fig.4  Novel_Orange_Datasets2021 partial picture preview 
+1.2  脐橙果实的识别、定位与分级方法 
+为实现采摘机器人在脐橙采摘过程中对脐橙果实
+的实时识别、定位与分级。该研究提出OrangePointSeg
+算法，OrangePointSeg 基于改进YOLACT 实例分割算
+法和最小二乘点云拟合算法。算法运行的总体流程为：
+首先使用改进YOLACT（命名为YOLACT-Fruit）处
+理彩色图像信息，实现在生成脐橙果实实例掩膜信息
+的同时，对果实进行初步筛选分类。然后利用果实实
+例掩膜，结合配准后的深度图，生成果实的深度点云。
+最后利用最小二乘拟合算法进行脐橙果实形状拟合，
+获得在相机坐标系下的果实质心坐标和半径。从而进
+一步实现果实空间定位和依据果实半径进行分级采摘
+的需求。 
+此外，该研究通过加入Mask R-CNN 算法，对目标
+检测和掩膜生成的效果进行对比分析。通过对比
+RANSAC 算法与最小二乘拟合算法在不同降采样果实点
+云数量下的拟合效果和效率，以选择速度和精度平衡的
+参数和算法。通过设置不同的拍摄距离和点运数量来评
+估算法针对果实分级的准确度。最终实现在复杂自然环
+境中，对脐橙果实进行实时的识别、定位和分级，以达
+到实际工程应用的现实需求。该研究的具体技术路线如
+图5 所示。 
+ 
+ 
+图5  脐橙实时识别与分级技术路线图 
+Fig.5  Real-time identification and classification technology 
+roadmap of navel orange 
+ 
+OrangePointSeg 的整体结构图如图6 所示，主要包含
+3 部分：第一部分为数据获取以及预处理，第二部分的
+YOLACT-Fruit 为改进的YOLCAT 算法网络结构，用以
+识别果实并获得掩膜，第三部分为脐橙果实生成、预处
+理以及拟合。最终输出果实在相机坐标系下的质心坐标
+以及果实的半径。 
+
+第14 期 
+刘德儿等：基于RGB-D 相机的脐橙实时识别定位与分级方法 
+ 
+157 
+ 
+注：YOLACT-Fruit 为该研究基于YOLACT 改进的实例分割模型。其中HRNet 为高分辨率网络，HRFPN 为主干网络对应通道的特征金字塔，其中P3～P7
+为基于FPN 生成的特征图层。Prediction head 为网络的预测头，其中的Mask coefficient 为掩膜系数预测头，Box 为边界框预测头，Class 为类别预测头，W 为
+特征图的宽度，H 为特征图的高度，Ca 表示置信率信息，4a 表示边界框的4 个anchor 数，Ka 表示掩膜系数。Protonet 为原型网络，与预测头构成并行分支。
+Binarization-Mask 模块为使用GPU 的矩阵运算生成二值化掩膜的模块。Crop、Threshold 为YOLACT-Fruit 的原型掩膜的组合运算模块。Mask Filters 为掩膜
+预处理模块。 
+Note: YOLACT-Fruit is the improved instance segmentation model based on YOLACT in this research. where HRNet is the high-resolution network. HRFPN is the 
+feature pyramid of the corresponding channel of the backbone network, wherein P3-P7 are feature layers generated based on FPN. Prediction Head is the prediction head 
+of the network, Where Mask coefficient is the mask coefficient prediction header, Box is the boundary box prediction header, and Class is the class prediction header, W 
+is the width of the feature map, H is the height of the feature map, Ca is the confidence rate information, 4a is the number of four anchors of the boundary box, and Ka is 
+the mask coefficient. Protonet is the prototype network, and forms a parallel branch with the prediction head. The Binarization-Mask module is a module that generates a 
+binarization mask using the matrix operation of the GPU. Crop, Threshold are combined operation modules of the prototype mask of YOLACT-Fruit. Mask Filters are 
+mask pretreatment module. 
+图6  OrangePointSeg 结构图 
+Fig.6  OrangePointSeg structure 
+ 
+1.3  脐橙果实实例分割的改进YOLACT 算法 
+1.3.1  YOLACT 算法简介 
+脐橙果实的识别和掩膜的生成是OrangePointSeg 中
+的第一步。后续的拟合需要在使用该步骤的掩膜与深度
+图裁剪得到深度图生产的点云上进行。利用实例分割算
+法，在识别果实的同时获得该果实在图像中所占的像素，
+实现果实与背景像素级别的分离。目前主流的实例分割
+算法主要有Mask R-CNN 和其改进的MS R-CNN。这些
+算法注重高精度，导致实时性不高[18-21]。YOLACT 是
+Bolya 等[22]在ICCV2019 会议上提出的一个基于全卷积网
+络的单阶段实时实例分割模型，该模型将实例分割分为
+两个并行的任务，在保持较高精度的同时加强了网络的
+实时性。第一个分支利用全卷积网络生成一系列的原始
+图像大小的原型掩码（prototype masks）；第二个分支通
+过对目标检测分支添加一个输出，以预测用于编码原型
+空间中的实例表示的每个锚点（anchor）的掩码系数（mask 
+coefficients）的向量，通过线性组合这两个分支的工作来
+为该实例构造高质量的掩膜。后续作者又推出了
+YOLACT++，在使用原有网络大部分结构的基础上加入
+了可变形卷积，优化了锚点的选择，对掩膜评估做了一
+些改进，使其在MS COCO 2017 数据集上，Tian xp 单卡
+下的速度为33.5 帧/s 和34.1%的平均精确率[23-24]。 
+1.3.2  改进的YOLACT 算法YOLACT-Fruit 
+果实深度点云的生成优劣，取决于实例分割的掩膜
+质量，越高质量的掩膜裁剪出的果实深度信息越精准。
+实例分割在计算机视觉领域属于位置敏感的任务，为了
+使位置信息更加精准，绝大多数网络通过下采样得到强
+语义信息，再通过上采样恢复高分辨率的位置信息，如
+U-Net，虽然维持了高分辨率特征图，但是导致大量的
+有效信息在不断的上下采样过程中丢失。同时，
+YOLACT 默认的主干网络由ResNet101 和FPN 构成，
+虽然ResNet 有着良好的特征表示能力，但对于小型目
+标检测有一定局限性[25-26]，同时由于其层数过深，导致
+训练时间长。过大的特征图导致推理时会占用更多的内
+存，在一些小型设备上运行的效率不高。该研究在
+YOLACT++网络的基础上进行改进，提出一种针对脐橙
+果实检测的模型YOLACT-Fruit，其结构为图6 中
+YOLACT-Fruit 标注的框内。YOLACT-Fruit 采用HRNet
+和HRFPN 作为特征映射的主干网络，HRNet（High 
+Resolution Net）[27]能够在整个过程中保持高分辨率表
+示，网络结构如图7 所示，其以高分辨率分支开始作为
+第一阶段，逐个添加由高到低的分辨率分支，以形成更
+多分支阶段，通过并行多个分辨率分支，并在整个过程
+中反复交换并行多分辨率分支网络中的信息，来进行重
+
+农业工程学报（http://www.tcsae.org）                                2022 年   
+ 
+158 
+复的多尺度融合，用更少的网络层数，达到强语义信息
+和精准位置信息的目的，在提高精度的同时减少硬件开
+销。考虑到脐橙果实分割的单一场景，试验采用
+HRNet_w48 网络结构（如表2 所示），网络分为4 个
+阶段（stage），每个阶段产生多尺度特征图（multi-scale 
+feature map）：第一阶段会生成四分之一分辨率的特征
+图，后续阶段成倍递减，为了使通道（channels）和特
+征图（feature map）大小的匹配，阶段之间通过过渡结
+构（transition）连接进行多尺度融合，不同尺寸特征图
+分别通过3×3 卷积或1×1 卷积进行下采样。为了使网络
+结构进行对应，需要将原始的FPN 修改为HRFPN，用
+于接收HRNet 输出的特征图，并输出与 YOLACT++相
+同的5 个预测头（Prediction Head）。 
+尽管YOLACT 在MS COCO 2017 数据集上有着优秀
+的特征提取和泛化能力，但MS-COCO 数据集过于庞大，
+包含80 类，超过20 万张图片，原始网络具有数据驱动
+性。而该研究自建脐橙果实数据集不包含背景的情况下
+只有2 类，在训练中易出现训练困难和过拟合情况。因
+此本试验采用图像增强的方法，生成大量的差异性数据
+增强数据集，对于数据集中含有小目标图片较少的情况，
+使用过度采样（oversample）的方式，即多次训练这类样
+本，进一步提高对远景果实小目标的检测能力。值得注
+意的是，与其他YOLACT 的改进算法相比较，如
+Res2Net-YOLACT[28]、EfficientNe-YOLACT，这些改进
+算法忽略了推理数据集所包含的类别，试验对脐橙果实
+类别的分类检测器计算大小为 2×n×n 的IoU 矩阵X，使
+用GPU 的向量化计算，加速对两种类别所有检测框进行
+降序排列的操作。 
+ 
+kj
+i
+kij     ,
+K
+max X
+k j
+
+
+  
+（1） 
+每个n×n 矩阵都为对角矩阵，通过将X 的下三角和对角
+区域设置为0，来删除得分较高但IoU 大于阈值t 的检测
+框。保留列方向上最大值，计算检测器的最大IoU 矩阵K，
+保留满足阈值t（K<t）检测框，以此优化非极大值抑制
+（Non-Maximum Suppression，NMS）的处理程序以减少
+计算开销，进一步提高模型的推理速度。 
+上述改进方法优化了YOLACT 的一些限制问题，在
+主干网络方面，HRNet+HRFPN 相较于ResNet101+FPN
+在降低模型网络深度的同时，提高了特征提取的能力，
+对于遮挡和远景小目标，能够生成质量更优的掩膜；并
+优化非极大值抑制流程，提高模型推理速度。在训练阶
+段通过增强数据集和过度采样解决过拟合及改善远景小
+目标果实识别效果。  
+ 
+图7  HRNet 网络结构图 
+Fig.7  High-Resolution Net structure 
+ 
+表2  用于特征提取的HRNet 骨干网络 
+Table 2  HRNet backbone network for feature extraction 
+阶段 
+Stage  
+多尺度特征图 
+Multi-scale 
+feature map 
+分支数 
+Number of 
+branches 
+Block 重复次
+数 
+Number of 
+repetitions of 
+Block 
+高分辨率模块重复
+数量 
+Number of repetitions 
+of High-Resolution 
+module 
+1 
+[1/4] 
+1 
+[4] 
+0 
+2 
+[1/4, 1/8] 
+2 
+[4, 4] 
+1 
+3 
+[1/4, 1/8, 1/16] 
+3 
+[4, 4] 
+4 
+4 
+[1/4, 1/8, 1/16, 
+1/32] 
+4 
+[4, 4, 4, 4] 
+3 
+ 
+脐橙果实实例分割可视化过程见图8，处理流程如下： 
+1）首先YOLACT-Fruit 会接收Azure Kinect 的RGB
+数据，将以中心点裁剪为512×512（像素）的图像输入到
+由HRNet 和HRFPN 组成的特征提取层。 
+2）其次将特征向量分别输入到预测头（Prediction 
+Head）分支和原型网络（Protonet）分支进行并行处理。 
+ 
+图8  脐橙果实实例分割处理过程 
+Fig.8  Instance segmentation process of navel orange fruit 
+ 
+3）原型分支负责生成原型掩膜，预测头分支负责从
+一系列原型掩膜生成掩膜系数。 
+
+第14 期 
+刘德儿等：基于RGB-D 相机的脐橙实时识别定位与分级方法 
+ 
+159 
+4）将上述2 个分支的结果进行线性组合，并对组合
+结果使用Sigmoid 非线性化来获得最终的最优的掩膜。 
+5）结合原型掩膜的定位信息得到实例的定位框，并
+生成相应的掩膜，最后得到可视化结果和二值化的掩膜
+信息和可视化实例信息。 
+1.4  脐橙果实的深度点云拟合与分级 
+通过上一步YOLACT-Fruit 算法得到果实掩膜后，通
+过与配准后的深度图进行“与运算”来裁剪出果实对应
+的深度像素，然后生成果实的深度点云，再在此基础上
+进行果实外形拟合，得到果实的形体参数。 
+1.4.1  深度图预处理与脐橙果实点云生成 
+Azure kinect DK 的彩色传感器和深度传感器的物理
+分辨率以及光学中心并不重合，分别与独立的 2D 坐标
+系相关联。在不同工作模式下，输出分辨率也不同。需
+要对相机输出的彩色图像和深度图像分别进行光学畸变
+校正后，再配准到同一2D 坐标系中。相机在出厂时已经
+完成校准和标定，因此试验使用C++编写数据采集程序，
+调用SDK 提供的API 访问设备校准数据，将RGB 图与
+深度图进行校正后再配准到同一坐标系中。考虑输入图
+像大小对设备的压力，试验将图校正后图像按中心点裁
+剪到512×512（像素）大小（图9）。 
+ 
+图9  数据采集流程 
+Fig.9  Data Acquisition Process 
+ 
+果实掩膜为二值化图，将上一步得到的深度图与果
+实实例掩膜进行与操作，得到一系列单个果实裁剪之后
+的深度图像，见图10b。由于采摘机器人需要获取果实相
+对于机械臂末端执行机构的位置，而相机一般安装于机
+械臂末端，因此将世界坐标系与相机坐标系视为重合。
+根据深度相机成像原理有： 
+ 
+0
+0
+1
+0
+0
+1
+x
+x
+d
+d
+d
+c
+d
+y
+d
+c
+d
+y
+d
+d
+f
+c
+d
+x
+X
+X
+f
+Z
+y
+c
+Y
+Y
+d
+Z
+Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+K
+  （2） 
+式中（xd，yd）为深度图中一点的像素坐标，（Xd，Yd，
+Zd）为该点在相机坐标系下的空间坐标，f 为相机焦距，
+dx、dy 为单个成像像素的物理宽和高，cx、cy 为相机像素
+坐标原点在成像坐标中的投影，构成相机内参矩阵Kc。
+根据此式可以生成果实点云，如图10c。 
+1.4.2  脐橙果实深度点云预处理 
+由于Azure Kinect DK 的深度传感器分辨率较高，
+生成的脐橙果实深度点云较为稠密，为了提高后续算法
+的性能，对生成的深度点云进行体素降采样，公式（3）。
+该算法首先通过计算点云群的边界框（Bounding Box），
+其次按照一定的分辨率将空间中的点云体素化，并建立起
+索引，根据索引遍历体素并计算每个体素的质心坐标，最
+后以该质心点来替代体素中的其他点云来实现降采样。 
+ 
+a. 原始深度图 
+a. Original depth image 
+b. 裁剪后深度图 
+b. Cropped depth image 
+c. 裁剪后的深度图生成的原始点云 
+c. Original point cloud generated from 
+clipped depth image 
+d. 降采样、离群点移除后的果实点云
+d. Downsampled and outlier removed fruit 
+point cloud 
+图10  点云生成及预处理效果图 
+Fig.10  Point cloud generation and pretreatment effect image 
+ 
+ 
+1
+1
+1
+1
+ 
+1
+1
+q
+x
+i
+i
+q
+y
+i
+i
+q
+z
+i
+i
+P
+x
+q
+P
+y
+q
+P
+z
+q
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+（3） 
+式中（Px，Py，Pz）为质心的三维坐标，q 为体素中的点
+云数量，（xi，yi，zi）为体素中点云的三维坐标。 
+因为深度传感器使用调幅连续波（Amplitude 
+modulation continuous wave，AMCW）时差测距（Time of 
+flight，ToF）方法，在实际的测量过程中，发射的红外光
+易受环境光影响，最终导致生成的深度点云包含小部分
+离群噪点。此外YOLACT 算法生成的掩膜边界不可避免
+会有小部分泄露溢出，在进行深度图裁剪过程中也会出
+现多余裁剪的现象。因此需要在点云降采样的基础上进
+行统计离群值移除，删除与点云的平均值相比更远离其
+邻居的点。算法首先计算到其所有的临近点的平均距离，
+同时计算全局距离平均值和标准差，计算公式如下： 
+ 
+
+
+2
+2
+2
+1
+1
+2
+1
+1 (
+)
+(
+)
+(
+)
+1
+k
+i
+i
+j
+i
+j
+i
+j
+j
+n
+i
+i
+n
+i
+i
+D
+x
+x
+y
+y
+z
+z
+k
+D
+n
+D
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ （4） 
+
+农业工程学报（http://www.tcsae.org）                                2022 年   
+ 
+160 
+式中Di 为第i 个点云所有的临近点的平均距离，k 为其距
+离均值满足高斯分布的临近点假设的数量，为全局距离
+平均值，n 为点云数量，为标准差，将Di 大于+的
+点设置为离群点并将其删除，为偏离标准差的倍数，本
+文设置为2。通过以上方法可以在保留最大特征点云的同
+时，减少点云数量，进一步加速拟合算法运行速度，图 10c
+和10d 分别为预处理前和预处理之后的果实点云可视化
+图，每个果实点云建立了最小外包立方体。 
+1.4.3  脐橙果实最小二乘法拟合及分级方法 
+由于深度点云的分布近似半球面，且自然环境下存
+在枝叶遮挡或果实粘连情况，造成部分果实点云不完整，
+常用随机采样一致性（Random Sample Consensus，
+RANSAC）及其改进的渐进一致采样法（Progressive 
+Sample Consensus，PROSAC）来进行果实拟合[29-30]。
+RANSAC 算法需要在迭代时随机选择样本点，存在错误
+选取样本点而增加计算时间的情况，算法复杂度高且速
+度较慢，作为其改进的PROSAC 算法，将随机采样改为
+在评价函数排序后，值最高的数据点子集中进行随机采
+样，同样需要考虑子集的大小和停止策略的选取。 
+试验参与预处理步骤的果实点云，本身是由脐橙实
+例融合深度裁剪生成的单个果实点云团，因此仅需对果
+实点云分别进行全局拟合。因此对于每个果实点云可以
+更方便的进行并行化处理，使得算法在果实数量较多的
+场景中也有较好的性能表现。试验选用最小二乘拟合法[31]
+（Least Squares Fitting，LSF）进行果实的球体拟合，脐橙
+果实近似球体，因此根据球面方程 
+ 
+2
+2
+2
+2
+p
+c
+p
+c
+p
+c
+x
+x
+y
+y
+z
+z
+r
+
+
+
+
+
+
+（
+）（
+）（
+）
+  
+（5） 
+式中（xp，yp，zp）为球体表面某点云坐标，（xc，yc，zc）
+为球心坐标，r 为球半径。由式（5）构造方程有： 
+
+
+
+
+
+
+
+
+2
+2
+2
+2
+2
+0
+(
+,
+,
+, )
+n
+c
+c
+c
+i
+c
+i
+c
+i
+c
+i
+E x
+y z r
+x
+x
+y
+y
+z
+z
+r
+
+
+
+
+
+
+
+
+
+ 
+ 
+（6） 
+式中半径r、球心坐标（xc，yc，zc）为未知参数，E 为所
+有点云与圆心距离平方和。以点到拟合球面的距离平方
+和最小为准则，对方程线性化后依据最小二乘原理即可
+求解半径与球心坐标。 
+同样地，根据果实的平均密度，可以计算出果实的
+质量，方便进一步对果实进行估产，单棵树果实产量可
+用下式计算出[32]。 
+ 
+3
+1
+4
+3
+Q
+avg
+i
+i
+P
+r
+
+
+
+
+
+
+
+
+
+
+
+
+  
+（7） 
+式中P 为质量，g；i 为果实序号，Q 为果实总数，ρavg
+为果实的平均密度，g/mL。 
+1.5  评价指标 
+为了评估YOLACT-Fruit 算法的效果，该研究使用
+Novel_Orange_Datasets2021
+的验证数据集在单张
+RTX2080Ti 显卡下进行了测试。在精度上取AP 作为评价
+指标，AP（Average Precision）表示掩膜的平均精确度，
+%。AP 定义为以精确率（Precision）为纵轴，以召回率
+（Recall）为横轴构成的PR 曲线下的面积，%。精确率表
+示正确检测到的果实像素与所有检到的果实像素之比，
+召回率表示正确检测到的果实像素与总的果实像素之
+比，计算公式为 
+ 
+TP
+Recall=
+100%
+TP+FN
+TP
+Precision
+100%
+TP+FP
+
+
+
+
+
+
+
+（
+）
+（
+）
+ 
+（8） 
+式中TP 表示正确检测到的果实像素数量，FN 表示未检测到
+的果实像素数量，FP 表示错误检测的果实像素数量。F1 为
+精准率和召回率的加权调和平均数，综合二者产出的结果。
+另外为了验证模型的位置敏感性，加入APS表示远景小目标
+果实的平均掩膜精度，APC表示遮挡果实的平均掩膜精度。
+在速度上使用FPS（帧/s）反映模型每秒检测画面帧数。试
+验选取不同主干网络的YOLACT 模型进行对比，所有训练
+参数相等，测试结果取IoU 的平均值作为阈值来计算精度。 
+1.6  试验平台与环境 
+试验使用工作站进行深度学习部分的训练、测试，硬
+件配置为AMD R3900x 12 核处理器，32 GB 内存，Nvidia 
+RTX 2080TI 12 GB 显卡。软件部分为Windows 10（20H2），
+深度学习框架为Pytorch 1.5.1。点云处理使用Open3D 
+0.14.1 版本点云库提供的Python 接口和其他数学计算库完
+成。Open3D 的后端经过高度优化，并支持并行化，方便与
+Pytorch 进行联调。训练参数根据模型的训练情况反复调
+整，最终YOLACT-Fruit 模型的训练参数为，最大训练迭
+代次数为2 000，初始学习率为0.003，分4 次间隔调整学
+习率，分别下降10%，初始动量为0.9，BatchSize 设置为4。 
+3  结果与分析 
+3.1  试验平台与改进YOLACT 训练结果 
+训练过程中的损失值变化见图11。可以看出在迭代
+750 次后，模型逐渐稳定。训练过程中的分类损失值与精
+度变化见图12，随着损失值趋于稳定，精度值也逐渐稳定。 
+  
+图11  全局训练损失值变化图 
+Fig.11  Global training loss value changement diagram 
+ 
+3.2  脐橙果实实例分割效果 
+本研究通过采用不同主干网络的YOLACT 模型的分
+割效果，以及不同算法在不同场景下的分割效果进行对
+比，验证改进的YOLACT 网络模型的有效性。 
+由表3 可知，在同样训练参数下，改进的YOLACT 模
+型（YOLACT-Fruit）模型大小比YOLACT（base）模型减
+少了37.95%，轻量化的网络反映在显存占用上降低了7%，
+
+第14 期 
+刘德儿等：基于RGB-D 相机的脐橙实时识别定位与分级方法 
+ 
+161 
+并且对比足够轻量化的YOLACT-R50，显存占用降低了
+5%。虽然YOLACT-darknet 显存占用更低，但掩膜的平均
+精确度也只是略高于YOLACT-R50，还是低于改进的
+YOLACT 模型（YOLACT-Fruit）的31.35%平均精确度，
+且速度提高到44.63 帧/s。对于远景的小目标果实，
+YOLACT-Fruit 的平均精确度高出YOLACT（base）模型
+2.9 个百分点，说明高分辨率并行网络和过渡采样的训练方
+式，可以提高对远景小目标掩膜生成的效果。对于遮挡情
+况，可看出YOLACT-Fruit 的平均精确度高出YOLACT
+（base）模型1.77 个百分点，说明HRNET 基于位置敏感的
+优势发挥了出来。在速度方面，仅比YOLACT-R50 平均速
+度慢了不到1 帧。总的来说，YOLACT-Fruit 在提高的推理
+速度的同时，提高了整体的掩膜精准度。 
+ 
+图12  分类损失值与平均精度变化图 
+Fig.12  Classification loss value and average accuracy 
+changement diagram 
+表3  不同主干网络YOLACT 模型性能 
+Table 3  YOLACT model performance of different backbone networks 
+模型 
+Model 
+主干网络 
+Backbone 
+模型 
+大小 
+Model 
+size/MB 
+显存占用
+Video 
+memory 
+uesed/MB
+平均精确度 
+Average 
+Precision（AP）
+/% 
+远景小目标平均精确度
+Average Precision of 
+long-range small target 
+(APS)/% 
+被遮挡目标平均精确度
+Average Precision of 
+covered target（APC）/% 
+速度 
+Speed/(帧·s-1)
+YOLACT（base） 
+ResNet101+FPN 
+194.2 
+3 270 
+28.5 
+9.9 
+26.8 
+34.41 
+YOLACT-R50 
+ResNet50+FPN 
+119.8 
+3 198 
+27.6 
+9.1 
+25.2 
+45.61 
+YOLACT-Fruit（Improved） 
+HRNet+HRFPN 
+120.5 
+3 024 
+31.15 
+12.5 
+28.57 
+44.63 
+YOLACT-darknet 
+Darknet53+FPN 
+183.7 
+2 587 
+27.8 
+9.5 
+26.1 
+28.12 
+ 
+为了进一步评估改进算法在不同场景下的果实识
+别与分割效果，试验选取了简单场景、遮挡与粘连场景、
+逆光场景及强光场景。同时也加入目前实例分割中精度
+高的Mask R-CNN 算法结果进行对比。从表4 可以看出，
+对于简单场景而言，改进YOLACT 算法与其基础算法
+精确率提升不大，但是在复杂场景，如遮挡、粘连情况
+下，对比基础模型YOLACT++（base）精度有着大幅度
+提高，进一步说明HRNET 位置敏感的特性发挥了出来。
+对于光照反差大的场景，识别精确率也有着显著的提
+高，说明数据集增强方法对于此类场景果实识别有着明
+显的改善作用。图13 为YOLACT-Fruit 和Mask R-CNN
+的可视化对比图，在光比反差大场景下（过曝，暗光），
+两种算法目标识别效果相当（图13c），由图 13a 知
+YOLACT-Fruit 的掩膜边缘处理的更加精细。在远景小
+目标和粘连场景下，Mask R-CNN 无法处理粘连情况
+（图 13b），其将果实簇视为一个整体。YOLACT-Fruit
+则只针对单独果实进行识别和分割，符合采摘过程中分
+级采摘的实际需求。在遮挡场景中（图 13d ），
+YOLACT-Fruit 的果实目标识别效果更好，而Mask 
+R-CNN 存在漏检的情况。 
+对比Mask R-CNN 方法，YOLACT-Fruit 虽然在整体
+检测精度上略逊，但是检测的实时性大幅度提高，这在
+现实检测场景中具有重要的意义，因为机器人在采摘时，
+并不是单次检测，在目标遮挡时，会转动机械臂调整角
+度，单次调整等待时间显得尤为重要，因此实时性的要
+求高于准确性。最后，对于初步分级来说，模型在训练
+的时候，数据集中仅标注成熟的果实，所以使用实例分
+割可以高效的剔除未成熟果实，完成初步筛选。后续的
+分级操作，将会在果实点云拟合后进行。 
+表4  不同场景下算法性能对比表 
+Table 4  Algorithm performance comparison 
+算法 
+Algorithm 
+场景 
+Scene 
+精确率 
+Accuracy 
+/% 
+召回率 
+Recall 
+/% 
+F1 
+/% 
+平均检测耗时
+Average 
+detection 
+time/ms 
+简单 
+90.00 
+85.62 
+87.76
+29.8 
+遮挡、粘连
+75.61 
+72.43 
+74.00
+31.5 
+逆光 
+70.26 
+68.25 
+69.24
+30.6 
+YOLACT++(base)
+强光 
+70.59 
+70.14 
+70.36
+34.2 
+简单 
+91.22 
+86.43 
+88.76
+27.3 
+遮挡、粘连
+80.25 
+79.25 
+79.75
+28.6 
+逆光 
+84.32 
+82.57 
+83.44
+29.1 
+YOLACT-Fruit
+强光 
+81.82 
+80.62 
+81.22
+30.8 
+简单 
+92.21 
+91.65 
+91.93
+166.6 
+遮挡、粘连
+82.94 
+82.44 
+82.69
+170.5 
+逆光 
+79.67 
+78.63 
+79.15
+169.2 
+Mask R-CNN 
+强光 
+75.27 
+75.41 
+73.81
+180.5 
+ 
+3.3  脐橙果实的深度点云拟合结果 
+3.3.1  不同点云数量下拟合试验效果 
+为了权衡果实点云拟合过程中的速度与精度，该研究
+试验统计2 种拟合算法在不同点云数量下拟合数据，并计
+算半径均方根误差和体积均方根误差。如表5 所示，当降
+采样分辨率较高时，点云数量充足，RANSAC 算法在半径
+均方根误差和体积均方根误差都小于最小二乘法，当分辨
+率较低时，最小二乘法拟合的效果会优于RANSAC 算法。
+在速度方面，最小二乘法明显快于RANSAC，这是由于
+RANSAC 本质上的迭代操作增加了运算时间、且精度也会
+
+农业工程学报（http://www.tcsae.org）                                2022 年   
+ 
+162 
+因为参数选择而不稳定。同时，获得的点云已经是含语义
+信息的果实点云，因此可以直接对全局点云进行拟合，无
+需在大量无关点云中进行拟合，在考虑兼顾精度与速度的
+要求下，使用最小二乘法拟合，选取1 400～2 000 点云数
+量的分辨率为最终降采样分辨率，此时果实拟合半径均
+方根误差为0.43 cm，体积均方根误差为52.6 mL，拟合
+耗时为1.99 ms，定位误差为0.49 cm，，基本满足机械臂
+定位的需求。 
+Mask R-CNN 
+可视化 
+Visualization 
+of Mask 
+R-CNN 
+ 
+ 
+Mask R-CNN 
+掩膜 
+The mask of  
+Mask R-CNN 
+ 
+ 
+Yolcat-Fruit
+可视化 
+Visualization 
+of 
+Yolcat-Fruit 
+ 
+ 
+Yolcat-Fruit
+掩膜 
+The mask of 
+Yolcat-Fruit 
+ 
+ 
+ 
+a. 过曝场景 
+a. Overexposure scene 
+b. 小目标、粘连场景 
+b. Small target and adhesion scene 
+c. 暗光欠曝场景 
+c. Dark underexposed scene 
+d. 遮挡场景 
+d. Occlusion scene 
+图13  不同场景脐橙果实实例分割算法效果对比 
+Fig.13  Effect comparison of navel orange fruit segmentation algorithms in different scenarios 
+ 
+表5  不同点云数量下两种拟合算法表现 
+Table 5  Performance of two fitting algorithms with different 
+numbers of point clouds 
+算法 
+Algorithm 
+降采样后点云
+数量 
+Number of  
+point clouds  
+after 
+downsampling 
+半径均方
+根误差
+RMSE of 
+radius/cm 
+体积均方
+根误差
+RMSE of 
+volume 
+/mL 
+定位误差
+Positioning 
+error/cm 
+拟合速度 
+Fitting 
+speed/ms 
+>2 000 
+0.38 
+45.2 
+0.50 
+19.94 
+2 000～1 400 
+0.42 
+49.8 
+0.52 
+16.52 
+1 400～800 
+0.51 
+56.4 
+0.61 
+13.96 
+RANSAC 
+<800 
+0.72 
+60.8 
+0.74 
+12.77 
+>2 000 
+0.41 
+48.9 
+0.48 
+3.98 
+2 000～1 400 
+0.43 
+52.6 
+0.49 
+1.99 
+1 400～800 
+0.47 
+54.8 
+0.62 
+1.59 
+LSF 
+<800 
+0.52 
+58.7 
+0.71 
+0.99 
+注：LSF 表示最小二乘拟合算法。 
+Note: LSF denotes the least-squares fitting algorithm. 
+3.3.2  不同距离下的果实分级试验结果 
+拟合的果实半径决定了果实分级时所属品质级别，
+为了探究不同距离对拟合精度的影响。算法应用场景为
+采摘机械臂提供引导信息，考虑到机械臂的工作半径，
+试验在同一场景下设置了0.5、1.0、1.5 和2.0 m 的果实
+拍摄距离。试验规定半径误差在0.5 cm 以内为成功分级。
+由试验结果表6 可知，当距离超过1.5 m 后，果实表面的
+深度像素变少，因此生成的点云数量不足2 000，超过
+2.0 m 则不足1 400。在1.0 m 以内，降采样点云不少于
+800 点云的情况下，该算法的半径误差均控制在0.5 cm 以
+内，实现成功分级。随着距离增加，果实点云数量在减少，
+同时YOLACT-Fruit 的掩膜质量也在下降，受分割精度与
+点云数量的双重影响，在1.5 m 处时，1 400～2 000 点云
+数量的半径均方根误差为0.48 cm，低于1 400 点云数量
+的半径均方根误差超过0.5 cm，未能成功分级。 
+
+第14 期 
+刘德儿等：基于RGB-D 相机的脐橙实时识别定位与分级方法 
+ 
+163 
+表6  不同距离下最小二乘拟合算法表现 
+Table 6  Performance of least square fitting algorithm under 
+different distances 
+距离 
+Distance 
+/m 
+掩膜分割平均精确度 
+Average mask 
+segmentation 
+accuracy/% 
+点云数量 
+Number of point 
+clouds 
+平均拟合半径均方根
+误差 
+RMSE of average fitting 
+radius/cm 
+>2 000 
+0.39 
+2 000～1 400 
+0.41 
+1 400～800 
+0.44 
+0.5 
+98.58 
+<800 
+0.48 
+>2 000 
+0.42 
+2 000～1 400 
+0.45 
+1 400～800 
+0.46 
+1.0 
+97.69 
+<800 
+0.53 
+2 000～1 400 
+0.48 
+1 400～800 
+0.56 
+1.5 
+96.12 
+<800 
+0.71 
+1 400～800 
+0.66 
+2.0 
+95.61 
+<800 
+0.76 
+ 
+3.4  算法综合性能分析 
+OrangePointSeg 的流程分为两个阶段：第一阶段为识
+别和分割阶段，使用改进YOLACT 进行果实实例分割，
+第二阶段为拟合、定位与分级阶段，使用最小二乘法进
+行果实点云拟合。最后该研究基于简单场景单个果实检
+测，使用笔记本电脑平台（处理器为i7 10875H，显卡为
+RTX2060，内存为16 G），使性能测试贴合实际部署设
+备，以此为基准测试，统计各阶段耗时。结果见表7，单
+个果实处理的总耗时为32 ms，换算为帧率为31.25 帧/s。
+为符合现实场景的果实数量，试验使用open3d 进行并行
+化处理加速，与串行运行效果进行对比。当果实数量变
+多时，并行处理耗时明显低于串行处理耗时，图14 中，
+当场景中果实数量为10 时的总体速度约为29.4 帧/s。因
+此OrangePointSeg 能在保证一定精度的同时，满足实时
+性端到端果实识别、定位和分级的要求。 
+表7  各阶段耗时统计 
+Table 7  Time consumption statistics of each stage 
+流程 
+Process 
+平均耗时 
+Average time used/ms
+果实实例分割Fruit instance segmentation 
+27 
+深度图裁剪，点云生成 
+Depth image cropping, point cloud generation 
+1 
+点云预处理Point cloud preprocessing 
+2 
+果实球体拟合Fruit sphere fitting 
+2 
+总耗时Total time consumption 
+32 
+ 
+ 
+图14  串行与并行处理时间对比 
+Fig.14  Comparison of sequential processing and parallel 
+processing time 
+4  结  论 
+1）在实例分割阶段，该研究提出了一种基于HRNet
+和HRFPN改进YOLACT的实例分割模型YOLACT-Fruit，
+在主干网络中使用轻量高分辨率的并行网络替换原始深
+度残差网络，另外优化了非极大值抑制的处理程序减少计
+算开销，进一步提高了模型的推理速度。改进后的网络更
+轻量化，实现更少的内存占用，在保证较高的检测精度的
+同时提高检测速度，果实掩膜平均精度为31.15%，在果实
+目标检中也表现出了良好的鲁棒性，同时对于远景小目标
+的检测精度也有所提高。 
+2）深度学习方法具有数据驱动性，且果园实际环
+境复杂，考虑到实际检测类别较少，使用图像增强和
+过度采样扩充数据集，提高模型的泛化能力。在不同
+的场景下，对比目前精度较高的Mask R-CNN 方法，
+虽然在整体检测精度上略逊，但是检测的实时性大幅
+度提高。 
+3）在果实拟合阶段，针对实例化的果实点云，使用
+最小二乘进行果实拟合，较常用RANSAC 算法保证了精
+度的同时获得数十倍的速度提升。并通过对比试验确定
+合适的降采样分辨率为1 400 至2 000 点云内的拟合果实
+误差在0.48 cm 以内，使用open3d 进行并行化加速，进
+一步提高了OrangePointSeg 的实时性。最终在10 个果实
+的场景下可达到29.4 帧/s 。因此该研究提出的
+OrangePointSeg 能够兼顾精度与速度，完成端到端检测
+和定位。后续可针对不同的果实建立样本库进行训练，
+以实现多种果实检测和定位，具有广泛的实用性和现实
+价值。 
+[参  考  文  献] 
+[1] 
+卢占军，钟八莲，郭慧. 赣南脐橙产业可持续发展的探
+讨[J]. 企业经济，2015(4)：149-152.  
+[2] 
+郑太雄，江明哲，冯明驰. 基于视觉的采摘机器人目标识别
+与定位方法研究综述[J]. 仪器仪表学报，2021，42(9)：28-51.  
+Zheng Taixiong, Jiang Mingzhe, Feng Mingchi. Vision based 
+target recognition and location for picking robot: A review[J]. 
+Chinese Journal of Scientific Instrument, 2021, 42(9): 28-51. 
+(in Chinese with English abstract) 
+[3] 
+王丹丹，宋怀波，何东健. 苹果采摘机器人视觉系统研究
+进展[J]. 农业工程学报，2017，33(10)：59-69.  
+Wang Dandan, Song Huaibo, He Dongjian. Research 
+advance on vision system of apple picking robot[J]. 
+Transactions of the Chinese Society of Agricultural 
+Engineering (Transactions of the CSAE), 2017, 33(10): 
+59-69. (in Chinese with English abstract) 
+[4] 
+王辉，毛文华，刘刚，等. 基于视觉组合的苹果作业机器
+人识别与定位[J]. 农业机械学报，2012，43(12)：165-170.  
+Wang Hui, Mao Wenhua, Liu Gang, et al. Identification and 
+location system of multi-operation apple robot based on 
+vision combination. Transactions of The Chinese Society of 
+Agricultural Machinery, 2012, 43(12): 165-170. (in Chinese 
+with English abstract) 
+[5] 
+张勤，陈建敏，李彬，等. 基于RGB-D 信息融合和目标
+检测的番茄串采摘点识别定位方法[J]. 农业工程学报，
+2021，37(18)：143-152.  
+Zhang Qin, Chen Jianmin, Li Bin, et al. Method for 
+recognizing and locating tomato cluster picking points based 
+
+农业工程学报（http://www.tcsae.org）                                2022 年   
+ 
+164 
+on RGB-D information fusion and target detection[J]. 
+Transactions of the Chinese Society of Agricultural 
+Engineering (Transactions of the CSAE), 2021, 37(18): 
+143-152. (in Chinese with English abstract) 
+[6] 
+孙宝霞，郑镇辉，胡文馨，等. 基于RGB-D 的龙眼实时
+检测与定位方法[J]. 林业工程学报，2022，7(3)：150-157.  
+Sun Baoxia, Zheng Zhenhui, Hu Wenxin, et al. Real-time 
+detection and localization method of longan based on 
+RGB-D[J]. Journal of Forestry Engineering, 2022, 7(3): 
+150-157. (in Chinese with English abstract) 
+[7] 
+方建军. 移动式采摘机器人研究现状与进展[J]. 农业工程
+学报，2004，20(2)：273-278.  
+Fang Jianjun. Present situation and development of mobile 
+harvesting robot[J]. Transactions of the Chinese Society of 
+Agricultural Engineering (Transactions of the CSAE), 2004, 
+20(2): 273-278. (in Chinese with English abstract) 
+[8] 
+李志鹏，罗玉峰，石志新，等. 脐橙采摘机械臂的设计与
+分析[J]. 机械设计与研究，2020，36(3)：188-194.  
+Li Zhipeng, Luo Yufeng, Shi Zhixin, et al. Design and 
+research of manipulator for naval orange harvesting[J]. 
+Machine Design & Research, 2020, 36(3): 188-194. (in 
+Chinese with English abstract) 
+[9] 
+麦春艳，郑立华，孙红，等. 基于RGB-D 相机的果树三
+维重构与果实识别定位[J]. 农业机械学报，2015，46(S1)：
+35-40.  
+Mai Chunyan, Zheng Lihua, Sun Hong, et al. Research on 3D 
+reconstruction of fruit tree and fruit recognition and location 
+method based on RGB-D camera[J]. Transactions of The 
+Chinese Society for Agricultural Machinery, 2015, 46(S1): 
+35-40. (in Chinese with English abstract) 
+[10] 李寒，陶涵虓，崔立昊，等. 基于SOM-K-means 算法的
+番茄果实识别与定位方法[J]. 农业机械学报，2021，52(1)：
+23-29.  
+Li Han, Tao Hanxiao, Cui Lihao, et al. Recognition and 
+localization method of tomato based on RGB-D image and 
+improved SOM-K-means algorithm[J]. Transac-tions of The 
+Chinese Society for Agricultural Machinery, 2021, 52(1): 
+23-29. (in Chinese with English abstract) 
+[11] 赵辉，李浩，岳有军，等. 基于RGB-D 相机的矮砧苹果
+识别与定位[J]. 计算机工程与设计，2020 ，41(8) ：
+2278-2283.  
+Zhao Hui, Li Hao, Yue Youjun, et al. Recognition and 
+localization of dwarf apple based on RGB-D camera[J]. 
+Computer Engineering and Design, 2020, 41(8): 2278-2283. 
+(in Chinese with English abstract) 
+[12] Wang Z, Xu Y, Yu J, et al. Instance segmentation of point 
+cloud captured by RGB-D sensor based on deep learning[J]. 
+International Journal of Computer Integrated Manufacturing, 
+2021, 34(9): 950-963.  
+[13] 项荣，应义斌，蒋焕煜，等. 基于双目立体视觉的番茄定
+位[J]. 农业工程学报，2012，28(5)：161-167.  
+Xiang Rong, Ying Yibin, Jiang Huanyu, et al. Localization of 
+tomatoes based on binocular stereo vision[J]. Transactions of 
+the 
+Chinese 
+Society 
+of 
+Agricultural 
+Engineering 
+(Transactions of the CSAE), 20012, 28(5): 161-167. (in 
+Chinese with English abstract) 
+[14] 吴刚. 基于RGB-D 相机的树上水果识别方法研究[D]. 无
+锡：江南大学，2020.  
+Wu Gang. Research on the Methods of On-tree Fruit 
+Recognition Based on RGB-D Camera[D]. Wuxi: Jiangnan 
+University, 2020. (in Chinese with English abstract) 
+[15] Tlgyessy M , Dekan M , Chovanec U, et al. et al. Evaluation 
+of the azure Kinect and its comparison to Kinect V1 and 
+Kinect V2[J]. Sensors, 2021, 21(2): 413-438.  
+[16] Gené-Mola J, Llorens J, Rosell-Polo J R, et al. Assessing the 
+performance of RGB-D sensors for 3d fruit crop canopy 
+characterization under different operating and lighting 
+conditions[J]. Sensors, 2020, 20(24): 7072-7093.  
+[17] Ji W, Liu D, Meng Y, et al. Exploring the solutions via 
+Retinex enhancements for fruit recognition impacts of 
+outdoor sunlight: A case study of navel oranges[J]. 
+Evolutionary Intelligence, 2021, 15(12): 1-37.  
+[18] 石杰，周亚丽，张奇志. 基于改进Mask RCNN 和Kinect
+的服务机器人物品识别系统[J]. 仪器仪表学报，2019，
+40(4)：216-228.  
+Shi Jie, Zhou Yali, Zhang Qizhi. Service robot item 
+recognition system based on improved Mask RCNN and 
+Kinect[J]. Chinese Journal of Scientific Instrument, 2019, 
+40(4): 216-228. (in Chinese with English abstract) 
+[19] 李晓筱，胡晓光，王梓强，等. 基于深度学习的实例分割
+研究进展[J]. 计算机工程与应用，2021，57(9)：60-67.  
+Li Xiaoxiao, Hu Xiaoguang, Wang Ziqiang, et al. Survey of 
+instance segmentation based on deep learning[J]. Computer 
+Engineering and Applications, 2021, 57(9): 60-67. (in 
+Chinese with English abstract) 
+[20] He K, Gkioxari G, Dollár P, et al. Mask r-cnn[C]//2017 IEEE 
+International Conference on Computer Vision (ICCV). IEEE, 
+2017: 2961-2969.  
+[21] Huang Z, Huang L, Gong Y, et al. Mask scoring 
+r-cnn[C]//2019 IEEE/CVF Conference on Computer Vision 
+and Pattern Recognition (CVPR). IEEE/CVF, 2019: 
+6409-6418.  
+[22] Bolya D, Zhou C, Xiao F, et al. Yolact: Real-time instance 
+segmentation[C]//2019 IEEE/CVF International Conference 
+on Computer Vision (ICCV). IEEE/CVF, 2019: 9157-9166.  
+[23] Bolya D, Zhou C, Xiao F, et al. Yolact++: Better real-time 
+instance segmentation[J]. IEEE transactions on Pattern 
+Analysis and Machine Intelligence, 2020, 44(2): 1108-1121.  
+[24] 张继凯，赵君，张然，等. 深度学习的图像实例分割方法
+综述[J]. 小型微型计算机系统，2021，42(1)：161-171.  
+Zhang Jikai, Zhao Jun, Zhang Ran, et al. Survey of image 
+instance segmentation methods using deep learning[J]. 
+Journal of Chinese Mini-Micro Computer Systems, 2021, 
+42(1): 161-171. (in Chinese with English abstract) 
+[25] Li Q, Jia W, Sun M, et al. A novel green apple segmentation 
+algorithm based on ensemble U-Net under complex orchard 
+environment[J]. Computers and Electronics in Agriculture, 
+2021, 180: 105900.  
+[26] Sun G L, Wang R B, Qian C, et al. Research and realization 
+of crop instance segmentation based on YOLACT[C]//2021 
+3rd International Conference on Management Science and 
+Industrial Engineering (MSIE 2021). Association for 
+Computing Machinery, 2021: 13-20.  
+[27] Wang J, Sun K, Cheng T, et al. Deep high-resolution 
+representation learning for visual recognition[J]. IEEE 
+Transactions on Pattern Analysis and Machine Intelligence, 
+2021, 43(10): 3349-3364.  
+[28] 张璐，方春，祝铭. 基于Res2Net-YOLACT 和融合特征
+的室内跌倒检测算法[J]. 计算机应用，2022，42(3)：
+757-763.  
+Zhang Lu, Fang Chun, Zhu Ming. Indoor fall detection 
+algorithm based on Res2Net-YOLACT and fusion feature[J]. 
+Journal of Computer Applications, 2022, 42(3): 757-763. (in 
+Chinese with English abstract).  
+[29] Wu G, Zhu Q, Huang M, et al. Automatic recognition of 
+juicy peaches on trees based on 3D contour features and 
+colour data[J]. Biosystems Engineering, 2019, 188: 1-13.  
+[30] Ghahremani M, Williams K, Corke F, et al. Direct and 
+accurate feature extraction from 3D point clouds of plants 
+using RANSAC[J]. Computers and Electronics in Agriculture, 
+2021, 187: 106240.  
+
+第14 期 
+刘德儿等：基于RGB-D 相机的脐橙实时识别定位与分级方法 
+ 
+165 
+[31] 刘珂，周富强，张广军. 半径约束最小二乘圆拟合方法及
+其误差分析[J]. 光电子·激光，2006，17(5): 604-607.  
+Liu Ke, Zhou Fuqiang, Zhang Guangjun. Radius constraint 
+least-square circle fitting method and error analysis[J]. 
+Journal of Optoel ectronics·Laser, 2006, 17(5): 604-607. (in 
+Chinese with English abstract) 
+[32] 谢洪起. 基于RGB-D 相机的猕猴桃外形和体积检测方法
+研究[D]. 杨凌：西北农林科技大学，2018.  
+Xie Hongqi. Shape and Volume Estimate of Kiwifruit Using 
+RGB-D Camera[D]. Yangling: Northwest Agriculture and 
+Forestry University of Science and Technology, 2018. (in 
+Chinese with English abstract) 
+ 
+ 
+ 
+Real-time identification, localization, and grading method 
+for navel oranges based on RGB-D camera 
+ 
+Liu De'er1, Zhu Lei1, Ji Weizhen2, Lian Yue1 
+(1. School of Civil and Surveying Engineering, Jiangxi University of Technology, Ganzhou 341000, China; 2. State Key Laboratory of 
+Remote Sensing Science, Beijing Normal University, Beijing 100875, China) 
+ 
+Abstract: The navel orange planting area in Gannan region of China has reached the first in the world, with an annual output 
+of one million tons. However, most navel oranges were picked manually with high labor intensity and low efficiency. It was 
+very urgent to introduce intelligent picking robots. In the process of navel orange picking, the picking robot needed to obtain 
+the spatial position and fruit size information of navel orange fruit in real time to achieve efficient and rapid intelligent grading 
+picking. This study proposed an algorithm framework--OrangePointSge based on the improved YOLACT model and the 
+least-square sphere fitting method. The real-time instance segmentation algorithm YOLACT generated an instance mask and 
+cropped the registered depth image to obtain the fruit depth point cloud. Then, the least-square method was used to fit the navel 
+orange fruit shape, and the centroid coordinates and radius under the camera coordinate system were obtained. Firstly, the 
+RGB-D data of navel orange fruit was collected by Microsoft's latest consumer-level depth camera (Azure Kinect DK), and the 
+navel orange fruit instance segmentation dataset and enhancement dataset were established and free to open source. The 
+dataset contained 2 178 images, including 8 712 samples. Among those samples, the number of non-occluded fruit was 4 682, 
+and the number of slightly occluded fruit was 4 030. Then the YOLACT algorithm was improved to adapt to the detection of 
+navel orange fruit, and the instance mask of the fruit was output. We modified the original ResNet (deep residual network) 
+backbone network to HRNet (High-Resolution Net) to simplify the model, and used the hrnet_w48 structure for feature 
+extraction to improve the model detection accuracy. We also optimized the non-maximum suppression process to improve the 
+detection speed. At the same time, several groups of comparative tests were also set up, including the performance of 
+YOLACT with different backbone networks and the performance of different algorithms in different scenarios. To improve the 
+generalization ability of the training model, we carried out a series of enhancement algorithms for color images, mainly 
+including scale change, color change, brightness change, and adding noise. For long-range small targets, we used oversampling 
+method for enhancement training to improve their detection accuracy. Therefore, the recognition speed and mask accuracy of 
+navel orange were higher than other algorithms. The detection speed was 44.63 frames/s and the average accuracy was 31.15%. 
+The mask generated by improved YOLACT will be cropped with the depth image registered with the color image to obtain the 
+depth information of each fruit to generate the fruit depth point cloud from the depth image. The least-square method was used 
+to fit the point cloud to obtain the centroid coordinates and radius of the fruit, which were used to guide the robot to carry out 
+grading picking. In addition, we added the comparison with RANSAC (Random Sample Consensus) algorithm. The results 
+show that the least-square method is faster than RANSAC while ensuring the appropriate accuracy. When the number of point 
+clouds was 1 400-2 000, the fitting time was 1.99 ms, the positioning error was 0.49 cm, the fitting radius root mean square 
+error was 0.43 cm, and the volume root mean square error was 52.6 mL. Through the experiment of setting different distances 
+on the fitting accuracy, it was found that when the number of point clouds was more than 800 and the distance was less than 
+1.0 m, the positioning error was controlled within 0.46 cm. Finally, by introducing parallel computing and combining the above 
+two processing flows, the overall processing speed of OrangePointSge was 29.4 frames/s, which can better balance the 
+accuracy and speed. Thus, the proposed algorithm is conducive to practical application and engineering deployment. 
+Keywords: image recognition; robot; RGB-D; instance segmentation; depth point cloud; YOLACT; RANSAC; least-squares 
+fitting 

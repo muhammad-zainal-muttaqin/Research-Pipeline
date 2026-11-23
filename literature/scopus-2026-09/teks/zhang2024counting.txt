@@ -1,0 +1,1825 @@
+ 
+ 
+基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法
+张润池 ，周云成※ ，侯玉涵 ，刘泽钰 ，赵鸿舸 ，赵昱涵
+（沈阳农业大学信息与电气工程学院，沈阳 110866）
+摘　要：针对在温室生产条件和作物种植模式约束下，番茄果实目标连续稳定跟踪困难，难以满足统计计数精度要求等
+问题，提出一种基于超深掩蔽与改进YOLOv8 的不同成熟度果实计数方法。在YOLOv8 基础上，构建融合全局特征的
+空间异质卷积核，优化设计卷积算子及目标检测网络，引入对果实目标标注更具鲁棒性的损失函数。提出用深度估计模
+型预测的深度信息，动态生成深度阈值，基于该阈值，掩蔽远景果实目标，解决目标跟踪不稳定产生的计数精度低的问
+题。结果表明，与YOLOv8n 相比，改进模型平均检测精度提高了3.2 个百分点，召回率提高了3.7 个百分点；将所设
+计的卷积算子用于目标检测模型，与使用该算子前相比，果实检测精度提高了2.7 个百分点，与引入鲁棒性损失函数前
+相比，引入该损失后，检测精度提高了1.1 个百分点；与不用超深掩蔽处理相比，应用该处理后，番茄果实计数精度提
+高了12.63 个百分点；该方法的番茄果实计数精度为93.80%，对不同成熟度果实的计数精度不低于91.00%，计算速度
+为23 帧/s。对YOLOv8 的改进是有效的，超深掩蔽对提高番茄计数精度具有重要作用，研究可为基于视觉技术的果蔬
+产量统计提供技术参考。
+关键词：番茄；果实计数；目标检测；多目标追踪；超深掩蔽
+doi：10.11975/j.issn.1002-6819.202407205
+中图分类号：TP183；S224　　　　文献标志码：A　　　　文章编号：1002-6819(2024)-24-0146-11
+张润池，周云成，侯玉涵，等. 基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法[J]. 农业工程学报，2024，
+40(24)：146-156. doi: 10.11975/j.issn.1002-6819.202407205　　http://www.tcsae.org
+ZHANG Runchi, ZHOU Yuncheng, HOU Yuhan, et al. Counting tomatoes with different maturities using ultra-depth masking
+and improved YOLOv8[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2024,
+40(24): 146-156. (in Chinese with English abstract)　　doi: 10.11975/j.issn.1002-6819.202407205　　http://www.tcsae.org
+ 
+0　引　言
+番茄在中国各地均有普遍种植，是重要的经济作物
+之一。不同成熟度番茄的准确计数，对实现番茄果蔬智
+能化估产[1]，制定最佳采摘期，提高果实品质，调配采
+摘人力资源等农艺管理具有重要意义。同时作为表型检
+测[2] 的重要指标之一，通过分析不同成熟度果实分布情
+况及成熟速度，也可为番茄品种改良提供重要依据。
+国内外学者应用视觉技术，在温室果蔬数量统计方
+面开展了相关的研究工作，这些方法总体上可分为基于
+传统图像处理的方法[3] 和基于深度学习的方法[4]。传统
+方法的基本思路是，应用果实与背景在颜色空间上的差
+异，对果实进行分割，然后通过连通域统计、模板匹配
+和分类检测[3] 等处理来统计果实目标数量。受温室复杂
+光照条件，图像噪声等各种因素的干扰，传统图像处理
+方法难以适应果实在品种、形状、颜色、成熟度等方面
+的变化，准确率较低。近年来，随着深度学习技术的发
+展，其在果实目标检测[5]、病虫害识别[6] 和籽粒计数[7]
+等农业领域得到了广泛应用。通过用大量带标注的图像
+样本训练Faster R-CNN [8]、YOLO[9] 等目标检测模型，
+深度学习也可用于果实目标检测计数，且具有良好的鲁棒
+性。ZENG 等[9] 提出一种可在移动端部署的轻量化改进
+YOLO 模型，用于番茄实时检测，基于检测结果，可统计
+出单帧图像上不同类别果实数量[10]。除基于目标检测的
+果实计数方法外，通过将计数问题转换为回归问题，即用
+CNN 或其他回归模型来直接预测目标个数[11]，也可构建
+果实计数方法。这种方法的图像标注工作量小，计算效
+率高，但模型缺少目标检测框输出，无法实现果实定位，
+也难以像目标检测模型一样，直观判断计数的可靠性。
+由于单帧图像难以覆盖整个统计区域，基于目标检
+测结果的直接计数法难以应用于日光温室等较大生产场
+景中，需通过移动过程中连续拍摄的视频帧，用目标检
+测模型在单帧图像上检测果实，进而追踪连续图像帧上
+的同一果实，用去除重复后的目标数作为计数结果，这
+也是当前主流的目标计数方法[12]。安志强等[13] 用ByteTrack
+算法[14] 对不同种类的海产品进行了跟踪计数，平均计数
+精度为91.62%。赵春江等[15] 基于改进YOLOv7 识别笼
+养鸡和蛋，并进行计数，鸡只的计数精度达96.7%。刘
+鑫等[16] 通过改进YOLOv7 识别大枣缺陷，并通过撞线计
+数法对数量进行统计，计数准确率为90.12%。李云霞等[17]
+用Faster R-CNN 对麦穗进行分类计数，决定系数为
+83%。上述研究在相对独立的目标上取得了良好的计数
+效果，而番茄果实呈簇状分布，独立检测计数具有更高
+的难度。另外，条播、吊蔓的番茄种植模式，要求相机
+  
+收稿日期：2024-07-23　　修订日期： 2024-10-28
+基金项目：国家重点研发计划资助（2023YFD1501303，2021YFD1500204）
+作者简介：张润池，研究方向为深度学习与农业信息处理。
+Email：2022240154@stu.syau.edu.cn
+※通信作者：周云成，博士，教授，研究方向为机器学习在农业信息处理
+中应用。Email：zhouyc2002@syau.edu.cn
+ 
+第 40 卷 　 第 24 期
+农 业 工 程 学 报
+Vol.40　No.24
+146
+2024 年 　　 12 月
+Transactions of the Chinese Society of Agricultural Engineering
+Dec. 2024
+
+通过运动巡检，才能有效统计果实数量。在特定相机视
+角下，会有大量远近、大小不同的果实出现在图像中，
+跟踪过程中也常出现目标间的反复遮挡，解决番茄果实
+目标的有效跟踪问题面临着挑战。
+针对智能估产、农艺管理等对番茄果实计数的实际
+需求，以及在现有温室生产条件和种植模式约束下，果
+实目标连续稳定跟踪困难，统计计数精度难以满足要求
+等问题，构建一种基于超深掩蔽与改进YOLOv8 的不同
+成熟度果实计数方法。通过构建具有融合全局特征的空
+间异质卷积核，优化设计卷积算子及目标检测模型骨干
+网络，并引入对目标标注工作更具鲁棒性的损失函数来
+提高模型性能。提出用单目深度估计模型预测的深度信
+息，动态滤除远景目标，来解决跟踪丢失或重复跟踪问
+题，优化设计果实目标跟踪器，实现不同成熟度番茄果
+实计数。在实际温室中开展番茄果实计数试验，验证方
+法的有效性。
+ 
+1　不同成熟度番茄计数方法的提出
+ 
+1.1　总体技术框架
+通过人或农业机器人等，携带视觉传感器（相机），
+在调查区域内沿番茄植株行，进行逐行巡检，并按适当
+角度进行连续成像，获取覆盖整个调查区域的视频序列。
+通过目标检测模型[18]，检测视频每一帧图像中不同成熟
+度番茄果实目标，生成果实目标检测框和目标类型（果
+实成熟度）。用多目标跟踪算法[19]，跟踪在连续帧中检
+测出的同一果实目标，同时为其分配唯一身份标识，并
+将果实成熟度及相应身份标识存入目标集合中。最终通
+过检索该集合，获取不同成熟度番茄数量。
+多目标跟踪算法主要基于目标检测模型检出的果实，
+通过目标特征提取与轨迹预测，在连续帧间匹配同一果
+实。在相机由远及近的运动中，由于场景遮挡、视角及
+光照变化产生的目标特征变化，使远景小目标连续跟踪
+困难。另外，图像中也会出现当前作物行后方的其他株
+行目标，对于逐行巡检来说，难以实现对后方株行果实
+的长期跟踪，易产生身份标识误分配或重分配。基于以
+上问题，本研究提出用超深掩蔽处理，滤除超过设定深
+度阈值的检测目标，使跟踪算法仅稳定跟踪近景目标，
+即在目标检测与目标跟踪流程间插入超深掩蔽处理，总
+体技术框架见图1。
+ 
+ 
+超深掩蔽
+深度阈值动态生成
+与检测框过滤
+多目标跟踪
+与
+目标标识
+目标
+检测器
+深度估计
+模型
+目标集合
+类型统计
+计数结果
+视频帧
+检测结果
+深度图
+过滤结果
+…
+…
+…
+…
+…
+…
+…
+图像1
+图像2
+图像t
+图1　番茄计数总体技术框架
+Fig.1    Overall technical framework for tomato counting
+ 
+ 
+1.2　果实目标检测器设计
+不同成熟度番茄果实的可靠检测，是实现进一步精
+确计数的前提。YOLO 系列模型[20] 在各种检测任务上得
+到了广泛的应用，本研究在其新进展之一，即YOLOv8
+模型[18] 上进行改进，以期进一步提高检测精度。
+ 
+1.2.1　检测器改进需求分析
+YOLOv8 用由跨阶段部分卷积（cross stage partial
+convolution，CSPConv）构建的骨干网络提取图像特征，
+用网络末端的快速空间金字塔池化（spatial pyramid
+pooling-fast，SPPF）层在深层特征中融合环境信息，用
+路径聚合网络（path aggregation net，PANet）融合多尺
+度图像特征，基于多尺度特征，通过解耦检测头输出不
+同大小目标物的坐标、类型及置信度。SPPF 在网络末端
+的小尺度特征图中融合了环境信息，该处理对提高
+YOLOv8 的性能起到了重要作用[18]。多数情形下，番茄
+果实属于小目标，该类目标需要检测头在较大尺度特征
+图上执行检测任务。如能在较大尺度特征（浅层特征）
+图中融合环境信息，对番茄小目标检测可能是有益的，
+本研究通过特征提取模块和骨干网络优化设计来实现该
+需求。
+YOLOv8 在训练过程中，用完全交并比（complete
+intersection over union，complete IoU，CIoU）作为边界
+框回归（bounding box regression，BBR）损失，CIoU 会
+使预测框与标注框具有最大的交并比[21]，同时也会对二
+者中心点距离、长宽比等几何差异施加额外惩罚。该约
+束要求训练样本要具有准确的标注。作为簇生果串，番
+茄目标在图像中会存在部分重叠，样本标注过程中，多
+位或同一位标注者，对不同图像上的相同重叠情形，可
+能会给出完全不同的判断，进而产生标注差异。对致力
+于提高模型拟合能力的CIoU 来说，样本标注差异会降
+低模型的训练效果[22]。本研究通过引入对训练样本标注
+工作更为鲁棒的BBR 损失来解决该问题。
+ 
+1.2.2　特征提取模块设计
+X ∈RC×H×W
+为在检测模型的浅层网络特征中融入环境信息，在
+LI 等[23] 提出的轻量级卷积算子Involution 基础上，设计
+特征提取模块。Involution 在多种视觉任务上都取得了良
+好效果，该算子将输入特征图
+（C、H、W 分
+别表示X 的通道数、宽和高）上每个像素位置的特征向
+第 24 期
+张润池等：基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法
+147 　
+
+Φ
+H
+量均视为可学习参数。首先通过非线性变换函数
+，将
+X 转换为可供卷积运算的卷积核
+，如式（1）所示：
+H = Φ(X) = W1σ(W0X),H ∈Rk2×H×W
+（1）
+W0 ∈RR×C
+W1 ∈Rk2×R
+σ
+R = C/4
+k2
+式中
+、
+为可学习线性变换参数，
+为
+非线性激活函数，
+用于降低线性变换的参数量，
+为卷积核空间尺度。
+H
+H
+用卷积核
+对X 做卷积运算，由于
+的特殊性，
+Involution 通过局部块（块大小为k×k）提取和Hadamard
+积实现该运算，如式（2）所示：
+E = ⟨Unfold(X;k)·H⟩,E ∈RC×k2×H×W
+（2）
+⟨·⟩
+k2
+Y ∈RC×H×W
+式中E 为积运算结果，
+表示Hadamard 运算符，Unfold
+表示局部块提取操作。在E 的
+维度上求和并调整结果
+张量的形状，则有Involution 运算结果
+。
+H
+Involution 卷积算子在X 空间维度上的不同区域应用
+不同的卷积核参数，即卷积核
+具有空间异质特性，该
+运算方式使算子可自适应地对X 的不同区域分配不同的
+权重，具有一定的空间注意力机制，但该注意力只是通
+过式（1）从X 的局部位置获得信息，没有在全局尺度上
+获得注意力机制的生成依据。本研究在卷积核生成过程
+中，通过应用Transformer 的多头注意力（multi-head self-
+attention，MHSA）机制[24]，在卷积核中引入并融合输入
+特征图的全局信息。同时为降低MHSA 的运算量，用池
+化操作对键值矩阵进行降维。将重新生成的空间异质卷
+积核应用于Involution 算子。卷积核融合了全局环境信
+息，具有全局注意力机制，并通过Hadamard 运算传递
+给计算结果。将重新设计的Involution 算子称为全局注
+意力化的Involution（global  attention-based  involution，
+GAInvolution），该算子的整体结构见图2，将其作为主
+要的特征提取模块，用于模型骨干网络设计。
+ 
+1.2.3　模型骨干网络设计
+用GAInvolution 算子取代YOLOv8 骨干网络CSPConv
+层（CSPLayer，图3a）的DarknetBottleneck 残差模块，
+构成新的特征提取层，命名为CSPGLayer（图3b），其
+中n 和C 为超参数，分别表示GAInvolution 算子
+的堆叠层数和CSPGLayer 特征图通道数。由于GAInvolution
+算子的引入，CSPGLayer 具有了全局环境信息融合能力。
+ 
+ 
+Linear, σ 
+Linear
+Linear
+Linear
+Pool
+Pool
+SDPA
++
+X
+Q
+K
+V
+Linear
+Unfold
+Hadamard
+Y
+GAInvolution
+注：Linear 表示线性变换；σ 为非线性激活函数；Pool 表示池化操作；
+Unfold 为局部块提取操作；Hadamard 为逐元素积运算；Q、K、V 分别表
+示查询、键和值矩阵；SDPA 表示缩放点积注意力运算；X、Y 为
+GAInvolution 的输入、输出特征图。下同。
+Note:  Linear  represents  a  linear  transformation;  σ  means  nonlinear  activation
+function;  Pool  means  pooling  operator;  Unfold  extracts  sliding  local  blocks;
+Hadamard  denotes  the  element-wise  multiplication;  Q,  K  and  V  represent  the
+query, key, and value matrices respectively; SDPA is short for scaled dot product
+attention.  X  and  Y  represent  the  input  and  output  feature  maps  of  the
+GAInvolution, respectively. The same below.
+图2　全局注意力化的Involution 算子
+Fig.2    Global attention-based involution (GAInvolution)
+ 
+ 
+b. CSPGLayer模块结构
+b. CSPGLayer module structure
+Conv 3×3, s=2, p=1,
+Conv 3×3, s=2, p=1,
+CSPGLayer, n=6d
+CSPGLayer, n=6d
+CSPGLayer, n=3d
+/2
+/4
+/4
+/8
+/8
+/16
+/16
+/32
+s1
+s2
+s3
+s4
+s5
+图像Image
+P3
+P4
+P5
+/8
+/16
+/32
+P1
+P2
+c. 骨干网络
+c. Backbone network 
+PConv-C
+Split
+GAInvolution
+GAInvolution
+……
+PConv-C
+Concat
+H×W×Ci
+H×W×C
+H×W×C
+H×W×0.5C
+H×W×0.5C
+H×W×0.5C
+H×W×0.5C
+H×W×C
+CSPGLayer
+n=?, C=?
+d. 路径聚合网络
+d. Path aggregation network (PANet) 
+Upsample
+Concat
+CSPGLayer, 
+Upsample
+Concat
+CSPGLayer, 
+Concat
+CSPGLayer, 
+Conv 3×3, s=2, 
+Concat
+CSPGLayer, 
+Conv 3×3, s=2, 
+P5
+P4
+P3 /8
+/16
+/32
+/16
+/16
+/16
+/8
+/8
+/8
+/16
+/16
+/16
+/32
+/32
+P3
+P4
+P5
+/8
+/16
+/32
+PANet
+PConv-C
+Split
+DarknetBottleneck
+DarknetBottleneck
+……
+PConv-C
+Concat
+H×W×Ci
+H×W×C
+H×W×C
+H×W×0.5C
+H×W×0.5C
+H×W×0.5C
+H×W×0.5C
+H×W×C
+n
+n
+CSPLayer
+n=?, C=?
+a. CSPLayer模块结构
+a. CSPLayer module structure
+图像
+Image
+PANet
+P5
+P4
+P3
+DH
+DH
+P5
+P4
+P3
+DH
+Backbone 
+network
+e. Object detection network
+e. 目标检测网络
+box
+box
+box
+cls
+cls
+cls
+p=1, C=256w
+n=3d, C=512w
+p=1, C=512w
+n=3d, C=512wr
+n=3d, C=256w
+C=64w
+C=128w
+CSPGLayer, n=3d, C=128w
+Conv 3×3, s=2, p=1, C=256w
+n=3d, C=512w
+, C=256w
+Conv 3×3, s=2, p=1, C=512w
+, C=512w
+Conv 3×3, s=2, p=1, C=512wr
+, C=512wr
+注：CSPLayer 表示跨阶段部分卷积层；n、C 为模块的超参数；H×W×Ci 等表示通道数为Ci，空间维度为H×W 的特征图；PConv-C 表示输出通道数为C 的
+点卷积；Split 为通道分割操作；Conv 3×3, s=2, p=1, C=64w 表示卷积核大小为3×3，步长为2，边界填充为1，通道数为64w 的卷积，余同；w 为网络宽度
+调解参数；s1～s5 表示网络阶段编号；P1～P5 表示不同尺度的特征；/8 表示特征图在空间维度上降低为输入图像的1/8，余同；d 为网络深度调节参数；
+Concat 为在通道维度上的特征连接操作；Upsample 为上采样模块；box 为目标边界框，cls 为目标类别。
+Note: CSPLayer denotes cross-stage partial convolution layer; n and C are hyperparameters of the module; H×W×Ci represents feature maps with Ci channels and spatial
+dimension of H×W; PConv-C represents point convolution with C output channels; Split is a channel splitting operation; Conv 3 × 3, s=2, p=1, C=64w, etc. represent
+convolutions with kernel size of 3 × 3, stride of 2, pad of 1, and channel dimension of 64w, same as others; w is the parameter for adjusting the width of the network. s1-
+s5 represent stage numbers; P1-P5 represent different scale pyramid features. ‘/8’, etc. indicate that the feature maps are reduced to 1/8 of the input image in spatial
+dimension, same as others; d is the parameter for adjusting the depth of the network; Concat is a feature concatenation operation along the channel dimension; Upsample
+is an up-sampling module; ‘box’ denotes object bounding box, and ‘cls’ denotes the object category.
+图3　果实目标检测网络结构
+Fig.3    Fruit object detection network structure
+　 148
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+用CSPGLayer，按YOLOv8 网络架构，重新构建骨
+干网络，结构如图3c，其中超参数d 用于调节网络深度，
+超参数w、r 用于调节网络宽度。由于CSPGLayer 已具
+有全局环境信息获取能力，因此本研究骨干网络末端不
+再用单独的SPPF 层来融合环境信息。同样用
+CSPGLayer 重新构建PANet，在输出特征图中融合不同
+尺度的特征，结构如图3 d。用重新设计的骨干网络和
+PANet 构建目标检测网络，结构如图3e，其中目标检测
+头则用与YOLOv8 相同的解耦检测头（decoupled head，
+DH）。DH 基于网络输出的不同尺度特征，实现果实目
+标位置及类型的预测。
+ 
+1.2.4　目标检测模型损失函数优化
+RWIoU
+为解决检测模型CIoU 损失对标注工作质量的强依
+赖，本研究参考近期研究进展[22]，用对标注工作更具鲁
+棒性的智慧IoU（wise IoU，WIoU）作为BBR 损失，以
+期提高模型泛化性能。首先定义预测框与真实框的距离
+度量
+，如式（3）所示：
+RWIoU = exp
+
+(x−xgt
+)2 +(y−ygt
+)2
+(
+W2
+g + H2
+g
+)∗
+,RWIoU ∈[1,e)
+（3）
+x
+y
+xgt
+ygt
+Wg
+Hg
+式中、为预测框中心点，
+、
+为标注框中心点，
+、
+为预测框与标注框最小外接矩形的宽和高（图4a），
+*表示在训练过程中将此部分计算从计算网络中分离。进
+一步定义模型预测框与果实真实标注框的交并比损失。
+LIoU = 1−IoU,IoU ∈[0,1]
+（4）
+LIoU
+¯LIoU
+LIoU
+β = L∗
+IoU/ ¯LIoU
+β
+β
+β
+LIoU
+β
+γ
+式中
+表示交并比损失，IoU 为预测框与标注框的交
+并比，该损失度量了预测框与标注框的重合度。设
+为目标检测模型训练过程中
+的滑动平均值，在该平
+均值基础上定义离群度
+，用于度量预测框质
+量。较小时，说明预测框质量高，此时通过BBR 损失
+向模型回传的梯度增量应较小。当较大时，则有一定概
+率是由于低质量标注或标注差异，此时BBR 回传给模型
+的梯度增量也应较小，以免对好的预测结果产生不利影
+响。总体上，当较小或较大时，通过BBR 回传给模型
+的梯度均应较小，即BBR 应更多关注一般质量预测框产
+生的
+。为此，在基础上定义非单调梯度增益因子，
+如式（5）所示：
+γ =
+β
+δαβ−δ
+（5）
+α
+δ
+γ
+γ
+β
+式中和是用于调节的超参数。随变化，呈现出先
+递增后递减的趋势（图4b）。
+RWIoU
+LIoU
+γ
+LWIoU
+基于
+、
+和，定义WIoU 损失
+：
+LWIoU = γRWIoULIoU
+（6）
+LIoU
+RWIoU
+RWIoU ∈[1,e)
+LIoU
+LIoU
+RWIoU
+考虑式（6）后两项，当预测框与标注框的中心偏离
+较远时，
+较大，
+也较大，由于
+，可
+进一步放大通过
+回传给模型的梯度，从而提高模型
+对偏离较远的预测框的关注度。而当
+较小时，则可
+降低模型对高质量预测框中心偏离
+的惩罚。因此，
+式（6）后两项具有双向注意力机制。进一步通过第一项
+γ
+的非单调梯度增益，使模型更多关注一般质量的预测
+框，从而减少对离散度低或高的预测框的关注度。因此，
+理论上WIoU 可缓解图像标注质量及标注差异对模型训
+练造成的影响。用WIoU 作为BBR 损失，与YOLOv8
+的其他损失项一同构成总损失函数，并与重新优化设计
+的骨干网络一起构成本研究果实目标检测器模型YOLOT。
+ 
+ 
+(x, y)
+中心Center
+中心Center
+(xgt, ygt)
+宽Width Wg
+预测框
+Prediction
+box
+标注框
+Label box
+高Height Hg
+a. 最小外接矩形
+a. Smallest enclosing box
+b. 离散度与梯度增益
+b. Outlier degree and gradient gain 
+梯度增益Gradient gain
+离散度Outlier degree
+δ=2, α=2.5
+δ=3, α=2.0
+δ=4, α=1.6
+δ=5, α=1.5
+δ=5, α=1.4
+0
+2
+4
+6
+8
+10
+0.2
+0.4
+0.6
+0.8
+1.0
+1.2
+1.4
+1.6
+α
+δ
+注：和为调解梯度增益的超参数，含义与式（5）相同。
+α
+δ
+Note: and are hyper parameters for adjusting the gradient gain, with the same
+meaning as expression (5).
+图4　最小外接矩形与梯度增益示例
+Fig.4    Example of minimum bounding rectangle and gradient gain
+ 
+1.3　基于超深掩蔽的果实目标过滤
+在图1 技术框架中引入超深掩蔽处理，过滤掉
+YOLOT 检测出的远景目标，解决远景小目标难以稳定
+跟踪，后方植株行果实目标难以长期跟踪[16] 的问题。对
+于当前图像帧，当预测出的果实目标框中心点深度超过
+设定阈值时，该预测结果即被滤除。
+ 
+1.3.1　图像深度获取
+D∗= DAM(I)
+D∗
+D∗
+激光、微波和超声波雷达等获取的离散深度难以直
+接与图像进行像素级匹配，Kinect 等深度相机易受日光
+干扰，双目立体匹配则不能保证在果实目标上提取到有
+效特征点，且该方法不适用于只有单目相机的巡检机器
+人。因此本研究不再采用这些技术手段获取图像深度，
+而是直接应用YANG 等[25] 提出的单目深度估计模型
+（depth  anything  model，DAM）来预测图像深度。
+DAM 是一个在150 万张真实深度标注图像和6 200 万张
+无标注图像上训练的深度估计大模型，相对误差不高于
+4.3%，具有良好的泛化性能和较高的深度估计精度。由
+于超深掩蔽处理只需要判断出目标的相对远近，因此小
+的深度估计误差不会影响目标的检测计数精度。本研究
+直接用DAM，估计相机获取的视频帧图像I 对应的深度
+信息
+，
+为与I 逐像素对应的逆向深度图
+（视差空间表示），进一步用视差空间的逆变换[25]，将
+转变为正常的相对深度图D，如式（7）所示：
+第 24 期
+张润池等：基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法
+149 　
+
+D = b·
+1
+D∗+c
+（7）
+D
+式中c 为变换参数，b 为缩放因子，用于控制
+的取值范
+围，分别设置为b=10、c=1[25]。
+ 
+1.3.2　超深掩蔽处理
+A = {⟨boxi,clsi⟩|i ∈[1, M]}
+boxi = [xi,yi,wi,hi]T
+xi,yi
+wi,hi
+clsi
+ω
+D(xi,yi) > ω
+i
+对于当前视频帧图像I，用YOLOT 检测不同成熟度
+番茄果实，得到检测结果集
+，
+为目标预测框，
+为预测框中心点，
+为预测框尺度，
+为果实成熟度类别得分，M 为I
+上的检测目标数。设深度阈值为
+，当预测框中心深度
+时，将检测结果从A 中滤除，将保留的结果
+作为近景目标集，用B 表示。
+ω
+ω
+ω
+由于DAM 预测的D 为相对深度图，仅表达场景中
+目标物的相对远近，相同的相对深度值在不同的图像间
+不具有可比性，因此本研究的深度阈值
+不采用固定值，
+而是分别根据每帧图像的深度值分布，动态计算其对应
+的。从采集自番茄种植温室的巡检视频中随机选择
+100 帧图像，用DAM 估计每帧图像的相对深度图D，预
+试验中用Kolmogorov-Smirnov（K-S）检验发现，有93%
+的深度图，其元素值分布满足正态分布。均值作为正态
+分布的数学期望，用其作为分割点可将分布分成两个区
+域，对于深度图D 及对应图像上的目标来说，则可分成
+近景及远景目标，为降低绝对性，并使得分割点可调节，
+在均值基础上增减一定倍数的标准差来用作分割点，即
+深度阈值，如式（8）所示：
+ω = µD +ρσD
+（8）
+µD
+σD
+ρ
+ω
+ω
+式中
+为D 的逐像素深度均值，
+为D 的标准差，表
+示倍数调节参数，用于调节
+的大小，根据后续试验确
+定其取值，并基于对目标检测结果做超深掩蔽。
+ 
+1.4　果实目标跟踪计数方法
+温室光环境复杂，巡检过程中目标反复遮挡现象
+严重，相机的非匀速不规则运动，也会增加目标跟踪难
+度。当前可供使用的多目标跟踪器主要有DeepSORT[26]、
+ByteTrack[14]、BoT-SORT[19] 等，其中BoT-SORT 在建立
+帧间目标关联时，同时考虑了目标预测框的尺度特征和
+表观特征，并引入相机运动补偿，克服了相机运动对尺
+度特征的影响，具有更好的跟踪鲁棒性[19]。因此本研究
+基于BoT-SORT 算法，设计果实目标跟踪计数器，以实
+现对超深掩蔽处理后的不同成熟度番茄果实计数，具体
+算法如下：
+步骤1：初始时，设置目标跟踪集T 为空，历史跟
+踪集S 为空；接下来对巡检视频进行逐帧处理；
+It
+τ
+Bh
+Bl
+It
+Bh
+Fh
+步骤2：设当前帧图像的目标检测结果经超深掩蔽
+处理后构成近景目标集B，按类别得分阈值将其分为高
+分集
+和低分集
+；应用BoT-SORT 的表观特征提取器
+在上分别提取
+中每个检测框区域的表观特征，构成
+表观特征集
+；
+It
+It−1
+步骤3：提取和前一帧图像
+的特征点，基于帧
+间特征点匹配和RANSAC 算法[27]，计算帧间仿射变换
+Mt
+t−1
+矩阵
+，并将其近似为相机运动模型；
+It
+Mt
+t−1
+步骤4：针对目标跟踪集T，基于卡尔曼滤波器和恒
+速模型假设，预测每个跟踪目标的边界框在上的位置，
+进一步基于
+对所预测的边界框进行运动补偿，得到
+边界框更新后的目标跟踪集T；
+Bh
+Bh
+Fh
+Bh
+Tr
+Bh
+Br
+Br
+步骤5：对T 和
+进行第一次关联。首先分别计算
+所跟踪目标的预测边界框与
+中目标检测框的IoU，同
+时逐一计算所跟踪目标表观特征和
+中特征向量的余弦
+相似度，基于二者构建代价矩阵；基于代价矩阵，采用
+匈牙利算法[28] 实现T 和
+的第一次关联；为避免误关联，
+对成功的关联执行额外的果实成熟度类型一致性检查，
+如类型不同，则解除关联；将T 中未成功关联的跟踪目
+标集记为
+，将
+中未成功关联的目标检测结果记为
+。
+表示在当前帧中新出现的高置信度果实目标；
+Tr
+Bl
+Tr
+Bl
+Tr
+Bl
+Tr
+Trr
+Ts
+步骤6：对
+和
+进行二次关联。计算
+跟踪目标
+预测边界框与
+目标检测框的IoU，基于其构建代价矩
+阵，用匈牙利算法进行
+和
+的关联；同样也检查关联
+对的果实成熟度类型，以避免误关联；将
+中仍未成功
+关联的跟踪目标集记为
+，将T 中经两次关联后，已关
+联成功的跟踪子集记为
+；
+Ts
+Ts
+步骤7：更新
+中目标的状态。首先根据
+在B 中
+关联的目标检测框（观测值），更新各跟踪目标的卡尔
+曼滤波器，同时采用指数移动平均方式更新这些目标的
+表观特征向量；
+Trr
+ξ
+步骤8：对于
+，如果其中包含已连续帧未能成功
+关联的跟踪目标，则认为已从视线中消失，将此类目标
+从T 中移出，同时移入集合S 中；
+Br
+η
+It+1
+It+1
+步骤9：对于
+，当其中检测目标的置信度超过阈
+值时，则将其添加进集合T 中，作为新目标，进行后
+续跟踪；如视频还有后续帧
+，以
+为当前帧，回到
+步骤2，否则继续下一步；
+步骤10：求T 和S 的并集，并重新存入S 中，S 包
+含整个视频的目标检测跟踪结果；对S 中不同类型目标
+进行数量统计，得到不同成熟度番茄果实的计数结果。
+τ
+ξ
+η
+本研究基于BoT-SORT 算法的果实目标跟踪方法，
+根据YOLOT 能够检测果实不同成熟度类型的特点，在
+算法的第5、6 步，引入额外的检查，通过比对果实成熟
+度类型，去除可能的误关联，算法的其他部分以及参数、
+和等的设置与BoT-SORT 相同。
+ 
+2　数据集构建及试验方法
+ 
+2.1　数据集构建
+ 
+2.1.1　数据采集设备
+用携带相机的轮式机器人底盘（图5a）作为载具，
+进行视频采集，该机器人可遥控行进。底盘上安装相机托
+架，托架顶部安装Intel RealSense D435 相机，分辨率为
+1 920×1 080 像素，采样频率为30 帧/s，相机离地高度
+约1.2 m。同时在机器人底盘上固定Microsoft Surface
+Pro 3 平板电脑（Windows 10 操作系统），并通过USB
+串口连接相机，用于视频采集与存储。
+　 150
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+ 
+a. 数据采集设备
+a. Data acquisition equipment 
+b. 数据采集方式
+b. Data acquisition method 
+植株
+Plant
+植株行Plant row
+通道Narrow alley
+轮式机器人
+Wheeled robot
+视线Sight line
+c. 果实成熟度及标注示例
+c. Fruit maturity and annotation examples 
+轮式机器人
+Wheeled robot
+平板电脑
+Tablet PC
+相机
+Camera
+标注框
+Label bounding box
+成熟果
+Ripe
+半熟果
+Semi-ripe
+未熟果
+Unripe
+不同成熟度簇生果串
+Mixed maturity clustered fruits
+e. 标注框尺寸分布
+e. Labelboxsize distribution 
+d. 标注框位置分布
+d. Labelbox positiondistribution 
+0.2
+0.4
+0.6
+0.8
+1.0
+0
+0.2
+0.4
+0.6
+0.8
+1.0
+宽Width
+宽Width
+高Height
+高Height
+0
+0.05 0.10 0.15 0.20 0.25
+0.1
+0.2
+0.3
+0.4
+图5　数据采集与标注
+Fig.5    Data acquisition and annotation
+ 
+ 
+2.1.2　数据样本采集
+于2023 年10 月，在沈阳市辽中区某番茄生产用日
+光温室内，开展视频采集。番茄植株吊蔓生长，处于盛
+果期，行距约1.2 m，株距约0.25 m，株高约2 m。在晴
+朗天气的10:00—15:00 采集数据，遥控机器人在株行间
+行进，相机平视，视线平行或垂直于株行。在机器人从
+行间通道的一端行进至另一端的过程中（图5b），进行
+视频采集，所采集的样本构成1 条视频。每条视频仅采
+用一种视角，即行进中，相机视线保持近似平行或垂直
+于株行。同时以人工方式巡检株行，对不同成熟度番茄
+进行计数并作记录。将每条视频与人工计数结果对应，
+当相机视线平行于株行时，两侧株行均在视场内，1 条
+视频对应两侧株行的番茄果实数量，当相机视线垂直于
+一侧株行时，则1 条视频仅对应该侧株行的果实数量。
+共采集145 条视频，两种视角的视频数量近似，每条视
+频平均约有300 帧图像。
+ 
+2.1.3　目标检测数据集制作
+Va
+Vb
+从145 条视频中选取70 条视频，构成集合
+，用于
+验证本研究不同成熟度番茄计数方法的有效性，其余75
+条视频，构成集合
+，用于制作目标检测模型的训练及
+测试数据集。
+Vb
+Vb
+针对
+的每一条视频，用OpenCV 编程做间隔采样，
+共从
+中提取1 900 帧图像。用labelImg 对每幅图像进
+行标注，逐个框选（图5c）出图像中所有番茄果实目标
+并标注成熟度。参考孙宇朝等[29] 的研究，将果实分为成
+熟果（红色，着色率≥70%）、半熟果（白粉色，着色
+率<70%）和未熟果（白果、绿果）3 种成熟度类型
+（图5c）。对标注结果进行分类统计，3 种成熟度果实
+占比分别为13%、16% 和71%，标注框均匀地分布在图
+像各处（图5 d），以标注框尺度不高于图像宽/高的5%
+的小目标为主（图5e）。图像及对应标注结果共同构成
+番茄果实目标检测数据集（tomato  detection  dataset，
+TDD）。
+ 
+2.2　模型训练方法
+基于PyTorch 2.1 计算框架，用Python 编程实现本
+研究番茄果实目标检测器模型YOLOT。考虑到模型实
+际应用中，边缘设备计算资源有限，YOLOT 网络结构
+超参数设置与YOLOv8 的轻量模型YOLOv8n[18] 相同。
+由于超深掩蔽使用已完成训练的DAM 模型[25]，果实目
+标跟踪计数器基于BoT-SORT 设计，因此只需完成对
+YOLOT 的训练，即可用于不同成熟度番茄果实计数。
+将TDD 按4:1 比例划分为训练集和测试集，用训练
+集训练YOLOT 模型。在一台配置Intel Core i9-13900HX
+处理器，32 GB 内存，1 T 硬盘，NVIDIA GeForce RTX 4080
+图形处理器，CUDA 12.1 并行计算库，cuDNN 8.2 深度
+学习加速库，Windows 10 操作系统的计算机上开展模型
+的训练。
+训练过程中，输入图像分辨率设置为640×640 像素，
+用与YOLOv8 相同的在线数据增广方法增广样本，用带
+动量因子的随机梯度下降法训练模型，动量因子为0.9，
+最大迭代轮数设置为600，初始学习率设置为0.01，每
+迭代1 轮，线性降低学习率，直至训练结束时，学习率
+降至10−4[18]。
+ 
+2.3　模型测试及评价指标定义
+用TDD 测试集测试番茄果实目标检测模型的性能，
+测试环境与训练环境相同，测试过程中除将输入图像设
+置为640×640 像素大小外，不再进行数据增广。用召回
+率、多类型目标平均精度均值（mean average precision，
+mAP）[30]、模型权重参数量、理论计算量和计算速度作
+为模型性能的评价指标。
+Va
+将经过训练和测试的YOLOT 模型置入图1 所示技
+术框架，构建番茄果实计数方法，并在视频集合
+上测
+试方法的有效性。用不同成熟度果实人工实测数量与本
+研究计数方法预测值之间的平均计数精度ACP、平均绝
+对误差（mean  absolute  error，MAE）和均方根误差
+（root mean square error，RMSE）3 项指标来评价方法的
+第 24 期
+张润池等：基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法
+151 　
+
+性能，具体定义如式（9）～（11）所示：
+ACP = 1−1
+N
+N
+∑
+i=1
+|p(Va,i
+)−y(Va,i
+)|/y(Va,i
+)
+（9）
+MAE = 1
+N
+N
+∑
+i=1
+|p(Va,i
+)−y(Va,i
+)|
+（10）
+RMSE =
+v
+t
+1
+N
+N
+∑
+i=1
+(p(Va,i
+)−y(Va,i
+))2
+（11）
+Va
+p(Va,i
+)
+Va,i
+y(Va,i
+)
+式中N 表示
+中的视频数，
+表示方法在视频
+上
+的预测果实数量，
+为人工统计数量。
+ 
+3　结果与分析
+ 
+3.1　目标检测模型有效性测试
+ 
+3.1.1　目标检测模型比较
+本研究目标检测模型YOLOT 基于YOLOv8 进行优
+化设计，为验证模型改进的有效性，与相同超参数配置
+的YOLOv8n[18]，同时与常用的目标检测模型Faster R-
+CNN[8]、SSD[31]，以及新近出现的轻量级模型YOLOv9c[32]
+和YOLOv10n[33] 进行比较。采用相同的TDD 数据集训
+练并测试各模型，结果如表1。
+ 
+ 
+表 1    不同模型的番茄果实目标检测性能比较
+Table 1    Comparison of tomato fruit object detection performance
+among different models
+模型
+Models
+mAP50/
+%
+mAP50-
+95/%
+召回率
+Recall/%
+计算量
+Computation
+scale/
+GFLOPs
+模型大小
+Model
+size/M
+计算延时
+Computation
+delay/ ms
+YOLOT
+91.0
+60.2
+90.2
+9.5
+13.5
+16.1
+YOLOv8n
+87.8
+58.2
+86.5
+8.1
+24.9
+12.6
+Faster R-
+CNN
+84.7
+56.9
+74.9
+370.2
+108.5
+80.1
+SSD
+73.6
+46.2
+67.1
+62.7
+91.6
+31.6
+YOLOv9c
+89.8
+59.5
+88.9
+6.9
+8.9
+11.2
+YOLOv10n
+90.7
+59.9
+89.6
+6.4
+6.8
+9.8
+注：mAP50 和mAP50-95 分别表示在交并比阈值为0.5 和0.5-0.95 的平均精度均
+值；GFLOPs 表示十亿次浮点运算。下同。
+Note：mAP50 and mAP50-95 represent the mean average precision at IoU thresholds
+of 0.5 and 0.5-0.95 respectively; GFLOPs is short for giga floating point operations.
+The same below.
+ 
+由表1 可知，在番茄果实目标检测任务上，YOLOT
+具有最高的目标检测精度和召回率。与YOLOv8n 相比，
+YOLOT 在平均检测精度指标mAP50 上提高了3.2 个百分
+点，目标召回率提高3.7 个百分点。由于用
+GAInvolution 算子重新设计了检测网络，YOLOT 在模型
+大小上比YOLOv8n 降低了45.8%，同时因MHSA 的引
+入，计算量和计算延时分别增加了17.3% 和27.8%，计
+算延时为16.1 ms，检测速度不低于62 帧/s，具有实时性，
+表明YOLOT 对于YOLOv8 的改进对提高检测精度和降
+低模型大小是有效的。与双阶段Faster R-CNN 和单阶段
+SSD 两种常用模型相比，在mAP50 指标上，YOLOT 分
+别提高6.3 和17.4 个百分点，模型大小和计算延时也大
+幅降低，YOLOT更利于在边缘设备上部署。与同期的
+YOLOv9c 相比，YOLOT 在mAP50 和mAP50-90 指标上分
+别高于前者1.2 和0.7 个百分点，与新出现的
+YOLOv10n 相比，YOLOT的mAP50 高0.3 个百分点，召
+回率高0.6 个百分点，YOLOT 仍具有竞争力。总体来说，
+在番茄目标检测任务上，YOLOT 的改进是有效的。
+ 
+3.1.2　目标检测模型消融试验
+为进一步验证特征提取模块GAInvolution 算子和目
+标检测网络设计的有效性，以及WIoU 引入对番茄目标
+检测任务的适用性，开展模型消融试验。用基于GAInvolution
+的网络（图3e）替换YOLOv8n 模型的网络，构成模型
+YOLOT-G，将图3e 所示网络的GAInvolution 更换为
+Involution 算子后，用作YOLOv8n 模型的网络，构成模
+型YOLOT-I，用WIoU 替换YOLOv8n 的CIoU 损失，
+构成模型YOLOT-W，各模型与本研究最终检测器模型
+YOLOT 一同，采用TDD 数据集进行训练和测试，结果
+见表2。
+ 
+ 
+表 2    目标检测模型消融试验结果
+Table 2    Ablation test results of target detection model
+%
+模型
+Models
+卷积算子
+Convolution operator
+损失函数
+Loss function mAP50 mAP50-95
+召回率
+Recall
+YOLOv8n
+CSPConv
+CIoU
+87.8
+58.2
+86.5
+YOLOT-I
+Involution
+CIoU
+88.4
+58.0
+87.5
+YOLOT-G
+GAInvolution
+CIoU
+90.5
+59.9
+89.3
+YOLOT-W
+CSPConv
+WIoU
+88.9
+58.4
+88.1
+YOLOT
+GAInvolution
+WIoU
+91.0
+60.2
+90.2
+ 
+表2 数据表明，GAInvolution 算子与网络结构的设
+计，以及WIoU 的引入均提高了番茄果实检测精度。
+YOLOT-I 用Involution 替换了YOLOv8n 的CSPConv 卷
+积算子，结果使mAP50-95 略微降低0.2 个百分点，但mAP50
+提高0.6 个百分点，召回率提高了1.0 个百分点，表明轻
+量级Involution 算子不会降低模型检测性能。YOLOT-G
+采用基于GAInvolution 的检测网络，与YOLOv8n 相比，
+mAP50 指标提高了2.7 个百分点，召回率提高了2.8 个百
+分点，表明所设计的GAInvolution 算子能有效提高模型
+果实目标检测能力。GAInvolution 算子具有融合全局特
+征的空间异质卷积核，可在网络浅层局部特征中引入全
+局信息，进而提高模型的目标检测能力。与YOLOT-I 相
+比，YOLOT-G 在mAP50 和mAP50-95 上分别提高2.1 和
+1.9 百分点，表明通过MHSA 融合全局环境信息，进而
+生成空间异质卷积核的GAInvolution 设计是有效的。与
+YOLOv8n 相比，YOLOT-W 引入了WIoU，使后者的mAP50
+提高1.1 个百分点，召回率提高1.6 个百分点，表明WIoU
+损失对提高模型检测性能是有效的。对比YOLOT 和
+YOLOT-G，两者的网络结构相同，YOLOT 使用了
+WIoU，使前者在各项精度指标上均优于后者，进一步证
+明了WIoU 的作用。总体上，YOLOT 的网络结构设计
+和损失函数优化对提高番茄果实检测性能是有效的。
+ 
+3.2　基于超深掩蔽的果实计数有效性试验
+Va
+将YOLOT 检测器、基于DAM 的超深掩蔽处理和
+基于BoT-SORT 的番茄果实计数器，按图1 所示技术框
+架组合起来后，构成本研究番茄果实计数方法，在
+视
+频集合上开展计数试验，验证方法的有效性。方法执行
+中，针对每帧图像I，通过DAM 预测深度图D，其中在
+　 152
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+ω
+ρ
+ρ
+ω
+ρ
+Va
+ρ
+用式（8）计算深度阈值时，需确定调节参数的取值。
+为寻找适宜的值，为其设置多组离散的正负较小值，用
+于的计算。分别测试不同值下，本文方法在
+上的计
+数性能，用以确定适宜的值。同时为验证超深掩蔽的有
+效性，也开展不启用该处理的计数试验。结果见表3。
+ 
+ 
+表 3    番茄果实计数试验结果
+Table 3    Tomato fruit counting experiment results
+超深掩蔽配置
+Ultra-depth masking configurations
+ACP /%
+MAE
+RMSE
+启用 Enable
+ρ
+ρ
+值  value
+×
+—
+81.17
+18.00
+23.27
+√
+0.3
+83.87
+12.33
+15.11
+√
+0.1
+87.34
+10.33
+11.27
+√
+0
+90.71
+9.00
+10.17
+√
+−0.1
+91.14
+8.33
+9.08
+√
+−0.3
+92.00
+6.00
+7.75
+√
+−0.5
+93.80
+4.33
+4.93
+√
+−0.6
+90.80
+5.33
+7.30
+ρ
+注：为深度阈值调节参数，含义同式（8）；×、√分别表示关闭或启用超深
+掩蔽；ACP，MAE 和RMSE 分别代表平均计数精度，平均绝对误差和均方根
+误差。下同。
+ρ
+Note:  is the depth threshold adjustment parameter, with the same meaning as
+equation (8). × and √ respectively indicate disabling or enabling ultra-depth
+masking. ACP, MAE and RMSE represent average counting precision, mean absolute
+error and root mean square error respectively. The same below.
+ 
+ρ
+ρ = 0
+由表3 可知，启用超深掩蔽处理后，不同值下的番
+茄果实计数精度ACP 均高于不启用超深掩蔽的试验结果，
+MAE 和RMSE 误差也均有降低。在启用超深掩蔽的多
+组试验中，在
+的基础上，逐渐增大其取值时，本研
+ρ = 0
+ρ = −0.5
+ρ
+ρ
+ω
+ρ
+ρ = −0.5
+究方法的计数精度逐渐下降。相应地在
+的基础上逐
+渐减小其取值时，则计数精度逐渐提高，当
+时，
+本文方法的果实计数精度ACP 最高，为93.80%，与不启
+用超深掩蔽的结果相比，ACP 提高了12.63 个百分点，进
+一步降低的取值，则精度开始下降。当取较大值时，
+则较大，不能完全掩蔽远景目标，而当取较小值时，
+则近景目标也会被掩蔽，无法对其跟踪计数。就试验结
+果而言，
+为计算深度阈值的适宜设置。总的来说，
+在番茄计数流程里引入超深掩蔽处理，对提高果实计数
+精度具有重要作用。
+对本研究番茄计数方法框架中YOLOT 的果实目标
+检测结果、DAM 的深度估计结果，以及基于深度的目标
+超深掩蔽结果进行可视化，部分样本的可视化结果如图6。
+由图6 的检测结果可以看出，YOLOT 能够有效检测不
+同成熟度番茄果实，包括远景小目标。在DAM 预测的
+对应深度图中，亮度表达目标远近，亮度越高表明目标
+越近，亮度分布表明深度图反应了图像对应的空间结构，
+且深度图中的番茄果实目标及茎秆边界清晰。对比过滤
+结果与检测结果可以看出，远景目标以及当前植株行后
+侧作物行中的果实目标均被有效滤除。在用本文方法进
+行果实计数时，由于超深掩蔽过滤掉了远景目标，相机
+移动过程中，因远景目标反复遮挡、特征变换等，给目
+标跟踪器带来重复跟踪计数的问题会被排除掉，从而提
+高了本研究方法的果实计数精度。
+ 
+ 
+检测结果
+Detection results
+深度图
+Depth map
+过滤结果
+Filter results
+ 示例 1
+ 示例 2
+示例 3
+示例 4
+Example 1 
+ Example 2 
+ Example 3 
+ Example 4 
+图6　基于超深掩蔽的果实目标过滤
+Fig.6    Fruit object filtering based on ultra-deep masking
+ 
+ 
+3.3　果实计数方法有效性分析
+ 
+3.3.1　方法间比较
+Va
+为进一步分析本研究方法的有效性，用YOLOv8n、
+YOLOv9c、YOLOv10n 作为目标检测器，结合本研究基
+于BoT-SORT 的目标计数器，组合出多种番茄果实计数
+方法。比较本研究方法和多种组合方法在
+上进行番茄
+果实计数的精度，结果见表4。
+由表4 可知，本研究方法具有最高的ACP 计数精度，
+和最低的MAE、RMSE 误差，计算速度为23 帧/s，在番
+茄果实计数任务上是有效的。与用YOLOv8n、
+YOLOv9c 和YOLOv10n 做目标检测器的方法相比，本
+研究方法的果实计数精度ACP 分别提高了7.68、4.41 和
+2.43 个百分点。4 种方法均采用相同的超深掩蔽处理和
+基于BoT-SORT 的多目标跟踪计数器，产生计数精度差
+异的因素主要为果实目标检测器的性能差异。
+ 
+ 
+表 4    不同方法间的果实计数精度比较
+Table 4    Comparison of fruit counting accuracy among different
+methods
+方法 Methods
+ACP/%
+MAE
+RMSE
+计算速度
+Calculation speed/(帧·s−1)
+本文方法 Our method
+93.80
+4.33
+4.93
+23
+YOLOv8n+BoT-SORT
+86.12
+9.68
+10.34
+30
+YOLOv9c+BoT-SORT
+89.39
+8.33
+9.33
+33
+YOLOv10n+BoT-SORT
+91.37
+7.67
+8.21
+39
+ 
+由于YOLOT 采用了基于MHSA 的全局特征融合过
+程，使本研究方法的计算速度慢于基于其他检测器的方
+第 24 期
+张润池等：基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法
+153 　
+
+法，但该处理能够提高检测器精度。结合表4 和表1 数
+据可知，目标检测器精度的提升可有效提高果实计数精
+度。高性能的目标检测器具有高的目标检测精度和召回
+率，可以在连续视频帧中持续检测同一目标，使后续多
+目标跟踪算法能稳定跟踪目标轨迹，进而提高计数精度。
+综上，本研究计数方法能够有效对番茄果实进行计数。
+ 
+3.3.2　不同成熟度果实计数精度分析
+Va
+为明确本研究方法对不同成熟度番茄果实进行计数
+的有效地，进一步分析其在
+视频集上，对不同成熟度
+果实的计数精度，结果见表5。
+ 
+ 
+表 5    不同成熟度果实计数精度
+Table 5    Counting accuracy of tomato fruits of different maturity
+成熟度Maturity
+ACP /%
+MAE
+RMSE
+成熟果 Ripe
+91.40
+3.32
+6.67
+半熟果 Semi-ripe
+92.93
+4.53
+6.37
+未熟果 Unripe
+95.54
+4.39
+4.46
+ 
+Va
+由表5 可知，就本研究方法在
+上的测试结果而言，
+成熟果的平均计数精度ACP 最低，未熟果的ACP 最高，
+但成熟果的MAE 低于未熟果，成熟果的绝对误差更低。
+成熟果颜色与背景差异大，理论上应更易于检测计数。
+然而本研究在采集试验数据时，果实尚未大量成熟，由
+前文对TDD 果实标注结果的统计也可知，样本主要以未
+熟果为主，使YOLOT 对成熟果的学习频率低于未熟果，
+影响其对成熟果的检测能力，进而影响了对成熟果的计
+数精度。另一方面，由式（9）~（10）也可知，如 MAE 相同，
+数量少的成熟果实ACP 会更低。基于成熟果与背景的颜
+色差异，以及本研究方法在未熟果上的计数精度，理论
+上增加模型对成熟果的学习频率，其计数精度将会有进
+一步提升。本研究方法对不同成熟度番茄果实的ACP 都
+在91% 以上，具有较高的精度，能够对不同成熟度番茄
+果实进行有效计数。不同成熟度果实的有效计数对制定
+番茄最佳采摘期，以及通过对果实成熟度情况分析进行
+品种改良等都具有实际意义。
+ 
+3.3.3　不同巡检视角的计数精度分析
+Va
+ρ = −0.5
+对番茄植株行进行巡检的视角主要为垂直视角和平
+行视角，即相机视线垂直或平行于植株行。为分析巡检
+视角对番茄计数精度的影响，按
+视频集采样时的相机
+视线，将数据集分为垂直视角和平行视角2 个子集，用
+本研究方法分别分析不同视角下的果实计数精度，超深
+掩蔽均设置
+，结果如表6 所示。
+ 
+ 
+表 6    不同巡检视角的果实计数精度比较
+Table 6    Comparison of fruit counting accuracy from different
+inspection perspectives
+巡检视角 Inspection perspectives
+ACP /%
+MAE
+RMSE
+垂直 Vertical
+94.00
+4.09
+4.54
+平行 Parallel
+91.41
+5.30
+5.33
+ 
+表6 数据表明，两种视角下，本研究方法都具有较
+高的计数精度。垂直视角和平行视角下的ACP 精度分别为94.00%
+和91.41%，前者比后者高2.59 个百分点，计数的MAE
+和RMSE 误差也低于后者，表明巡检视角对计数精度也
+具有一定影响。限于行间通道宽度，垂直视角下，相机
+离植株行较近，出现在图像中的目标主要是近景果实，
+目标较大，更易于检测器检测，同时该视角下的相机运
+动，也会使方法对果实目标的跟踪帧数相对较少，出现
+果实身份标识符跳变的可能性下降，进而降低了计数误
+差。总体上，垂直视角更利于以果实计数为目的的植株
+行巡检。该研究可为基于视觉技术的果蔬产量统计等提
+供技术参考。
+ 
+4　结　论
+本文构建了一种基于超深掩蔽与改进YOLOv8 的不
+同成熟度番茄果实计数方法，并进行了试验测试，主要
+结论如下：
+1）改进的番茄目标检测器是有效的，与YOLOv8n
+相比，平均检测精度mAP50 提高了3.2 个百分点，召回
+率提高了3.7 个百分点，模型大小降低了45.8%，与同期
+的YOLOv9c 相比，mAP50 则提高了1.2 个百分点。
+2）所设计的GAInvolution 算子能有效提高目标检测
+器的番茄果实检测能力，以其为主要算子的检测模型比
+改进前的YOLOv8n，在mAP50 和召回率上分别提高2.7
+和2.8 个百分点；WIoU 损失对提高模型检测性能是有效
+的，该损失的引入使模型的mAP50 比改进前提高了1.1
+个百分点。
+3）超深掩蔽处理对提高番茄果实统计计数的精度具
+有重要作用，用基于单目深度估计模型预测的深度，动
+态统计深度阈值，当用深度均值减去0.5 倍的深度标准
+差作为深度阈值时，果实计数方法具有最高的计数精度，
+与不采用掩蔽处理的方法相比，平均计数精度提高了
+12.63 个百分点。
+4）本研究方法的果实计数平均精度为93.80%，对
+不同成熟度的番茄果实计数精度不低于91%，计算速度
+为23 帧/s，方法在番茄果实计数任务上是有效的。巡检
+视角对番茄果实计数精度具有影响，垂直视角比平行视
+角的计数精度高2.59 个百分点，垂直视角更利于果实计
+数。研究可为基于视觉技术的果蔬产量统计提供技术参考。
+[ 参    考    文    献]
+ 
+ MAHESWARI  P,  RAJA  P,  APOLO-APOLO  O  E,  et  al.
+Intelligent  fruit  yield  estimation  for  orchards  using  deep
+learning based semantic segmentation techniques: A review[J].
+Frontiers in Plant Science, 2021, 12: 684328.
+[1]
+ CARDELLICCHIO  A,  SOLIMANI  F,  DIMAURO  G,  et  al.
+Detection of tomato plant phenotyping traits using YOLOv5-
+based single stage detectors[J]. Computers and Electronics in
+Agriculture, 2023, 207: 107757.
+[2]
+ 黄小玉，李光林，马驰，等. 基于改进判别区域特征融合
+算法的近色背景绿色桃子识别[J]. 农业工程学报，2018，
+34(23)：142-148.
+HUANG  Xiaoyu,  LI  Guanglin,  MA  Chi,  et  al.  Green  peach
+recognition based on improved discriminative regional feature
+integration algorithm in similar background[J]. Transactions of
+the Chinese Society of Agricultural Engineering (Transactions
+of the CSAE), 2018, 34(23): 142-148. (in Chinese with English
+[3]
+　 154
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+abstract)
+ RANJAN  V,  SHARMA  U,  NGUYEN  T,  et  al.  Learning  to
+count
+ everything[C]//2021
+ IEEE/CVF
+ Conference
+ on
+Computer Vision and Pattern Recognition (CVPR), June 20-25,
+2021,  Nashville,  TN,  USA.  Los  Alamitos:  IEEE  Computer
+Society, 2021: 3393-3402.
+[4]
+ 高芳芳，武振超，索睿，等. 基于深度学习与目标跟踪的
+苹果检测与视频计数方法[J]. 农业工程学报，2021，37(21)：
+217-224.
+GAO  Fangfang,  WU  Zhenchao,  SUO  Rui,  et  al.  Apple
+detection  and  counting  using  real-time  video  based  on  deep
+learning  and  object  tracking[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(21): 217-224. (in Chinese with English abstract)
+[5]
+ 黄丽明，王懿祥，徐琪，等. 采用YOLO 算法和无人机影
+像的松材线虫病异常变色木识别[J]. 农业工程学报，2021，
+37(14)：197-203.
+HUANG Liming, WANG Yixiang, XU Qi, et al. Recognition
+of  abnormally  discolored  trees  caused  by  pine  wilt  disease
+using  YOLO  algorithm  and  UAV  images[J].  Transactions  of
+the Chinese Society of Agricultural Engineering (Transactions
+of the CSAE), 2021, 37(14): 197-203. (in Chinese with English
+abstract)
+[6]
+ 姚业浩，李毅念，陈玉仑，等. 基于油菜角果长度图像识
+别的每角粒数测试方法[J]. 农业工程学报，2021，37(23)：
+153-160.
+YAO Yehao, LI Yinian, CHEN Yulun, et al. Testing method
+for the seed number per silique of oilrape based on recognizing
+the  silique  length  images[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(23): 153-160. (in Chinese with English abstract)
+[7]
+ REN S, HE K, GIRSHICK R, et al. Faster R-CNN: Towards real-
+time object detection with region proposal networks[J]. IEEE
+Transactions  on  Pattern  Analysis  and  Machine  Intelligence,
+2016, 39(6): 1137-1149.
+[8]
+ ZENG T, LI S, SONG Q, et al. Lightweight tomato real-time
+detection  method  based  on  improved  YOLO  and  mobile
+deployment[J]. Computers and Electronics in Agriculture, 2023,
+205: 107625.
+[9]
+ 杨坚，钱振，张燕军，等. 采用改进YOLOv4-tiny 的复杂环
+境下番茄实时识别[J]. 农业工程学报，2022，38(9)：215-221.
+YANG  Jian,  QIAN  Zhen,  ZHANG  Yanjun,  et  al.  Real-time
+recognition  of  tomatoes  in  complex  environments  based  on
+improved  YOLOv4-tiny[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2022, 38(9): 215-221. (in Chinese with English abstract)
+[10]
+ 刘航，刘涛，李世娟，等. 基于深度残差网络的麦穗回归
+计数方法[J]. 中国农业大学学报，2021，26(6)：170-179.
+LIU Hang, LIU Tao, LI Shijuan, et al. Research on wheat ear
+regression counting based on deep residual network[J]. Journal
+of  China  Agricultural  University,  2021,  26(6):  170-179.  (in
+Chinese with English abstract)
+[11]
+ 魏超宇，韩文，刘辉军. 基于深度学习的温室大棚小番茄
+果实计数方法[J]. 中国计量大学学报，2021，32(1)：93-
+100.
+WEI  Chaoyu,  HAN  Wen,  LIU  Huijun.  Counting  method  of
+cherry tomato fruits in greenhouses based on deep learning[J].
+Journal  of  China  Jiliang  University,  2021,  32(1):  93-100.  (in
+Chinese with English abstract)
+[12]
+ 安志强，李智军，刘硕，等. 融合YOLOv7 和BYTE 多目
+[13]
+标跟踪的多类别海珍品计数方法[J]. 农业工程学报，2023，
+39(9)：183-189.
+AN Zhiqiang, LI Zhijun, LIU Shuo, et al. Multi-category sea
+foods counting method integrating YOLOv7 and BYTE multi-
+target  tracking[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2023,
+39(9): 183-189. (in Chinese with English abstract)
+ ZHANG Y, SUN P, JIANG Y, et al. ByteTrack: Multi-object
+tracking by associating every detection box[C]//2022 European
+Conference on Computer Vision (ECCV), October 23-27, 2022,
+Tel Aviv, Israel. New Delhi: Springer, Cham, 2022: 1-21.
+[14]
+ 赵春江，梁雪文，于合龙，等. 基于改进YOLOv7 的笼养
+鸡/蛋自动识别与计数方法[J]. 农业机械学报，2023，54(7)：
+300-312.
+ZHAO  Chunjiang,  LIANG  Xuewen,  YU  Helong,  et  al.
+Automatic  identification  and  counting  method  of  caged  hens
+and eggs based on improved YOLOv7[J]. Transactions of the
+Chinese Society for Agricultural Machinery, 2023, 54(7): 300-
+312. (in Chinese with English abstract)
+[15]
+ 刘鑫，马本学，李玉洁，等. 基于改进YOLOv7-ByteTrack
+的干制哈密大枣缺陷检测与计数系统[J]. 农业工程学报，
+2024，40(3)：303-312.
+LIU Xin, MA Benxue, LI Yujie, et al. Detecting and counting
+defects  in  dried  Hami  jujube  using  improved  YOLOv7-
+ByteTrack[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2024,
+40(3): 303-312. (in Chinese with English abstract)
+[16]
+ 李云霞，马浚诚，刘红杰，等. 基于RGB 图像与深度学习
+的冬小麦田间长势参数估算系统[J]. 农业工程学报，2021，
+37(24)：189-198.
+LI  Yunxia,  MA  Juncheng,  LIU  Hongjie,  et  al.  Field  growth
+parameter estimation system of winter wheat using RGB digital
+images  and  deep  learning[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(24): 189-198. (in Chinesewith English abstract)
+[17]
+ JOCHER  G,  CHAURASIA  A,  QIU  J,  et  al.  YOLOv8  by
+ultralytics[EB/OL]. (2023-05-21) [2023-01-10]. https://github.
+com/ultralytics/ultralytics.
+[18]
+ AHARON  N,  ORFAIG  R,  BOBROVSKY  B  Z.  BoT-SORT:
+Robust associations multi-pedestrian tracking [EB/OL]. (2022-
+07-07) [2023-11-15]. https://arxiv.org/abs/2206.14651.
+[19]
+ REDMON J, DIVVALA S, GIRSHICK R, et al. You only look
+once:  Unified,  real-time  object  detection[C]//2016  IEEE
+Conference  on  Computer  Vision  and  Pattern  Recognition
+(CVPR), June 27-30, 2016, Las Vegas, NV, USA. Los Alamitos:
+IEEE Computer Society, 2016: 779-788.
+[20]
+ ZHENG  Z  H,  WANG  P,  LIU  W,  et  al.  Distance-IoU  loss:
+Faster  and  better  learning  for  bounding  box  regression[C]//
+Thirty-Third  AAAI  Conference  on  Artificial  Intelligence
+(AAAI-19),  January  27-February  1,  2019,  Honolulu,  Hawaii,
+USA. Polo Alto: AAAI Press, 2019: 12993-13000.
+[21]
+ TONG  Z,  CHEN  Y,  XU  Z,  et  al.  Wise-IoU:  Bounding  box
+regression  loss  with  dynamic  focusing  mechanism  [EB/OL].
+(2023-04-08) [2023-10-20]. https://arxiv.org/abs/2301.10051.
+[22]
+ LI  D,  HU  J,  WANG  C,  et  al.  Involution:  Inverting  the
+inherence  of  convolution  for  visual  recognition[C]//2021
+IEEE/CVF  Conference  on  Computer  Vision  and  Pattern
+Recognition (CVPR), June 20-25, 2021, Nashville, TN, USA.
+Los Alamitos: IEEE Computer Society, 2021: 12316-12325.
+[23]
+ VASWANI A, SHAZEER N, PARMAR N, et al. Attention is
+[24]
+第 24 期
+张润池等：基于超深掩蔽与改进YOLOv8 的不同成熟度番茄计数方法
+155 　
+
+all  you  need[C]//Thirty-first  Annual  Conference  on  Neural
+Information Processing Systems (NIPS), December 4-9, 2017,
+Long Beach, CA, USA. San Francisco: Curran Associates Inc,
+2017:5999–6009.
+ YANG  L,  KANG  B,  HUANG  Z,  et  al.  Depth  anything:
+Unleashing  the  power  of  large-scale  unlabeled  data[C]//2024
+IEEE/CVF  Conference  on  Computer  Vision  and  Pattern
+Recognition  (CVPR),  June  17-21,  2024,  Seattle,  WA,  USA.
+Los Alamitos: IEEE Computer Society, 2024: 10371-10381.
+[25]
+ WOJKE  N,  BEWLEY  A,  PAULUS  D.  Simple  online  and
+realtime tracking with a deep association metric[C]//2017 IEEE
+International Conference on Image Processing, September 17-
+20, 2017, Beijing, China. New York: IEEE, 2017: 3645-3649.
+[26]
+ WEI  T,  PATEL  Y,  SHEKHOVTSOV  A,  et  al.  Generalized
+differentiable  RANSAC[C]//2023  IEEE/CVF  International
+Conference  on  Computer  Vision  (ICCV),  October  2-6,  2023,
+Paris, France. New York: IEEE, 2023: 17603-17614.
+[27]
+ RABBANI,  QUAZZAFI,  KHAN,  et  al.  Modified  Hungarian
+method  for  unbalanced  assignment  problem  with  multiple
+jobs[J].  Applied  Mathematics  and  Computation,  2019,  361:
+493-498.
+[28]
+ 孙宇朝，李守豪，夏秀波，等. 利用改进YOLOv5s 模型检
+测番茄果成熟度及外观品质[J]. 园艺学报，2024，51(2)：
+[29]
+396-410.
+SUN Yuchao, LI Shouhao, XIA Xiubo, et al. Detecting tomato
+fruit  ripeness  and  appearance  quality  based  on  improved
+YOLOv5s[J]. Acta Horticulturae Sinica, 2024, 51(2): 396-410.
+(in Chinese with English abstract)
+ KYNKÄÄNNIEMI T, KARRAS T, LAINE S, et al. Improved
+precision  and  recall  metric  for  assessing  generative  models
+[C]//The  33rd  Annual  Conference  on  Neural  Information
+Processing  Systems  (NeurIPS  2019),  December  8-14,  2019,
+Vancouver Canada. San Francisco: Curran Associates Inc, 2019:
+3927-3936.
+[30]
+ LIU W, ANGUELOV D, ERHAN D, et al. SSD: Single shot
+multibox detector[C]//2016 European Conference on Computer
+Vision (ECCV), October 11-14, 2016, Amsterdam, Netherlands.
+New Delhi: Springer, 2016: 21-37.
+[31]
+ WANG  C  Y,  YEH  I  H,  LIAO  H  Y  M.  YOLOv9:  Learning
+what  you  want  to  learn  using  programmable  gradient
+information [EB/OL]. (2024-02-21) [2024-02-29]. https://arxiv.
+org/abs/2402.13616.
+[32]
+ WANG A, CHEN H, LIU L, et al. YOLOv10: Real-time end-to-
+end  object  detection  [EB/OL].  (2024-05-23)  [2024-06-28].
+https://arxiv.org/abs/2405.14458.
+[33]
+ 
+Counting tomatoes with different maturities
+using ultra-depth masking and improved YOLOv8
+ZHANG Runchi , ZHOU Yuncheng※ , HOU Yuhan , LIU Zeyu , ZHAO Hongge , ZHAO Yuhan
+(College of Information and Electrical Engineering, Shenyang Agricultural University, Shenyang 110866, China)
+Abstract: Continuously  and  stably  tracking  fruit  objects  is  required  for  tomato  production  in  modern  agriculture  in  recent
+years.  Some  difficulties  also  remained  on  the  statistical  counting  accuracy  under  greenhouse  production,  due  to  the  mode
+constraints of crop planting. In this study, a counting method was proposed for tomatoes of varying maturity, utilizing ultra-
+depth masking and an improved YOLOv8 model. Multi-head self-attention (MHSA) was introduced to construct a spatially
+heterogeneous  convolution  kernel.  The  global  features  were  also  integrated  using  the  lightweight  convolution  operator
+Involution.  A  new  convolution  operator  was  optimized  and  designed,  termed  Global  Attention-based  Involution
+(GAInvolution). This operator formed the backbone network of the tomato detector, YOLOT, an improved YOLOv8 model.
+The model also incorporated the WIoU (wise intersection over union) loss to improve the robustness of the object labeling
+process. In addition, the depth information was predicted by the mono-depth estimation model, called Depth Anything. The
+distant fruit objects were dynamically filtered to avoid object tracking loss or duplicate tracking. This processing was referred
+to  as  ultra-depth  masking.  A  tomato  counter  was  also  optimized  using  the  BoT-SORT  algorithm.  Combining  the  tomato
+detector, depth estimation model, ultra-depth masking, and object counter, the comprehensive framework was constructed to
+identify and count tomatoes of different maturity levels. The experimental results showed that the mean average precision at
+IoU thresholds of 0.5 (mAP50) of the improved tomato detector increased by 3.2 percentage points, and the recall rate increased
+by  3.7  percentage  points,  indicating  the  effectiveness  of  the  improved  YOLOv8  model,  compared  with  the  original.  The
+GAInvolution convolution operator significantly improved the tomato object detector. The detector with GAInvolution as the
+main  operator  achieved  the  2.7  and  2.8  percentage  point  increase  in  the  mAP50  and  the  recall  rate,  respectively,  thereby
+significantly improving tomato detection performance. WIoU loss function was introduced to further improve the detection
+accuracy,  where  the  mAP50  increased  by  1.1  percentage  points,  compared  with  the  original.  Ultra-depth  masking  greatly
+contributed to the accuracy of tomato fruit counting. The depth threshold was dynamically calculated and predicted using the
+depth map and the Depth Anything model. The highest counting accuracy was achieved by setting the average depth value of
+the depth map minus 0.5 times the depth standard deviation as the threshold. The average counting precision (ACP) of tomato
+fruits increased by 12.63 percentage points using ultra-depth masking. The better performance of counting tasks was achieved
+in the tomato fruits, with an ACP of 93.80% and a calculation speed of 23 frames per second. The accuracy of fruit counting was
+closely  related  to  the  performance  of  the  object  detector.  Moreover,  counting  accuracy  varied  with  different  inspection
+viewports,  with  the  vertical  viewport  achieving  2.59  percentage  points  higher  accuracy  than  the  parallel  one.  Tomatoes  of
+different maturity levels were counted with ACP of at least 91%. This finding offers valuable technical insights for predicting
+fruit and vegetable yields using visual technology.
+Keywords: tomato; fruit counting; object detection; multi-object tracking; ultra-depth masking
+　 156
+农业工程学报（http://www.tcsae.org）
+2024 年

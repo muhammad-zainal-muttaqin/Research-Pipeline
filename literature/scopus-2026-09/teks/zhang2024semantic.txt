@@ -1,0 +1,1516 @@
+ 
+ 
+基于RGB 和深度双模态的温室番茄图像语义分割模型
+张羽丰 1，杨　景 1，邓寒冰 1,2※，周云成 1,2，苗　腾 1,2
+（1.   沈阳农业大学信息与电气工程学院，沈阳 110866；2.   辽宁农业信息化工程技术研究中心，沈阳 110866）
+摘　要：图像语义分割作为计算机视觉领域的重要技术，已经被广泛用于设施环境下的植物表型检测、机器人采摘、设
+施场景解析等领域。由于温室环境下未成熟番茄果实与其茎叶之间具有相似颜色，会导致图像分割精度不高等问题。本
+研究提出一种基于混合Transformer 编码器的“RGB+深度”（RGBD）双模态语义分割模型DFST（depth-fusion
+semantic transformer），试验在真实温室光照情况下获得深度图像，对深度图像做HHA 编码并结合彩色图像输入模型进
+行训练，经过HHA 编码的深度图像可以作为一种辅助模态与RGB 图像进行融合并进行特征提取，利用轻量化的多层感
+知机解码器对特征图进行解码，最终实现图像分割。试验结果表明，DFST 模型在测试集的平均交并比可达96.99%，对
+比不引入深度图像的模型，其平均交并比提高了1.37 个百分点；对比使用卷积神经网络作为特征提取主干网络的
+RGBD 语义分割模型，其平均交并比提高了2.43 个百分点。结果证明，深度信息有助于提高彩色图像的语义分割精度，
+可以明显提高复杂场景语义分割的准确性和鲁棒性，同时也证明了Transformer 结构作为特征提取网络在图像语义分割
+中也表现出了良好的性能，可为温室环境下的番茄图像语义分割任务提供解决方案和技术支持。
+关键词：温室；作物；语义分割；注意力机制；设施环境；番茄图像；RGBD；Transformer
+doi：10.11975/j.issn.1002-6819.202309169
+中图分类号：S126　　　　文献标志码：A　　　　文章编号：1002-6819(2024)-02-0295-12
+张羽丰，杨景，邓寒冰，等. 基于RGB 和深度双模态的温室番茄图像语义分割模型[J]. 农业工程学报，2024，40(2)：
+295-306. doi: 10.11975/j.issn.1002-6819.202309169　　http://www.tcsae.org
+ZHANG Yufeng, YANG Jing, DENG Hanbing, et al. Semantic segmentation model for greenhouse tomato images using RGB
+and depth bimodal[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2024, 40(2):
+295-306. (in Chinese with English abstract)　　doi: 10.11975/j.issn.1002-6819.202309169　　http://www.tcsae.org
+ 
+0　引　言
+番茄作为温室环境下的重要果蔬作物之一，在其生
+长过程中定期获取果实状态（如形状、颜色等）对于番
+茄表型检测研究十分重要。然而，传统方法是通过人工
+抽样的方式进行手动检测，比较费时费力且效率低下，
+无法满足高通量、精准化的需求。近些年，研究人员普
+遍采用各种计算机视觉的技术来解决这一问题，特别是
+图像语义分割技术，其可以在复杂环境下对空间中任意
+位置的目标进行识别和分割，是区分作物果实（前景）
+和生长环境（背景）的有效技术手段。
+由于温室环境十分复杂，如光照不均匀、作物果实
+和枝叶的重叠遮挡、作物果实与枝叶有相近的纹理和颜
+色等，这些问题都会影响温室场景下图像语义分割精度。
+为了模型适应温室作物复杂生长环境，研究人员通常以
+深度卷积神经网络作为基础，利用海量的RGB 图像对模
+型进行训练，以实现高精度、高鲁棒性的图像语义分割。
+但随着深度学习的模型的不断演变，只利用RGB 模态进
+行模型训练所能达到的语义分割精度研究已经逐渐趋于
+瓶颈。
+随着场景深度传感器技术的不断进步，研究人员能
+够以较低成本获取海量的、高精度深度图像。与RGB 图
+像不同，深度图像能够提供场景范围、目标位置和轮廓
+等信息，其与RGB 图像的融合可以在不同空间位置上更
+好地区分具有相似颜色和纹理的目标对象。针对温室环
+境下的作物图像语义分割任务，可以利用深度图像使模
+型能够更好的理解场景几何信息和目标对象的空间关系，
+从而提高图像语义分割精度。
+目前在农业领域已有许多研究将深度信息与RGB 信
+息进行结合，从而提高图像分割与目标识别的精度。在
+RGBD 双模态联合应用方面，邓寒冰等[1] 提出基于
+RGBD 的肉牛图像全卷积网络的语义分割优化方法，用
+深度密度值来量化深度图像中不同像素点是否属于相同
+类型的概率，并根据深度图像与彩色图像在内容上的互
+补关系，优化和提升全卷积网络对肉牛图像的语义分割
+（像素密集预测）精度。张勤等[2] 提出基于RGBD 信息
+融合和目标检测的番茄串采摘点识别定位方法，提高番
+茄采摘的精确度。吴鑫等[3] 提出将RGB 和深度信息相结
+合，分割出物体所在区域，从而提高目标识别的精度。
+仇瑞承等[4] 提出了了一种基于RGBD 相机的玉米茎粗参
+  
+收稿日期：2023-09-22　　修订日期： 2024-01-08
+基金项目：国家重点研发计划项目子课题（2022YFD2002303-01）；辽宁
+省教育厅基本科研项目面上项目（JYTMS20231303）；国家自然科学基金
+项目（31901399）；十四五国家重点研发计划项目子课题
+（2021YFD1500204）
+作者简介：张羽丰，研究方向为计算机视觉。
+Email：zhangyufengabcabc@163.com
+※通信作者：邓寒冰，博士，副教授，研究方向为计算机视觉，植物表型
+检测。Email：denghanbing@syau.edu.cn
+ 
+第 40 卷 　 第 2 期
+农 业 工 程 学 报　
+Vol.40　No.2
+2024 年 　　 1 月
+Transactions of the Chinese Society of Agricultural Engineering
+Jan. 2024
+295
+
+数提取方法。以小喇叭口期玉米为观测对象，利用RGBD
+相机获取田间玉米的彩色图像和深度图像。GAI 等[5] 应
+用RGBD 相机测量室内玉米和田间西兰花的株高和作物
+半径，获得了精度较高的测量结果。蒋焕煜等[6] 研究了
+基于双目立体视觉技术的成熟番茄的识别与定位方法，
+获取了成熟番茄的位置信息，用于指导温室内成熟番茄
+的自动化采摘作业。周云成等[7] 提出一种基于面向通道
+分组卷积网络的番茄主要器官实时识别网络模型，可直
+接用特征图预测番茄器官目标边界和类型。赵春江等[8]
+提出一种基于级联卷积神经网络的番茄花期识别检测方
+法，提高了番茄花期识别的准确率。
+在RGBD 语义分割模型研究方面，YUAN 等[9] 使用
+了两个残差网络作为编码器分别提取RGB 图像和深度图
+像的特征，并在解码器中进行融合，使模型可以更好的
+提取并融合RGB 图像与深度图像的特征信息。GUPTA
+等[10] 将深度图像分解为视差、高度和角度三个通道，并
+将三个通道转换成伪颜色的RGB 图像，以提高图像的分
+割精度。QI 等[11] 提出了基于图的网络来更充分地挖掘
+场景的几何信息，而不单是使用卷积神经网络，使模型
+具有长距离特征提取能力，从而提高模型的全局建模能
+力。HU 等[12] 提出了一个注意互补网络，可以选择性地
+从RGB 和深度分支中收集特征，进一步强化了模型的特
+征提取与融合能力。CHEN 等[13] 提出了一种统一而高效
+的交叉模态引导编码器，不仅可以有效地重新校准RGB
+特征响应，而且可以通过多个阶段的特征提取和模态之
+间的交替融合来获取准确的深度信息。
+目前，基于RGBD 双模态的视觉技术在设施农业领
+域刚刚兴起，但其中的深度信息模态主要用于目标点位
+识别、或位置识别等，并不能用于辅助RGB 模态的图像
+分割任务，无法充分利用深度模态在目标区域分割中的
+空间信息。此外，基于RGBD 的图像语义分割研究主要
+是利用卷积神经网络（convolutional  neural  networks，
+CNN）提取特征，而CNN 的结构普遍遵循“编码器-解
+码器”框架，其中编码器用于特征提取，在逐层降低特
+征图分辨率的同时，保留特征图的语义信息。但是在
+CNN 提取特征的过程中，由于受卷积核大小的限制，模
+型只能利用局部信息理解输入图像，无法从全局解析图
+像像素点的上下文信息，从而影响编码器输出特征的可
+区分性。
+为此，研究人员使用Transformer 模型在大型数据集
+上进行预训练，然后将模型迁移到小数据集上进行调优，
+最终模型的测试精度要高于传统CNN 网络。此外，由
+于Transformer 结构能够更好地建立图片中像素点的上下
+文关系，所以能够避免由于数据集过小而导致的过拟合
+问题。LIU 等[14] 设计了基于Transformer 的CMX（cross-
+modal  fusion  for  RGB-X  semantic  segmentation  with
+transformers）多模态融合框架，用两个平行的主干网络
+在RGB 图像和互补模态（X 模态）中提取特征，对获取
+到的特征图进行模态之间的矫正和融合，但是两个平行
+的特征提取主干网络就会导致模型的参数量过大且训练
+缓慢，而且Transformer 结构具有更大的感受野，也会增
+加模型训练过程中的计算量。
+为解决上述问题，提高温室环境下目标对象的分割
+精度精度与速度，本研究提出一种基于混合Transformer
+编码器（mix transformer encoder，Mit）[15] 的RGBD 语
+义分割模型DFST（depth-fusion semantic transformer），
+使用Mit 编码器分别提取RGB 特征和深度特征，将
+RGB 和深度的特征图通过模态之间的互补特征进行矫正，
+然后对矫正过后的特征图进行融合和特征提取；利用解
+码器接收多阶段、多尺度的RGBD 特征图，使用轻量化
+的多层感知机进行特征图解码，在保证分割效果的同时
+减少了计算量，最终实现图像的语义分割。
+ 
+1　材料与方法
+ 
+1.1　数据采集
+本研究以温室下的番茄为研究对象，在温室中，光
+照的变化可以对物体的外观、颜色和纹理产生显著影响，
+从而影响图像中前景物体的识别和分割。例如较强的光
+照会增加图像的对比度，使前景物体的边缘更加清晰，
+更易于分割；相反，较弱的光照会降低对比度，使前景
+物体的边缘模糊，会降低分割精度。为保证数据集的多
+样性，根据温室环境下光线条件的不同，分别在
+08:00～10:00、12:00～14:00、16:00～18:00 3 个时间段
+对番茄进行图像采样，保证试验获取到的图像代表作物
+生长时的真实光照情况，具体如图1 所示。
+ 
+ 
+a. Normal light
+b. 强光
+b. Strong light
+c. 弱光
+c. Weaklight
+a. 正常光照
+图1　不同光照强度下的番茄果实图像
+Fig.1    Tomato images under different light intensities
+ 
+在采集图像时，试验使用Azure Kinect 深度相机获
+取RGBD 图像（设置彩色镜头为分辨率1 920×1 080，
+30 帧/s；深度镜头分辨率为640×576，30 帧/s）。Azure
+Kinect 是由微软开发的深度相机，能够同时获取RGB 图
+像和深度图像数据，镜头具有较高的分辨率和灵敏度，
+在0～10 m 距离内也能够获取高质量的深度信息。
+Azure Kinect 的深度相机利用调幅连续波时差测距
+（time of flight，ToF）原理，将近红外频谱中的调制光
+投射到场景中，记录光线从相机传播到场景，然后从场
+景返回到相机所花费的时间，通过时间和光速来计算场
+景中不同位置的深度值并生成深度图。
+数据的采集过程中，为保证数据的普适性，在温室
+环境的不同光照条件下对番茄植株进行了多角度、多位
+置的随机拍摄。每一组图像中包含了番茄的RGB 图像和
+对应的深度图像，采集到的RGB 图像和深度图分辨率均
+为1 280×720 像素，获取到的RGB 图像与深度图像进行
+　 296
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+配准，确保RGB 图像中的像素点与深度图像中的表示距
+离的像素点间的映射关系。
+试验共采集温室环境下的番茄RGBD 图像1 000 组，
+为保证训练样本之间的差异性，对数据集中在相同图像
+采集位置获取的图像进行余弦相似度计算，由于余弦相
+似度越大，表明两张图像相似程度越高，为了保证图像
+内容多样性和图像数量间的平衡，本试验通过多次尝试
+和比较，最终将余弦相似度阈值设为0.88，删除相似图
+片再经过人工筛选，可以得到500 组温室环境下的番茄
+RGBD 图像。在试验中，将其中450 组图像（90%）作为
+训练样本集，剩下的50 组图像（10%）为测试样本集。
+ 
+1.2　深度图像预处理及数据增强
+在获取深度图片的采集过程中由于太阳直射干扰以
+及番茄表面反光影响，会使获取到的深度图像出现深度
+缺失，如图2 所示，本研究采用将深度图像（图2b）转
+码为HHA（horizontal disparity, height above ground, angle）
+三通道图像来更好地利用获取到的真值深度。HHA 概念
+由GUPTA 提出，其三个通道分别提供了每个像素具备
+几何属性，包括水平视差、地面高度，以及像素的局部
+表面与推断的重力方向形成的角度，这些数据能够使研
+究人员更好地利用深度图像中的几何信息，提升对深度
+图像对RGB 图像的辅助解析效果。
+此外，为了扩充训练集的规模，使模型得到充分的
+训练，降低模型对于噪声、不同视角、不同光照下图像
+的敏感性，增强模型的泛化能力。本试验使用数据增强
+的方式对数据集进行扩充，在模型读取数据前对图像进
+行随机平移、旋转、缩放、裁剪、翻转等变换，将训练
+样本扩充至2 500 张。
+ 
+ 
+a. RGB图像
+a. RGB image
+b. 深度图像
+b. Depth image
+c. HHA图像
+c. HHA image
+图2　番茄的RGB、深度和HHA 图像
+Fig.2    RGB, depth and HHA images of tomatoes
+ 
+2　RGBD 语义分割网络
+本文提出的RGBD 语义分割模型，在CMX 多模态
+融合框架的基础上对RGBD 分割网络进行重新设计，结
+构如图3 所示。为了使RGB 和深度图像能有效的利用各
+自的互补信息，模型先使用一个Mit block 分别提取
+RGB 和深度图像的特征，之后经过一个RGBD 特征矫正
+模块，将矫正后的RGB 与深度特征图输入到RGBD 特
+征融合模块进行特征融合，融合后的特征图被送入后续
+的Mit block 进行特征提取，最后将多维度特征图送入解
+码器进行分割预测。重新设计后的模型只使用一次的特
+征融合，在保证精度的同时提升了训练与推理速度，即
+使数据集较小也能让模型得到充分训练。深度图片的加
+入可以有效改善温室环境下光照变化以及番茄颜色变化
+对模型分割性能的影响，并且模型中使用了形状卷积模
+块，强化模型对番茄形状以及位置的感知，降低枝干、
+树叶遮挡的影响。
+ 
+ 
+ 
+ 
+RGB输入
+Mitblock
+Mitblock 2
+Mitblock 3
+Mitblock 4
+Mitblock
+RGBD
+特征矫正
+模块
+RGBD
+特征融合
+模块
+Depth输入
+多级特征
+图3　RGBD 语义分割模型
+Fig.3    RGBD semantic segmentation model
+ 
+ 
+2.1　Mit 主干网络
+本研究选用Mit 作为模型的主干特征提取网络，其
+结构如图4 所示。由高效自注意力层模块、混合前馈神
+经网络模块和重叠图像块合并模块构成。Mit 是一种基
+于transformer encoder 的特征提取主干网络，其结构更加
+适合图像语义分割。与普通的视觉Transformer[16] 相比，
+Mit 具有如下特点：
+1）使用分层次的编码器结构，输出多尺度特征，并
+在解码器中将多尺度特征融合在一起，使模型能够同时
+捕捉高分辨率、粗粒度的特征和低分辨率、细粒度，优
+化分割结果；
+2）相比较普通的自注意力方式，使用了序列缩减策
+略，以减少计算复杂度；
+3）在混合前馈神经网络中，使用3×3 的深度卷积代
+第 2 期
+张羽丰等：基于RGB 和深度双模态的温室番茄图像语义分割模型
+297 　
+
+替传统位置编码来获取图像的位置信息，以提高模型的
+泛化能力。
+编码器由4 个Mit block 堆叠构成其结构，如图5 所
+示。在经过每个Mit block 之后，特征图的分辨率分别变
+为原特征图大小的1/4、1/8、1/16 和1/32，这4 个不同
+分辨率的特征图会在解码器中进行融合。
+ 
+ 
+3×h×w
+c×h/4×h/4
+Conv
+…
+Flatten
+Transpose
+c×h×w
+高效自注意力层
+Norm
+Conv3×3
+MLP
+GELU
+混合前馈神经网络
+重叠图像块合并
+xinput
+xoutput
+注：图中xinput 代表输入的RGB 或深度特征图；xoutput 代表Mit block 输出的特征图；h 代表特征图的高；w 代表特征图的宽；c 代表特征图的通道数；Conv
+代表卷积层；Flatten 代表展平层；Transpose 代表转置层；Norm 代表标准化层；Conv3×3 代表卷积核大小为3×3 的卷积层；MLP 代表多层感知机层；
+GELU 代表GELU 激活函数。
+Note: In the figure xinput denotes the input of RBG's or Depth's feature map;xoutput denotes the feature map of Mit block's output; h denotes the height of feature;w denotes
+the width of feature; c denotes the channel of feature; Conv denotes the convolutional layer; Flatten denotes the spreading layer; Transpose denotes the transpose layer;
+Norm denotes the normalization layer; Conv3×3 represents convolution layer with 3×3 size kernels; MLP denotes the multilayer perceptual machine layer; GELU
+denotes the GELU activation function.
+图4　Mit block 结构
+Fig.4    Structur of Mit block
+ 
+ 
+A
+m
+B
+B
+Sconv
+Relu
+Sconv
+Sigmoid
+RGB
+特征图
+Depth
+特征图
+R2
+rec
+D2
+rec
+R1
+rec
+D1
+rec
+RGBD通道矫正
+RGBD空间矫正
+Linear
+Relu
+Linear
+Sigmoid
+1×1×2c
+2×1×1×c
+1×1×4c
+1×1×2c
+2×h×w×1
+R1
+rec
+R2
+rec
+注：图中B 表示按通道连接，A 表示平均池化层，m 表示最大池化层，
+Sconv 表示形状卷积（ShapeConv）；Linear 表示全连接层；Sigmoid 表示
+Sigmoid 激活函数；Relu 表示线性整流函数；c 表示通道数；
+表示
+RGB 通道权重；
+表示RGB 空间权重；D1
+rec 表示深度通道权重；D2
+rec
+表示深度空间权重。
+R1
+rec
+Note: B in the figure denotes connected by channel; A denotes average pooling
+layer;  m  denotes  max  pooling  layer;  Sconv  denotes  shape  convolution
+(ShapeConv);  Linear  represents  the  fully  connected  layer;  Sigmoid  represent
+Sigmoid activation function; Relu represent rectified linear unit; c denotes the
+channels;
+  denotes  the  channel  weitht  of  RGB;  R2
+rec  denotes  the  spatial
+weight  of  RGB;  D1
+rec  denotes  channel  weight  of  depth;  D2
+rec  denotes  spatial
+weight of depth.
+图5　RGBD 特征矫正模块结构图
+Fig.5    RGBD feature rectification module structure
+ 
+ 
+2.1.1　重叠图像块合并
+在传统的视觉Transformer 中，图像块融合过程是通
+过合并相邻图像块来达到降低特征图分辨率的目的。但
+由于这些相邻图像块之间没有重叠部分，导致模型不能
+获取这些图像块周围的局部连续特征。为解决这个问题，
+Mit 使用了一个重叠的图像块融合过程，其中分别定义
+了图像块大小K、相邻图像块之间的步幅S、和图像块
+的填充大小P。本文为保证重叠合并后得到的特征图与
+非重叠过程得到的特征图具有相同大小，设定Mit 中第
+一阶段的K =7、S =4、P =3，后续3 个阶段的 K =3、S =2、P =1。
+ 
+2.1.2　高效自注意力层
+在编码器中，主要的计算瓶颈来源与高效自注意力
+层。在原始的多头自注意过程中，每个头中的查询向量
+为Q、关键向量为K、数值向量为V，三者具有相同的
+维度（N×c），其中N=h×w，表示序列的长度，c 为特
+征图通道数，自注意估计的计算如式（1）所示：
+J(Q, K,V) = Softmax
+( QKT
+√chead
+)
+V
+（1）
+式中J(Q, K, V) 表示计算自注意力值的函数，Softmax 为
+归一化指数函数，chead 为注意力头的通道数。
+由于该过程的计算复杂度为O(N2)，模块的计算量
+与图片的分辨率成正比，因此本研究在Mit 中使用了在
+文献[17] 中引入的序列缩减操作，此操作使用减少率t
+来降低序列的长度，具体计算如下：
+Z′ = ReShape(N
+t ,c×t)(Z)
+（2）
+Z′′ = Linear(c×t,c)(Z′)
+（3）
+式中ReShape 表示维度缩放函数，Linear 表示全连接映
+射函数，Z 是要减少的序列，Z'表示对Z 进行维度缩放
+后的序列，Z''表示序列缩减的输出结果，t 表示序列缩
+放系数。利用式(2)，可以将Z 的维度缩放为(N/t)×(c×t)；利用
+式(3)，可以将缩放后的序列的维度，通过全连接层改变
+为(N/t)×c，把自注意机制的复杂性从O(N2) 降低到
+O(N2/t)，提高了模型的计算效率。由于模型中共有4 个
+Mit block，其对应的t 值分别为64、16、4 和1。
+ 
+2.1.3　混合前馈神经网络
+视觉Transformer 使用位置编码（position encode，
+PE）来引入位置信息，但是位置编码的分辨率是固定的，
+因此当测试图片的分辨率与训练所用图片的分辨率不同
+时，需要对测试图像进行线性插值操作，这往往会导致
+精度下降，使模型的泛化能力降低。为了解决这个问题，
+CHU 等[18] 提出条件位置编码概念，利用一个二维卷积
+动态地生成位置编码，解决了传统位置编码分辨率固定
+的问题，即使用卷积操作代替位置编码来获取特征图中
+　 298
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+的位置信息。所以，本研究在Mit 中引入了混合前馈神
+经网络，在每个前馈神经网络中加入一个3×3 大小的深
+度感知卷积和一个多层感知机来解决零填充对位置信息
+的影响[19]，混合前馈神经网络的计算式如式（4）所示：
+Xout = MLP(GELU(Conv(MLP(Xin))))+ Xin
+（4）
+式中Xin 是通过自注意力得到的特征图，Xout 表示网络输
+出结果，GELU 表示激活函数，MLP 表示多层感知机，
+Conv 表示卷积操作。
+ 
+2.2　RGBD 特征矫正模块
+深度图像通常包含大量噪声，这些噪声主要包含有
+限的测量范围造成的低质量深度区域，以及强烈光照造
+成的深度缺失。为此，本研究在模型中加入了RGBD 特
+征矫正模块，利用RGB 图像所提供的纹理信息去纠正和
+校准这些深度缺失区域，以降低由于低质量深度图像所
+导致的分割误差。
+RGBD 模态矫正模块被使用在2 个相邻的骨干网络
+之间，经过模态校正后的特征都将被输出到下一阶段进
+行特征提取。RGBD 特征矫正模块在2 个不同的维度上
+处理输入特征，包括通道特征校正和空间特征矫正，2
+种特征校正方式的结合可以实现好的RGBD 特征的提取
+和矫正。本研究在多模态融合框架的跨模态特征校正模
+块基础上，对卷积层进行改进，将空间矫正模块中的卷
+积层用形状感知卷积层[20] 代替，利用形状感知卷积层，
+可以将深度特征分解为一个形状分量和一个位置分量，
+然后引入2 个可学习权值动态调整形状分量与位置分量
+的权重，最后对这2 个分量的加权和进行卷积，可以使
+模型更好的理解物体的形状和位置信息。
+Frgb
+in
+FD
+in
+R1
+rec
+R2
+rec
+D1
+rec
+D2
+rec
+Frgb
+out
+FD
+out
+如图5 所示，RGBD 特征矫正模块包含通道特征矫
+正过程和空间特征矫正过程。每个过程都会在第一阶段
+以RGB 特征图
+、深度特征图
+作为输入。2 类特征
+图通过RGBD 特征矫正模块之后，可以生成4 个权重，
+包括RGB 通道权重
+、RGB 空间权重
+、深度通道
+权重
+、深度空间权重
+。根据这4 个权重可以最终
+得到矫正过后RGB 特征图
+与深度特征图
+。具体
+矫正过程可以表示为：
+Frgb
+out = Frgb
+in +λ1R1
+rec +λ2R2
+rec
+（5）
+FD
+out = FD
+in +λ1 D1
+rec +λ2 D2
+rec
+（6）
+式中λ1 和λ2 是2 个超参数，本研究为保证通道权重和空
+间权重的平衡性，将λ1 和λ2 都设为0.5。
+ 
+2.2.1　通道特征矫正
+Frgb
+in
+FD
+in
+E1
+rgb
+E1
+D
+Frgb
+in
+FD
+in
+E1
+rgb
+E1
+D
+通道特征矫正过程将RGB 特征图
+和深度特征图
+沿空间轴嵌入两个注意向量
+和
+。不同于文献[10, 21-22]
+只使用全局平均池化获得注意向量，此模块使用全局最
+大池化和全局平均池化获得
+和
+沿通道维度的信息，
+连接4 个结果向量，获得中间向量Y，在通过多层感知
+机之后输入到Sigmoid 激活函数中，并将函数输出结果
+进行多通道分离，得到
+和
+向量，具体计算式如下：
+E1
+rgb, E1
+D = Split(σ(MLP(Y)))
+（7）
+σ
+式中为Sigmoid 激活函数，MLP 为多层感知机，Split
+为多通道分离操作。通道特征矫正操作如下：
+R1
+rec = E1
+D ⊗FD
+in
+（8）
+D1
+rec = E1
+RGB ⊗Frgb
+in
+（9）
+⊗
+R1
+rec
+式中表示对每个通道特征进行逐元素相乘，
+为
+RGB 通道权重，D1
+rec 为深度通道权重。
+ 
+2.2.2　空间特征校正
+Frgb
+in
+FD
+in
+E2
+rgb
+E2
+D
+由于通道特征校正过程专注于学习全局的特征权值，
+本研究在多模态融合框架中再引入了空间特征校正过程。
+其中，RGB 特征图
+和深度特征图
+作为输入，将被
+连接并嵌入到RGB 空间权重
+和深度空间
+中。嵌入
+操作由2 个1×1 的卷积层与1 个RELU函数组成。利用
+Sigmoid 型函数可以得到嵌入式特征图Fe，利用多通道
+分离操作将其进一步分成2 个权重。获取空间特征权重
+的过程计算式如下：
+Fe = Conv
+(
+RELU
+(
+Conv
+(
+Frgb
+in ||FD
+in
+)))
+（10）
+E2
+rgb, E2
+D = Split(σ(Fe))
+（11）
+其中Conv 表示卷积操作，RELU 表示线性整流函数，
+符号||表示两个特征图按维度拼接。与通道特征矫正类似，
+空间特征矫正的计算式如下：
+R2
+rec = E2
+D ∗FD
+in
+（12）
+D2
+rec = E2
+rgb ∗Frgb
+in
+（13）
+R2
+rec
+D2
+rec
+式中
+为RGB 空间权重， 
+为深度通道权重，符号
+*表示对每个控件特征进行逐元素相乘。
+ 
+2.3　RGBD 特征融合模块
+RGBD 特征融合模块将矫正过后的RGB 特征图和深
+度特征图合并成一个单一的特征图，其过程主要包含两
+个阶段，以此来加强RGB 图像和深度图像之间的信息交
+互。如图6 所示，首先，模块设计实现了一种交叉注意
+机制，用来在两个分支之间进行全局信息交换，然后将
+这两个分支的输出进行连接，连接后的特征被转化为原
+始特征图大小，最后可以输出融合后的特征图。
+ 
+ 
+展平
+展平
+交叉
+注意力
+B
+Conv 1×1
+DWConv 3×3
+RELU
+Conv 1×1
+Add&Norm
+Conv 1×1
+Depth特征图
+RGB特征图
+融合特征图
+N×c
+N×2c
+N×c
+注：图6 中DWConv3×3 表示大小为3×3 的深度感知卷积层；RELU 表示
+线性整流函数；Add&Norm 表示残差连接并标准化；Conv1×1 表示1×1 大
+小的卷积核；c 表示通道数；N = h × w ；
+Note:In figure6, DWConv3×3 denotes a depth-aware convolutional layer of size
+3×3;  RELU  denotes  rectified  linear  unit;  Add&Norm  denotes  residual
+connection  and  normalization;  Conv1×1  denotes  convolutional  kernel  in  1×1
+size; c denotes the channels; N = h × w.
+图6　RGBD 特征融合模块结构图
+Fig.6    Structure of RGBD feature fusion module
+第 2 期
+张羽丰等：基于RGB 和深度双模态的温室番茄图像语义分割模型
+299 　
+
+首先这两种模态的特征将通过一个对称的双路径结
+构来交换它们的信息，将大小为h×w×c 的输入特征转换
+为N×c，其中N=h×w。然后利用线性插入操作，生成2
+个大小同为N×c 的向量，分别是残差向量Dres 和交互向
+量Dinter。模型使用一种有效的交叉注意机制，应用于这
+两个来自不同模态路径的交互向量，从而实现跨模态的
+充分的信息交换，这种信息交换过程以“序列到序列”
+的方式提供了互补的交互。
+在多模态融合框架中，交叉注意机制是基于传统的
+自注意操作实现的[23]，将输入向量编码为查询向量Q、
+关键向量K 和数值向量为V。全局注意力结果可以通过
+矩阵乘法QKT 获得，其中QKT 的大小为N×N，N=h×w，
+这导致了过高的内存占用。相比之下，SHEN 等[24] 使用
+大小为chead×chead 的全局上下文向量G=KTV，注意力结
+果可以通过矩阵乘法QG 获得。该方法使特征矫正模
+块重构和改进了多头交叉注意力机制，交互向量将被
+嵌入到每个头部的关键向量和数值向量中，其中每个向
+量的大小都是N×chead。输出是通过将交互向量与RGB
+路径的上下文向量相乘，即交叉注意过程，具体如下式
+所示：
+GRGB = KT
+RGBVRGB
+（14）
+GD = KT
+DVD
+（15）
+URGB = Dinter
+RGBSoftmax(GD)
+（16）
+UD = Dinter
+D Softmax(GRGB)
+（17）
+式中G 表示全局上下文向量，U 表示注意力结果，D 表
+示深度图像，Softmax 为归一化指数函数。为了实现来
+自不同模态的注意力，模块中保持了多头机制，其中注
+意力头的数量与Transformer 的骨干网络相匹配。
+在RGBD 特种融合阶段，首先使用一个简单的通道
+嵌入来合并两条路径的特征，这是通过1×1 的卷积层来
+实现的。此外，在通道融合过程中，受SegFormer 和
+ConvMLP [25] 中的混合前馈神经网络的启发，为了利用
+周围区域的信息提高RGBD 图像的分割效果，本研究增
+加了一个深度卷积层DWConv3×3 来实现跳跃连接结构，
+将大小为h×w×2c 的合并特征融合到大小为h×w×c 的输
+出中并实现特征解码。
+ 
+2.4　轻量化的全多层感知机解码器
+Mit 比传统的CNN 编码器具有更大的有效的感受野，
+但模型的计算量与感受野成正比。为此，本研究使用了
+一个只由多层感知机组成的轻量级解码器，这降低了计
+算量，并减少了复杂的调参工作。
+对多层感知机解码器进行轻量化主要包含4 个步骤：
+首先解码器接收来自主干特征提取网络的多级特征Fi，
+并通过一个多层感知机层来统一信道维度；然后，特征
+图通过上采样操作，转换成原图的1/4 大小，并且按通
+道将上采样结果拼接在一起；第三，用一个多层感知机
+对多级特征进行融合拼接，可以得到融合特征F；最后，
+使用一层MLP 用融合到的特征去预测分割掩膜M。
+F′
+i = Linear(ci,c)(Fi),∀i
+（18）
+F′′
+i = UpSample
+(h
+4 × w
+4
+)
+(F′
+i),∀i
+（19）
+F = Linear(4c,c)(Concat(F′′
+i )),∀i
+（20）
+M = Linear(c,Ncls)(F)
+（21）
+F′
+i
+Fi
+F′′
+i
+F′
+i
+式中
+为多级特征
+的全连接映射结果，
+为
+进行上
+采样后的输出，M 为预测的掩模，Linear(ci , c) 为以ci 为
+输入向量维数、c 为输出向量维数的线性层，UpSample
+为上采样操作，Ncls 为类别数。
+ 
+2.5　损失函数的改进
+交叉熵损失函数（cross entropy loss，CE）被经常用
+于评判语义分割任务的效果，但是交叉熵损失函数对所
+有样本的损失权重都是一样的，因此在训练时会平等地
+计算所有的样本的损失值，但在本研究的数据集中，背
+景的像素点的数量要远大于番茄的像素点的数量，这会
+导致损失值偏向背景的像素点，针对温室下番茄数据集
+的特点，本研究将损失函数更换为焦点函数（focal loss，
+FL）[26]
+焦点函数是一种基于交叉熵损失函数改进型损失函
+数，相比交叉熵损失函数，其在处理类别不平衡或难分
+类样本方面具有更好的效果。焦点函数通过引入一个超
+参数γ，对不平衡的样本类别进行调整。在训练过程中，
+焦点损失函数会给难分类样本分配更高的权重，从而使
+模型更加关注这些难以分类的样本，提高模型的泛化能
+力。焦点损失函数的计算式为：
+FL(Pt) = −(1−Pt)γlg(Pt)
+（22）
+式中Pt 表示模型预测正确类别的概率，γ 是超参数，用
+于控制难分类样本的权重。当γ=0 时，焦点损失函数退
+化为交叉熵损失函数。当γ>0 时，焦点损失函数会给予
+难分类样本更大的权重，使模型更加关注难以分类的样
+本。焦点损失函数适用于样本类别不平衡和难分类样本
+比例较高的情况，能够提高模型的性能和泛化能力。
+ 
+3　试验结果与分析
+ 
+3.1　硬件平台及训练策略
+在试验的模型训练过程中，需要对不同输入模态进
+行训练和测试对比，为保证训练、测试过程的公平性，
+本试验将模型对应的训练任务放到同一硬件平台上完成。
+试验平台采用 Dell Precision 7 920，内存为 64 GB，中央
+处理器主频为 2.1 GHz，中央处理器核心数为 16，图形
+处理器（graphic  processing  unit，GPU）为 NVIDA
+2080Ti，图形处理器显存为 11 GB，图形处理器核心数
+为4 352。训练过程初始参数如表1 所示。
+本试验所使用的特征提取主干网络Mit 是基于自注
+意力机制的Transformer 提取特征的，相较于CNN 有更
+强大的全局建模能力，但是缺少了CNN 的归纳偏置（局
+部性以及平移不变性），这导致了在小数据及上可能会
+导致参数训练不充分，所以本研究使用迁移学习[27]
+　 300
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+对模型进行训练，模型首先在数据集image-1K 上进行预
+训练，将预训练好的权重迁移到Mit 主干网络中，以提
+升模型对温室环境番茄图像的特征敏感度。
+ 
+ 
+表 1    训练过程相关参数
+Table 1    Parameters of training process
+参数名称
+Parameter name
+参数值
+Parameter value
+图像大小 Image size/像素pixel
+700×480
+图像批量数 Batchsize
+2
+学习率 Learning rate
+0.000 06
+最大训练轮数 Max training epoch
+500
+权重衰减系数 Weight decay
+0.01
+ 
+3.2　评估指标
+为评价模型性能，本文使用平均交并比[28]（mean
+intersection over union，mIoU）和像素准确率[29]（pixel
+accuracy，PA）作为番茄图像分割效果的量化评价指标。
+平均交并比MIoU 用于评价模型总体目标区域的分割
+准确度，定义如式（23）所示：
+MIoU =
+1
+k +1
+∑k
+i=0
+Pii
+∑k
+j=0 Pij +
+∑k
+j=0 P ji −Pii
+（23）
+式中k 为类别数，i 为真值对应的类别，j 为预测类别，
+Pij 表示将i 类别预测为j 类别。
+像素准确率PA 可以用所有预测正确的像素数量除以
+像素总数来获得，定义如式（24）所示：
+PA =
+TP +TN
+TP +TN + FP + FN
+（24）
+式中TP 为真正例的数量，表示模型预测为正例，实际是
+正例；FP 为假正例，表示模型预测为正例，实际是反例；
+FN 为假反例，表示模型预测为反例，实际是正例；TN 为
+真反例，表示模型预测为反例，实际是反例。
+ 
+3.3　损失函数之间的对比结果试验
+为了验证焦点损失函数函数的有效性，将改进后的
+损失函数与交叉熵损失函数进行对比，在训练条件不变
+的情况下，仅更换损失函数对模型进行训练500 个epoch，
+对比试验结果如图7 所示。其中，焦点损失函数收敛速
+度、以及收敛区间的平滑性都要优于交叉熵损失函数，
+而2 种损失函数的收敛损失值（焦点损失函数对应的收
+敛时损失值更低）也表明在样本类别存在不平衡的情况
+之下，焦点损失函数更适合作为模型的损失函数。
+ 
+0
+0
+0.05
+0.10
+0.15
+损失Loss
+0.20
+0.25
+0.30
+100
+200
+训练轮数Epochs
+300
+400
+500
+交叉熵损失函数Cross entropy loss
+焦点损失函数Focal loss
+图7　相同条件下的2 种损失函数的损失值对比
+Fig.7    Comparison of loss values between two loss functions in the
+same conditions
+ 
+3.4　RGBD 特征矫正效果图
+为了验证RGBD 矫正模块的效果，将深度图的输入
+特征和校正特征进行了可视化，结果如图8 所示。
+获取到的深度图像会受太阳光的影响，当太阳光照
+射在光滑的番茄表面上之后，反射光会导致生成的深度
+图像出现深度缺失。如图8a 中方框内所示，矫正之前的
+深度特征图中番茄内部出现了大量的空洞区域，RGBD
+模态矫正模块可以通过大量的训练，去补全番茄内部深
+度缺失的像素值。图8b 展示的深度特征图中，空洞区域
+得到了明显的修复，这是由于RGB 图像可以向深度图像
+提供纹理信息，模型可以通过RGB 提供的纹理特征对深
+度图像中的噪进行分析和矫正。
+ 
+ 
+图像1
+Image1
+图像2
+Image2
+a. 矫正之前的Depth特征图
+b. 矫正之后的Depth特征图
+rectification feature map
+a. Before RGBD feature 
+rectification feature map
+b. After RGBD feature 
+图8　经过RGBD 矫正模块前后的对比结果
+Fig.8    Comparison results before and after RGBD feature
+rectification module
+ 
+3.5　深度图像对分割结果的影响
+为了探究引入深度图像以后对最后图片分割精度的
+影响，本研究在其他条件均不变的情况之下，仅改变输
+入（RGB、RGB+Depth、RGB+HHA）得到的结果如表2
+所示。在引入深度图片以及将深度图片转化为HHA 图
+片之后，模型在测试集上得到的平均交并比分别提高了
+0.16、1.37 个百分点，对比使用原始的深度图像，使用
+HHA 编码的深度图片进行训练，准确率提高了1.21 个
+百分点。结果表明，可以利用深度图像有助于提升温室
+环境下图像语义分割的结果，而且通过对深度信息进行
+HHA 编码，能继续提升模型在双模态情况下的语义分割
+精度。
+ 
+ 
+表 2    不同输入对测试集结果的影响
+Table 2    Effect of different inputs on test set results
+%
+输入模态
+Input modals
+像素准确率
+Pixel accuracy
+平均交并比
+Mean intersection over union
+RGB
+92.92
+95.62
+RGB+Depth
+93.18
+95.78
+RGB+HHA
+95.13
+96.99
+ 
+在弱光条件下，如图9 第1 行图像所示，当光照条
+件不佳时，在使用RGB 模态对应的分割结果中，出现了
+明显的误差，番茄轮廓出现了锯齿状，会将前方遮挡的
+枝叶识别成番茄；在使用RGB+Depth 双模态对应的分割
+第 2 期
+张羽丰等：基于RGB 和深度双模态的温室番茄图像语义分割模型
+301 　
+
+结果中，番茄边缘更加清晰，同时将前方遮挡的枝叶识
+别成番茄的问题也有所改善；在使用RGB+HHA 双模态
+对应的分割结果中，分割效果进一步提高，叶片遮挡区
+域也被识别出来，这是由于番茄在不同光照下会呈现不
+同的颜色，引入深度图片之后可以补充番茄个体的形状
+及位置信息，从而降低光照变化带来的误差。在正常光
+照条件下，如图9 第2 行图像所示，有枝叶遮挡的情况
+下，只使用RGB 进行训练的分割结果出现了明显的误差，
+会将一部分与蕃茄果实颜色相近的枝叶错误识别成番茄
+个体；在引入深度图像参与训练之后，错分割现象明显
+改善，但依然存在着将枝叶误判成番茄个体的情况；而
+使用RGB+HHA 进行训练的后，模型的分割结果更接近
+真实值，进一步改善了枝叶遮挡对分割效果的影响，这
+是由于HHA 图像相比于深度图像可以更好的利用深度
+图中的几何信息；在强光条件下，如图9 第3 行图像所
+示，在强光条件下只使用RGB 进行训练，模型的分割结
+果中出现了明显的误差，番茄内部区域出现了大块的空
+洞区域，即番茄表面像素被预测为背景像素；在使用
+RGB+Depth 双模态进行训练之后，模型修正了强光条件
+下番茄内部误判的情况；而使用RGB+HHA 进行训练之
+后，模型不仅改善了由强光照射造成的误差，并且强化
+了对远处小目标的识别能力。
+ 
+ 
+a. 原图
+a. Original image
+b. 真实值
+b. Ground truth
+c. 分割结果 (RGB)
+c. Segmentation results 
+(RGB)
+d. 分割结果 (RGB+Depth)
+d. Segmentation results  
+(RGB+Depth)
+e. 分割结果 (RGB+HHA)
+e. Segmentation results  
+(RGB+Depth)
+弱光
+正常光照
+强光
+Strong light
+Weak light
+Normal light
+图9　不同模态的图像分割结果
+Fig.9    Image segmentation results of different modals
+ 
+通过试验对比，证明了在训练中加入深度信息模态，
+对基于Transformer 框架的语义分割模型是有精度提升的。
+深度信息可以帮助语义分割算法更好地理解图像中不同
+物体之间的空间关系。通过深度信息，模型可以更准确
+地推断出物体的位置、尺寸和形状，从而改善语义分割
+的精度。深度信息可以提供额外的语义上下文信息，帮
+助算法更好地理解图像中的语义关系。通过融合深度信
+息和RGB 图像，模型可以更准确地推断出物体的类别和
+边界。
+ 
+3.6　不同主干网络对RGBD 图片分割的影响
+为了探究不同特征提取主干网络对RGBD 分割的影
+响，本研究在其他条件不变的情况下，仅改变特征提取
+主干网络，将本文使用的Mit 与swin  transformer[30]、
+resnet101 在相同条件下训练，输入的模态均为RGB+HHA，
+模型收敛后，将不同模型在相同测试集进行预测，表3
+给出了具体测试结果。
+由表3 可知，在相同条件下，本研究使用的Mit 特
+征提取主干网络的平均交并比分别比resnet101、swin_s、swin_b
+提高了2.42、1.52 和0.79 个百分点。Mit 的参数量仅为
+其他3 种模型的0.59、0.48 和0.27。本文使用的Mit 在
+更少参数量的情况下实现了更高的精确度，证明了Mit
+作为分割任务主干网络的准确性及高效性。
+ 
+ 
+表 3    不同主干网络的测试结果
+Table 3    Testing results of different backbones
+主干网络
+Backbone
+像素准确率
+Pixel accuracy/%
+平均交并比
+Mean intersection
+over union/%
+总参数量
+Total of
+parameters/106
+resnet101
+92.27
+94.57
+43.9
+swin_s
+92.69
+95.47
+53.7
+swin_b
+93.84
+96.20
+94.4
+Mit（本文）
+95.13
+96.99
+26.2
+ 
+具体分割效果如图10 所示，对于图像1（图10 第
+1 行），正常状态下的番茄个体分割效果差别不大，但
+是对于远处小番茄个体的识别和分割，使用Transformer
+主干网络的swin transformer 和Mit 的分割效果要明显优
+于resnet101，这是因为Tranformer 相比于卷积网络有更
+强大的全局建模能力；对于图像2（图10 第2 行），番
+茄个体被前方枝叶所遮挡，Mit 可以清晰地分割出目标
+个体，降低对枝叶遮挡对分割效果的影响；对于图像
+3（图10 第3 行），目标番茄被颜色相近的枝叶遮挡，
+无论是resnet101 还是swin transformer 都出现了不同程
+度的误差，会将一部分枝叶像素识别成番茄个体，对比
+发现Mit 的分割结果更加接近真实值。
+上述分析表明，Mit 特征提取主干网络可以在复杂
+　 302
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+温室环境下对目标进行准确识别与分割，与卷积神经网
+络结构相比，无论是对枝叶遮挡的抗干扰能力还是远处
+小目标的识别，都能达到更好的分割效果。
+ 
+3.7　不同RGBD 分割模型之间的对比
+为进一步验证本研究所提出的DFST 模型在温室环
+境下的鲁棒性，将其与ShapeConv[20]、SA-gate[13]、CMX[14]
+等RGBD 分割模型进行对比。输入的模态均为RGB+
+HHA，之后在相同的测试集上进行预测，得到的分割结
+果如表4 所示。本文提出的DFST 分割模型在相同条件
+下，平均交并比分别比ShapeConv、SA-gate、CMX 提
+高了2.43、1.97 和1.21 个百分点，证明了DFST 在温室
+环境下性能的优越性。
+ 
+ 
+图像1
+Image1
+图像2
+Image2
+图像3
+Image3
+a. 原图
+a. Original image
+b. 真值
+b. Ground truth
+c. resnet101
+c. resnet101
+d. swin_s
+d. swin_s
+e. swin_b
+e. swin_b
+f. Mit
+f. MIt
+注：方框区域指示了Mit 与其他主干网络分割结果的差异
+Note：The square area indicates the difference between segmentation results between Mit and other backbones
+图10　不同主干网络的分割结果
+Fig.10    Segmentation results of different backbone
+ 
+ 
+ 
+表 4    不同RGBD 分割模型的测试结果
+Table 4    Testing results of different RGBD segmentation models
+RGBD 分割模型
+RGBD segmentation model
+像素准确率
+Pixel accuracy/%
+平均交并比
+Mean intersection over union/%
+ShapeConv
+92.27
+94.56
+SA-gate
+92.94
+95.02
+CMX
+93.18
+95.78
+DFST（本文）
+95.13
+96.99
+ 
+具体分割效果如图11 所示。对于图像1（图11 中
+第1 行），番茄个体处于强光照射下，DFST 模型的分
+割效果要好于其他RGBD 语义分割框架，番茄的边缘更
+为清晰，结果更加接近真值；对于图像2 和图像3（图
+11 中第2、3 行），目标番茄个体前方均有枝叶遮挡，
+DFST 对被枝叶遮挡的番茄的识别效果要好于其他RGBD-
+分割模型，降低了误将前方被遮挡物识别成番茄个体的
+概率。这是由于相比于ShapeConv 的将RGB 与Depth 只
+进行简单的通道连接的融合策略，DFST 使用了两个并
+行的网络分别提取RGB 与Depth 的特征，可以使RGB 与Depth
+的特征得到更充分地融合。相比于SA-gate，DFST 使用
+了全局建模能力更强的Mit 作为特征提取主干网络，提
+高的模型在温室环境下的鲁棒性。相比于CMX，DFST
+使用了形状卷积模块，增强模型对番茄个体形状以及
+位置的感知，降低了由于光照变化及枝叶遮挡所导致的
+误差。上述分析表明，DFST 模型可以实现复杂温室环
+境下的番茄识别与分割，增加了模型的鲁棒性。
+ 
+ 
+图像1
+Image1
+图像2
+Image2
+图像3
+Image3
+a. 原图
+a. Original image
+b. 真值
+b. Ground truth
+c. ShapeConv
+c. ShapeConv
+d. SA-gate
+d. SA-gate
+e. CMX
+e. CMX
+f. DFST
+f. DFST
+注：方框区域指示了不同RGBD 分割模型的分割结果差异
+Note：The square areas indicate the differences of segmentation results among different RGBD segmentation models
+图11　不同语义分割模型的分割结果
+Fig.11    Segmentation results of different semantic segmentation models
+ 
+第 2 期
+张羽丰等：基于RGB 和深度双模态的温室番茄图像语义分割模型
+303 　
+
+4　结　论
+本研究以温室环境下的番茄作为研究对象，提出了
+基于Mit（mix transformer encoder）的RGBD 双模态语
+义分割模型DFST（depth-fusion semantic transformer），
+经过大量试验得到以下结论：
+1）本研究提出的DFST 模型，在RGB 语义分割的
+基础之上引入深度模态，并将深度信息编码为HHA 作
+为另一模态进行辅助训练，解决了温室环境下农作物分
+割精度不高的问题，对比不引入深度图像的分割结果，
+平均交并比提高了1.37 个百分点。
+2）本研究将深度图像编码为HHA 三通道图像，降
+低了设备、环境、光照的对获取深度图像质量的影响，
+试验结果表明，对比不转化的深度图像，使用HHA 编
+码的深度图片进行训练，其模型的准确率提高了1.21 个
+百分点。
+3）本研究使用Transformer 代替传统卷积神经网络
+作为特征提取主干网络，解决了传统卷积神经网络全局
+建模能力较弱、易过拟合的问题。试验结果表明，使用
+基于Transformer 的Mit 特征提取主干网络相比于resnet101
+平均交并比提高了2.42 个百分点。
+由于RGBD 语义分割的效果依赖于高质量的深度图
+像，在未来的研究中会进一步探究如何获取高质量的深
+度图片以及更高性能的RGBD 特征融合策略。
+综上所述，针对温室环境下番茄图像的语义分割任
+务，本研究提出的DFST 模型可以实现复杂环境、多光
+照情况下的快速精确分割。可以为温室环境下的农作物
+表型信息检测提供理论和技术支撑。
+[ 参    考    文    献]
+ 
+ 邓寒冰，周云成，许童羽，等. 基于 RGB-D 的肉牛图像全
+卷积网络语义分割优化[J]. 农业工程学报，2019，35(18)：
+151-160.
+DENG  Hanbing,  ZHOU  Yuncheng,  XU  Tongyu,  et  al.
+Optimization  of  cattle’s  image  semantics  segmentation  with
+fully convolutional networks based on RGB-D[J]. Transactions
+of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+ Engineering
+(Transactions  of  the  CSAE),  2019,  35(18):  151-160.  (in
+Chinese with English abstract)
+[1]
+ 张勤，陈建敏，李彬，等. 基于 RGB-D 信息融合和目标检
+测的番茄串采摘点识别定位方法[J]. 农业工程学报，2021，
+37(18)：143-152.
+ZHANG  Qin,  CHEN  Jianmin,  LI  Bin,  et  al.  Method  for
+recognizing  and  locating  tomato  cluster  picking  points  based
+on  RGB-D  information  fusion  and  target  detection[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2021, 37(18): 143-152.
+(in Chinese with English abstract)
+[2]
+ 吴 鑫，王桂英，丛 杨. 基于颜色和深度信息融合的目标识
+[3]
+别方法[J]. 农业工程学报，2013，29(增刊 1)：96-100.
+WU Xin, WANG Guiying, CHONG Yang. Object recognition
+method  by  combining  color  and  depth  information[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2013, 29(Supp.1): 96-
+100. (in Chinese with English abstract)
+ 仇瑞承，张 漫，魏 爽，等. 基于 RGB-D 相机的玉米茎粗
+测量方法[J]. 农业工程学报，2017，33(增刊 1)：170-176.
+QIU Ruicheng, ZHANG Man, WEI Shuang, el al. Method for
+measurement  of  maize  stem  diameters  based  on  RGB-D
+camera[J]. Transactions of the Chinese Society of Agricultural
+Engineering  (Transactions  of  the  CSAE),  2017,  33(Supp.1):
+170-176. (in Chinese with English abstract)
+[4]
+ GAI J, TANG L, STEWARD B L. Plant recognition through
+the
+ fusion
+ of
+ 2D
+ and
+ 3D
+ images
+ for
+ robotic
+weeding[C]//Proceedings  American  Society  of  Agricultural
+and  Biological  Engineers  2015  International  Meeting.  New
+Orleans, USA: ASABE, 2015: 1-9.
+[5]
+ 蒋焕煜，彭永石，申 川，等. 基于双目立体视觉技术的成熟
+番茄识别与定位[J]. 农业工程学报，2008，24(8)：279-283.
+JIANG  Huanyu,  PENG  Yongshi,  SHEN  Chuan,  et  al.
+Recognizing  and  locating  ripe  tomatoes  based  on  binocular
+stereo  vision  technology[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering(Transactions of the CSAE),
+2008, 24(8): 279-283. (in Chinese with English abstract)
+[6]
+ 周云成，许童羽，邓寒冰，等. 基于面向通道分组卷积网
+络的番茄主要器官实时识别[J]. 农业工程学报，2018，
+34(10)：153-162.
+ZHOU  Yuncheng,  XU  Tongyu,  DENG  Hanbing,  et  al.  Real-
+time  recognition  of  main  organs  in  tomato  based  on  channel
+wise  group  convolutional  network[J].  Transactions  of  the
+Chinese Society of Agricultural Engineering (Transactions of
+the CSAE), 2018, 34(10): 153-162. (in Chinese with English
+abstract)
+[7]
+ 赵春江，文朝武，林森，等. 基于级联卷积神经网络的番茄
+花期识别检测方法[J]. 农业工程学报，2020，36(24)：143-152.
+ZHAO  Chunjiang,  WEHN  Chaowu,  LIN  Sen,  et  al.  Tomato
+florescence  recognition  and  detection  method  based  on
+cascaded  neural  network[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2020, 36(24): 143-152. (in Chinese with English abstract)
+[8]
+ YUAN  J,  ZHOU  W,LUO  T,  et  al.  DMFNet:  Deep  Multi-
+Modal
+ Fusion
+ Network
+ for
+ RGB-D
+ Indoor
+ Scene
+Segmentation[J]. IEEE Access,2019,7:169350-169358.
+[9]
+ GUPTA S, GIRSHICK R, ARBELAEZ P, et al. Learning rich
+features  from  RGB-D  images  for  object  detection  and
+segmentation[C]//Proceedings  of  2014  European  Conference
+on Computer Vision. Zurich, Switzerland: Springer, 2014: 345-
+[10]
+　 304
+农业工程学报（http://www.tcsae.org）
+2024 年
+
+360.
+ QI X, LIAO R, JIA J, et al. 3d graph neural networks for rgbd
+semantic
+ segmentation[C]//Proceedings
+ of
+ 2017
+ IEEE
+International  Conference  on  Computer  Vision.  Venice,  Italy:
+IEEE, 2017: 5199-5208.
+[11]
+ HU X, YANG K, FEI L, et al. Acnet: Attention based network
+to  exploit  complementary  features  for  rgbd  semantic
+segmentation[C]//Proceedings  of  2019  IEEE  International
+Conference on Image Processing. Taipei, China: IEEE, 2019:
+1440-1444.
+[12]
+ CHEN  X,  LIN  K  Y,  WANG  J,  et  al.  Bi-directional  cross-
+modality  feature  propagation  with  separation-and-aggregation
+gate  for  RGB-D  semantic  segmentation[C]//Proceedings  of
+2020 European Conference on Computer Vision. Glasgow, UK:
+Springer, 2020: 561-577.
+[13]
+ LIU H, ZHANG J, YANG K, et al. CMX: Cross-modal fusion
+for  RGB-X  semantic  segmentation  with  transformers[J].IEEE
+Transactions  on  Intelligent  Transportation  Systems  ,  2023  ,
+24(12): 14679-14694.
+[14]
+ XIE  E,  WANG  W,  YU  Z,  et  al.  SegFormer:  Simple  and
+efficient
+ design
+ for
+ semantic
+ segmentation
+ with
+transformers[J].  Advances  in  Neural  Information  Processing
+Systems, 2021, 34: 12077-12090.
+[15]
+ DOSOVITSKIY  A,  BEYER  L,  KOLESNIKOV  A,  et  al.  An
+image  is  worth  16x16  words:  Transformers  for  image
+recognition
+ at
+ scale[C]//Proceedings
+ of
+ International
+Conference
+ on
+ Learning
+ Representations.
+ Addis
+Ababa,Ethiopia: ICLR, 2020: 2010-2032.
+[16]
+ WANG W, XIE E, LI X, et al. Pyramid vision transformer: A
+versatile
+ backbone
+ for
+ dense
+ prediction
+ without
+convolutions[C]//Proceedings  of  2021  IEEE  International
+Conference  on  Computer  Vision.  Montreal,  Canada:  IEEE,
+2021: 568-578.
+[17]
+ CHU  X,  TIAN  Z,  ZHANG  B,  et  al.  Conditional  positional
+encodings  for  vision  transformers[C]//Proceedings  of  the
+Eleventh International Conference on Learning Representations.
+Vienna, Austria: ICLR, 2022: 2102-2112.
+[18]
+ ISLAM  M  A,  JIA  S,  BRUCE  N  D  B.  How  much  position
+information
+ do
+ convolutional
+ neural
+ networks
+encode[C]//Proceedings
+ of
+ International
+ Conference
+ on
+Learning Representations.Addis Ababa,Ethiopia: ICLR, 2020:
+1847-1858.
+[19]
+ CAO J, LENG H, LISCHINSKI D, et al. Shapeconv: Shape-
+aware  convolutional  layer  for  indoor  rgb-d  semantic
+segmentation[C]//Proceedings  of  2021  IEEE  International
+Conference  on  Computer  Vision.  Montreal,  Canada:  IEEE,
+2021: 7088-7097.
+[20]
+ DENG  F,  FENG  H,  LIANG  M,  et  al.  FEANet:  Feature-
+enhanced  attention  network  for  RGB-thermal  real-time
+semantic
+ segmentation[C]//Proceedings
+ of
+ 2021
+ IEEE
+International  Conference  on  Intelligent  Robots  and  Systems.
+Prague, Czech Repubic: IEEE, 2021: 4467-4473.
+[21]
+ CHEN  L,  ZHANG  H,  XIAO  J,  et  al.  Sca-cnn:  Spatial  and
+channel-wise  attention  in  convolutional  networks  for  image
+captioning[C]//Proceedings  of  2017  IEEE  Conference  on
+Computer  Vision  and  Pattern  Recognition.  Honolulu,  USA:
+IEEE, 2017: 5659-5667.
+[22]
+ VASWANI A, SHAZEER N, PARMAR N, et al. Attention is
+all  you  need[J].Advances  in  Neural  Information  Processing
+Systems, 2017 , 30 : 5998-6008.
+[23]
+ SHEN  Z,  ZHANG  M,  ZHAO  H,  et  al.  Efficient  attention:
+Attention  with  linear  complexities[C]//Proceedings  of  2021
+IEEE  winter  conference  on  applications  of  computer  vision.
+Waikola, USA: IEEE, 2021: 3531-3539.
+[24]
+ LI J, HASSANI A, WALTON S, et al. Convmlp: Hierarchical
+convolutional  mlps  for  vision[C]//Proceedings  of  2023
+IEEE/CVF  Conference  on  Computer  Vision  and  Pattern
+Recognition. Vancouver, Canada: IEEE, 2023: 6306-6315.
+[25]
+ LIN T Y, GOYAL P, GIRSHICK R, et al. Focal loss for dense
+object  detection[C]//Proceedings  of  2017  IEEE  International
+Conference on Computer Vision (ICCV). Venice, Italy: IEEE,
+2017: 2980-2988.
+[26]
+ PAN  S,  YANG  Q.  A  survey  on  transfer  learning[J].  IEEE
+Transactions  on  Knowledge  and  Data  Engineering,  2010,
+22(10): 1345-1359.
+[27]
+ 孟庆宽，杨晓霞，张漫，等. 基于语义分割的非结构化田间
+道路场景识别[J]. 农业工程学报，2021，37(22)：152-160.
+MENG  Qingkuan,  YANG  Xiaoxia,  ZHANG  Man,  et  al.
+Unstructured  field  road  scene  recognition  based  on  semantic
+segmentation[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering(Transactions  of  the  CSAE),  2021,
+37(22): 152-160. (in Chinese with English abstract)
+[28]
+ 余果，刘秋斌，陈方园，等. 基于改进残差网络的橡胶林
+卫星影像语义分割方法[J]. 农业工程学报，2022，38(15)：
+204-211.
+YU  Guo,  LIU  Qiubin,  CHEN  Fangyuan,  et  al.  A  semantic
+segmentation  method  for  rubber  forest  satellite  images  based
+on improved residual network[J]. Transactions of the Chinese
+Society  of  Agricultural  Engineering  (Transactions  of  CSAE),
+2022, 38(15): 204-211. (in Chinese with English abstract)
+[29]
+ LIU Z, LIN Y, CAO Y, et al. Swin transformer: Hierarchical
+vision  transformer  using  shifted  windows[C]//Proceedings  of
+2021  IEEE  International  Conference  on  Computer  Vision.
+Montreal, Canada: IEEE, 2021: 10012-10022.
+[30]
+第 2 期
+张羽丰等：基于RGB 和深度双模态的温室番茄图像语义分割模型
+305 　
+
+ 
+Semantic segmentation model for greenhouse tomato images using RGB
+and depth bimodal
+ZHANG Yufeng1, YANG Jing1, DENG Hanbing1,2※, ZHOU Yuncheng1,2, MIAO Teng1,2
+(1. College of Information and Electrical Engineering, Shenyang Agricultural University, Shenyang 110866, China;　2. Liaoning
+Engineering Research Center for Information Technology in Agricultural, Shenyang 110866, China)
+Abstract: Image  semantic  segmentation  has  been  widely  used  in  various  applications,  such  as  plant  phenotyping,  robot
+harvesting, and facility scene analysis. Periodic fruit status of tomato is required for phenotypic information, such as shape and
+color. Tomato can be one of the most important vegetable crops in greenhouse environments. However, manual sampling and
+detection fail to meet the requirements of high throughput and precision, due to the time-consuming, labor-intensity, and low
+efficiency. Computer vision can be expected for image semantic segmentation in recent years. This image segmentation has
+been  frequently  used  to  distinguish  the  crop  fruits  (foreground)  and  growth  environment  (background)  in  complex
+environments.  It  is  still  necessary  to  improve  the  accuracy  of  semantic  segmentation  in  the  complex  environments  of  the
+greenhouse, for example, the uneven lighting in greenhouse environments, overlapping and occlusion between crop fruits and
+leaves, and the similarity in texture and color between immature crops and leaves. Traditional semantic segmentation of deep
+convolutional networks has been used only in the RGB modality of images for training. The accuracy of semantic segmentation
+can  be  achieved  by  the  bottleneck  using  only  RGB  modality  for  training,  with  the  continuous  evolution  of  deep  learning
+models. In this study, an "RGB + Depth" model of multimodal semantic segmentation (called DFST, depth-fusion Semantic
+Transformer) was proposed using a hybrid Transformer encoder (mix transformer encoder). Mit (mix transformer encoder) was
+adopted as the main feature extraction network of the DFST model. Mit was a Transformer encoder feature extraction backbone
+network more suitable for semantic segmentation. Compared with the ordinary Vision Transformers (ViTs), Mit shared the
+following advantages: 1) A hierarchical Encoder structure was employed to output the multi-scale features. The Decoder was
+also combined to capture and optimize segmentation for both high-resolution coarse- and low-resolution fine-grained features;
+2) Computational complexity was reduced using sequence reduction, instead of an ordinary Self-Attention structure. Positional
+Embedding was removed to replace the Mix FFN. 3×3 Deepwise Conv was introduced in the Feed-Forward Network (Mix-
+FFN), in order to convey the position information. Depth images were obtained under real greenhouse lighting in a specific
+experiment. The depth images were encoded into the HHA (horizontal disparity, height above ground, angle) format before
+training. The HHA-encoded depth images were fused with the RGB images as an auxiliary modality for feature extraction. A
+lightweight multi-layer perceptron decoder was used to decode and segment the feature maps. The experimental results show
+that: 1) The DFST model improved the segmentation accuracy of crops in greenhouse environments. The depth was introduced
+as an auxiliary modality in addition to RGB semantic segmentation. mIoU was improved by 1.37% than before. 2) The depth
+images were encoded into the HHA three-channel images. The high-quality depth images were obtained in the conditions of
+equipment,  environment,  and  lighting.  The  training  accuracy  was  improved  by  1.21%  using  HHA-encoded  depth  images,
+compared  with  the  non-encoded  ones.  3)  A  transformer  was  used  as  the  feature  extraction  backbone  network,  instead  of
+traditional  convolutional  neural  networks.  The  reason  was  the  weak  global  modeling  and  easy  overfitting  of  previous
+convolutional  neural  networks.  The  transformer  Mit  feature  extraction  backbone  network  improved  the  mIoU  by  2.43%,
+compared with the ShapeConv. In summary, the DFST model can be expected to serve as the semantic segmentation task of
+tomato images in greenhouse environments. The rapid and accurate segmentation was achieved in complex environments, such
+as  various  lighting  conditions.  The  findings  can  provide  theoretical  assistance  for  crop  detection  and  intelligent  harvesting
+robots in greenhouse environments.
+Keywords: greenhouse; crop; semantic segmentation; attention mechanism; facility environment; tomato; RGBD; Transformer
+　 306
+农业工程学报（http://www.tcsae.org）
+2024 年
