@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 819 kajian korpus `main6` yang PDF-nya tersedia, dari 819 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 236 | 236 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 132 | 132 |
-| C3 | Pencitraan TBS kelapa sawit | 110 | 110 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 240 | 240 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 142 | 142 |
+| C3 | Pencitraan TBS kelapa sawit | 122 | 122 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 | 33 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 91 | 91 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 94 | 94 |
 | R | Tinjauan terdahulu | 105 | 105 |
-| T | Metode yang dapat dipindahkan dari luar pertanian | 82 | 82 |
-| | **Jumlah** | 789 | 789 |
+| T | Metode yang dapat dipindahkan dari luar pertanian | 83 | 83 |
+| | **Jumlah** | 819 | 819 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (236)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (240)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -226,12 +226,15 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2020 | Häni N. | A comparative study of fruit detection and counting methods for yield mapping in apple orchards | Journal of Field Robotics | [PDF](pdf/hani2020comparative.pdf) | [DOI](https://doi.org/10.1002/rob.21902) |
 | 2020 | Mekhalfi M.L. | Vision system for automatic on-tree kiwifruit counting and yield estimation | Sensors Switzerland | [PDF](pdf/mekhalfi2020vision.pdf) | [DOI](https://doi.org/10.3390/s20154214) |
 | 2020 | Santos T.T. | Grape detection, segmentation, and tracking using deep neural networks and three-dimensional association | Computers and Electronics in Agriculture | [PDF](pdf/santos2020grape.pdf) | [DOI](https://doi.org/10.1016/j.compag.2020.105247) |
+| 2020 | Sarron J. | Is machine learning efficient for mango yield estimation when used under heterogeneous field conditions? | Acta Horticulturae | [PDF](pdf/sarron2020machine.pdf) | [DOI](https://doi.org/10.17660/actahortic.2020.1279.30) |
 | 2020 | Serafino S.E. | Detection and Counting of Lemons using Artificial Vision and Tracking Techniques for Real Time Harvest Estimation | Proceedings 2020 46th Latin American Computing Conference Clei 2020 | [PDF](pdf/serafino2020detection.pdf) | [DOI](https://doi.org/10.1109/clei52000.2020.00064) |
 | 2020 | Sun S. | Three-dimensional photogrammetric mapping of cotton bolls in situ based on point cloud segmentation and clustering | ISPRS Journal of Photogrammetry and Remote Sensing | [PDF](pdf/sun2020three.pdf) | [DOI](https://doi.org/10.1016/j.isprsjprs.2019.12.011) |
 | 2020 | Tsoulias N. | Apple shape detection based on geometric and radiometric features using a LiDAR laser scanner | Remote Sensing | [PDF](pdf/tsoulias2020apple.pdf) | [DOI](https://doi.org/10.3390/rs12152481) |
 | 2020 | Zhao X. | Automatic sweet pepper detection based on point cloud images using subtractive clustering | International Journal of Agricultural and Biological Engineering | [PDF](pdf/zhao2020automatic.pdf) | [DOI](https://doi.org/10.25165/j.ijabe.20201303.5460) |
+| 2019 | Anderson N.T. | Estimation of fruit load in mango orchards: tree sampling considerations and use of machine vision and satellite imagery | Precision Agriculture | [PDF](pdf/anderson2019estimation.pdf) | [DOI](https://doi.org/10.1007/s11119-018-9614-1) |
 | 2019 | Gutiérrez S. | Ground based hyperspectral imaging for extensive mango yield estimation | Computers and Electronics in Agriculture | [PDF](pdf/gutierrez2019ground.pdf) | [DOI](https://doi.org/10.1016/j.compag.2018.12.041) |
 | 2019 | Huang Y.H. | High-throughput image analysis framework for fruit detection, localization and measurement from video streams | 2019 Asabe Annual International Meeting | [PDF](pdf/huang2019high.pdf) | [DOI](https://doi.org/10.13031/aim.201900487) |
+| 2019 | Koirala A. | Deep learning for real-time fruit detection and orchard fruit load estimation: benchmarking of ‘MangoYOLO’ | Precision Agriculture | [PDF](pdf/koirala2019deep.pdf) | [DOI](https://doi.org/10.1007/s11119-019-09642-0) |
 | 2019 | Liu X. | Monocular Camera Based Fruit Counting and Mapping with Semantic Data Association | IEEE Robotics and Automation Letters | [PDF](pdf/liu2019monocular.pdf) | [DOI](https://doi.org/10.1109/lra.2019.2901987) |
 | 2019 | Méndez V. | In-field estimation of orange number and size by 3D laser scanning | Agronomy | [PDF](pdf/mendez2019field.pdf) | [DOI](https://doi.org/10.3390/agronomy9120885) |
 | 2019 | Nellithimaru A.K. | ROLS : Robust object-level SLAM for grape counting | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops | [PDF](pdf/nellithimaru2019rols.pdf) | [DOI](https://doi.org/10.1109/cvprw.2019.00321) |
@@ -241,6 +244,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2018 | Häni N. | Apple Counting using Convolutional Neural Networks | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hani2018apple.pdf) | [DOI](https://doi.org/10.1109/iros.2018.8594304) |
 | 2018 | Liu X. | Robust Fruit Counting: Combining Deep Learning, Tracking, and Structure from Motion | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/liu2018robust.pdf) | [DOI](https://doi.org/10.1109/iros.2018.8594239) |
 | 2018 | Ramos P. | Measurement of the ripening rate on coffee branches by using 3D images in outdoor environments | Computers in Industry | [PDF](pdf/ramos2018measurement.pdf) | [DOI](https://doi.org/10.1016/j.compind.2018.03.024) |
+| 2017 | Linker R. | A procedure for estimating the number of green mature apples in night-time orchard images using light distribution and its application to yield estimation | Precision Agriculture | [PDF](pdf/linker2017procedure.pdf) | [DOI](https://doi.org/10.1007/s11119-016-9467-4) |
 | 2017 | Roy P. | Active view planning for counting apples in orchards | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/roy2017active.pdf) | [DOI](https://doi.org/10.1109/iros.2017.8206500) |
 | 2017 | Roy P. | Vision-Based Apple Counting and Yield Estimation | Springer Proceedings in Advanced Robotics | [PDF](pdf/roy2017vision.pdf) | [DOI](https://doi.org/10.1007/978-3-319-50115-4_42) |
 | 2016 | Gongal A. | Apple crop-load estimation with over-the-row machine vision system | Computers and Electronics in Agriculture | [PDF](pdf/gongal2016apple.pdf) | [DOI](https://doi.org/10.1016/j.compag.2015.10.022) |
@@ -256,7 +260,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 | 2012 | Wang Q. | Design of crop yield estimation system for apple orchards using computer vision | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 | [PDF](pdf/wang2012design.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (132)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (142)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -350,6 +354,8 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2021 | Luo L. | Grape berry detection and size measurement based on edge image processing and geometric morphology | Machines | [PDF](pdf/luo2021grape.pdf) | [DOI](https://doi.org/10.3390/machines9100233) |
 | 2021 | Massah J. | Design, development, and performance evaluation of a robot for yield estimation of kiwifruit | Computers and Electronics in Agriculture | [PDF](pdf/massah2021design.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106132) |
 | 2021 | Mirhaji H. | Fruit detection and load estimation of an orange orchard using the YOLO models through simple approaches in different imaging and illumination conditions | Computers and Electronics in Agriculture | [PDF](pdf/mirhaji2021fruit.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106533) |
+| 2021 | Neethi M.V. | Yield estimation in mango orchards using machine vision | Aip Conference Proceedings | [PDF](pdf/neethi2021yield.pdf) | [DOI](https://doi.org/10.1063/5.0046526) |
+| 2021 | Prabhu A. | Identification and yield estimation of mature fruits using modified watershed algorithm | 2021 2nd International Conference for Emerging Technology Incet 2021 | [PDF](pdf/prabhu2021identification.pdf) | [DOI](https://doi.org/10.1109/incet51464.2021.9456198) |
 | 2021 | Smirnov I. | Neural network for identifying apple fruits on the crown of a tree | E3s Web of Conferences | [PDF](pdf/smirnov2021neural.pdf) | [DOI](https://doi.org/10.1051/e3sconf/202127001021) |
 | 2020 | Akai R. | Distortion-adaptive grape bunch counting for omnidirectional images | Proceedings International Conference on Pattern Recognition | [PDF](pdf/akai2020distortion.pdf) | [DOI](https://doi.org/10.1109/icpr48806.2021.9412659) |
 | 2020 | Bellocchio E. | Combining Domain Adaptation and Spatial Consistency for Unseen Fruits Counting: A Quasi-Unsupervised Approach | IEEE Robotics and Automation Letters | [PDF](pdf/bellocchio2020combining.pdf) | [DOI](https://doi.org/10.1109/lra.2020.2966398) |
@@ -369,19 +375,27 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2019 | Di Gennaro S.F. | A precision viticulture UAV-based approach for early yield prediction in vineyard | Precision Agriculture 2019 Papers Presented at the 12th European Conference on Precision Agriculture Ecpa 2019 | [PDF](pdf/di2019precision.pdf) | [DOI](https://doi.org/10.3920/978-90-8686-888-9_46) |
 | 2019 | Kanwal Z. | Overlapped apple fruit yield estimation using pixel classification and hough transform | International Journal of Advanced Computer Science and Applications | [PDF](pdf/kanwal2019overlapped.pdf) | [DOI](https://doi.org/10.14569/ijacsa.2019.0100271) |
 | 2019 | Kestur R. | MangoNet: A deep semantic segmentation architecture for a method to detect and count mangoes in an open orchard | Engineering Applications of Artificial Intelligence | [PDF](pdf/kestur2019mangonet.pdf) | [DOI](https://doi.org/10.1016/j.engappai.2018.09.011) |
+| 2019 | Sathesh Kumar K. | Automated Yield Estimation of Fruits Using Multilayer Convolution Neural Networks | Proceedings of the 2019 International Conference on Advances in Computing and Communication Engineering Icacce 2019 | [PDF](pdf/sathesh2019automated.pdf) | [DOI](https://doi.org/10.1109/icacce46606.2019.9079955) |
 | 2018 | Behera S. | On-Tree Detection and Counting of Apple Using Color Thresholding and CHT | Proceedings of the 2018 IEEE International Conference on Communication and Signal Processing Iccsp 2018 | [PDF](pdf/behera2018tree.pdf) | [DOI](https://doi.org/10.1109/iccsp.2018.8524363) |
 | 2018 | Fu L. | Kiwifruit yield estimation using image processing by an Android mobile phone | IFAC Papersonline | [PDF](pdf/fu2018kiwifruit.pdf) | [DOI](https://doi.org/10.1016/j.ifacol.2018.08.137) |
+| 2018 | Gayathri Devi T. | Image Processing System for Automatic Segmentation and Yield Prediction of Fruits using Open CV | International Conference on Current Trends in Computer Electrical Electronics and Communication Ctceec 2017 | [PDF](pdf/gayathri2018image.pdf) | [DOI](https://doi.org/10.1109/ctceec.2017.8455137) |
+| 2018 | Hutagalung A. | Detection and Counting of Mango Fruits in Occluded Condition Using Image Analysis | Proceedings of 2017 5th International Conference on Instrumentation Communications Information Technology and Biomedical Engineering Icici Bme 2017 | [PDF](pdf/hutagalung2018detection.pdf) | [DOI](https://doi.org/10.1109/icici-bme.2017.8537729) |
 | 2018 | Linker R. | Machine learning based analysis of night-time images for yield prediction in apple orchard | Biosystems Engineering | [PDF](pdf/linker2018machine.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2018.01.003) |
 | 2018 | Liu J. | Tomato yield estimation based on object detection | Journal of Advanced Computational Intelligence and Intelligent Informatics | [PDF](pdf/liu2018tomato.pdf) | [DOI](https://doi.org/10.20965/jaciii.2018.p1120) |
 | 2018 | Millan B. | On-the-go grapevine yield estimation using image analysis and boolean model | Journal of Sensors | [PDF](pdf/millan2018go.pdf) | [DOI](https://doi.org/10.1155/2018/9634752) |
 | 2018 | Qian J. | A smartphone-based apple yield estimation application using imaging features and the ANN method in mature period | Scientia Agricola | [PDF](pdf/qian2018smartphone.pdf) | [DOI](https://doi.org/10.1590/1678-992x-2016-0152) |
+| 2018 | Wang C. | Detection and counting of immature green citrus fruit based on the Local Binary Patterns (LBP) feature using illumination-normalized images | Precision Agriculture | [PDF](pdf/wang2018detection.pdf) | [DOI](https://doi.org/10.1007/s11119-018-9574-5) |
 | 2017 | Bargoti S. | Image Segmentation for Fruit Detection and Yield Estimation in Apple Orchards | Journal of Field Robotics | [PDF](pdf/bargoti2017image.pdf) | [DOI](https://doi.org/10.1002/rob.21699) |
 | 2017 | Chen S.W. | Counting Apples and Oranges with Deep Learning: A Data-Driven Approach | IEEE Robotics and Automation Letters | [PDF](pdf/chen2017counting.pdf) | [DOI](https://doi.org/10.1109/lra.2017.2651944) |
 | 2017 | Cheng H. | Early yield prediction using image analysis of apple fruit and tree canopy features with neural networks | Journal of Imaging | [PDF](pdf/cheng2017early.pdf) | [DOI](https://doi.org/10.3390/jimaging3010006) |
 | 2017 | Dorj U.O. | An yield estimation in citrus orchards via fruit detection and counting using image processing | Computers and Electronics in Agriculture | [PDF](pdf/dorj2017yield.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.05.019) |
 | 2017 | Pinho T.M. | Comparative Analysis between LDR and HDR Images for Automatic Fruit Recognition and Counting | Journal of Sensors | [PDF](pdf/pinho2017comparative.pdf) | [DOI](https://doi.org/10.1155/2017/7321950) |
+| 2017 | Qureshi W.S. | Machine vision for counting fruit on mango tree canopies | Precision Agriculture | [PDF](pdf/qureshi2017machine.pdf) | [DOI](https://doi.org/10.1007/s11119-016-9458-5) |
 | 2017 | Tran C.C. | Automatic dragon fruit counting using adaptive thresholds for image segmentation and shape analysis | 2017 4th Nafosted Conference on Information and Computer Science Nics 2017 Proceedings | [PDF](pdf/tran2017automatic.pdf) | [DOI](https://doi.org/10.1109/nafosted.2017.8108052) |
+| 2016 | Hung C. | Autonomous intelligent system for fruit yield estimation | Acta Horticulturae | [PDF](pdf/hung2016autonomous.pdf) | [DOI](https://doi.org/10.17660/actahortic.2016.1130.82) |
+| 2016 | Li H. | Immature green citrus fruit detection and counting based on fast normalized cross correlation (FNCC) using natural outdoor colour images | Precision Agriculture | [PDF](pdf/li2016immature.pdf) | [DOI](https://doi.org/10.1007/s11119-016-9443-z) |
 | 2016 | Maldonado W. | Automatic green fruit counting in orange trees using digital images | Computers and Electronics in Agriculture | [PDF](pdf/maldonado2016automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2016.07.023) |
+| 2016 | Payne A.B. | Automating mango crop yield estimation | Acta Horticulturae | [PDF](pdf/payne2016automating.pdf) | [DOI](https://doi.org/10.17660/actahortic.2016.1130.87) |
 | 2016 | Silwal A. | A hierarchical approach to apple identification for robotic harvesting | Transactions of the Asabe | [PDF](pdf/silwal2016hierarchical.pdf) | [DOI](https://doi.org/10.13031/trans.59.11619) |
 | 2015 | Font D. | Vineyard yield estimation based on the analysis of high resolution images obtained with artificial illumination at night | Sensors Switzerland | [PDF](pdf/font2015vineyard.pdf) | [DOI](https://doi.org/10.3390/s150408284) |
 | 2015 | Hung C. | A feature learning based approach for automated fruit yield estimation | Springer Tracts in Advanced Robotics | [PDF](pdf/hung2015feature.pdf) | [DOI](https://doi.org/10.1007/978-3-319-07488-7_33) |
@@ -393,7 +407,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2013 | Yamamoto K. | Detection and counting of intact tomato fruits on tree using image analysis and machine learning methods | Conference Proceeding 5th International Conference Tae 2013 Trends in Agricultural Engineering 2013 | [PDF](pdf/yamamoto2013detection.pdf) |  |
 | 2012 | Ye X. | Fruit yield estimation through multispectral imaging | Advances in Citrus Nutrition | [PDF](pdf/ye2012fruit.pdf) | [DOI](https://doi.org/10.1007/978-94-007-4171-3_30) |
 
-## C3: Pencitraan TBS kelapa sawit (110)
+## C3: Pencitraan TBS kelapa sawit (122)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -483,23 +497,35 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2020 | Harsawardana | AI-Based Ripeness Grading for Oil Palm Fresh Fruit Bunch in Smart Crane Grabber | Iop Conference Series Earth and Environmental Science | [PDF](pdf/harsawardana2020ai.pdf) | [DOI](https://doi.org/10.1088/1755-1315/426/1/012147) |
 | 2020 | Mohd Ali M. | Combination of laser-light backscattering imaging and computer vision for rapid determination of oil palm fresh fruit bunches maturity | Computers and Electronics in Agriculture | [PDF](pdf/mohd2020combination.pdf) | [DOI](https://doi.org/10.1016/j.compag.2020.105235) |
 | 2020 | Prasetyo N.A. | Automatic detection and calculation of palm oil fresh fruit bunches using faster R-CNN | International Journal of Applied Science and Engineering | [PDF](pdf/prasetyo2020automatic.pdf) | [DOI](https://doi.org/10.6703/ijase.202005_17(2).121) |
+| 2020 | Sae-Tang S. | Estimation of Oil Content in Oil Palm Fresh Fruit Bunch by Its Surface Color | Proceedings 2020 15th International Joint Symposium on Artificial Intelligence and Natural Language Processing Isai Nlp 2020 | [PDF](pdf/saetang2020estimation.pdf) | [DOI](https://doi.org/10.1109/isai-nlp51646.2020.9376834) |
 | 2020 | Septiarini A. | Automatic image segmentation of oil palm fruits by applying the contour-based approach | Scientia Horticulturae | [PDF](pdf/septiarini2020automatic.pdf) | [DOI](https://doi.org/10.1016/j.scienta.2019.108939) |
 | 2020 | Septiarini A. | Maturity grading of oil palm fresh fruit bunches based on a machine learning approach | 2020 5th International Conference on Informatics and Computing Icic 2020 | [PDF](pdf/septiarini2020maturity.pdf) | [DOI](https://doi.org/10.1109/icic50835.2020.9288603) |
+| 2020 | Setiawan A.W. | Palm Oil Fresh Fruit Bunch Grading System Using Multispectral Image Analysis in HSV | 2020 IEEE International Conference on Informatics Iot and Enabling Technologies Iciot 2020 | [PDF](pdf/setiawan2020palm.pdf) | [DOI](https://doi.org/10.1109/iciot48696.2020.9089431) |
 | 2020 | Syaifuddin A. | Detection of palm fruit maturity level in the grading process through image recognition and fuzzy inference system to improve quality and productivity of crude palm oil (CPO) | Journal of Physics Conference Series | [PDF](pdf/syaifuddin2020detection.pdf) | [DOI](https://doi.org/10.1088/1742-6596/1581/1/012003) |
+| 2020 | Wong Z.Y. | Computer vision algorithm development for classification of palm fruit ripeness | Aip Conference Proceedings | [PDF](pdf/wong2020computer.pdf) | [DOI](https://doi.org/10.1063/5.0002188) |
 | 2019 | Astuti I. | Oil palm fruit ripeness detection using K-Nearest neighbour | Journal of Physics Conference Series | [PDF](pdf/astuti2019oil.pdf) | [DOI](https://doi.org/10.1088/1742-6596/1277/1/012028) |
+| 2019 | Septiarini A. | Image-based processing for ripeness classification of oil palm fruit | Proceeding 2019 5th International Conference on Science in Information Technology Embracing Industry 4 0 Towards Innovation in Cyber Physical System Icsitech 2019 | [PDF](pdf/septiarini2019image.pdf) | [DOI](https://doi.org/10.1109/icsitech46713.2019.8987575) |
+| 2019 | Setiawan A.W. | Estimation of Nigrescens Palm Oil Ripeness using Contrast and Skewness from 680 nm Image | Proceedings 2019 International Seminar on Intelligent Technology and Its Application Isitia 2019 | [PDF](pdf/setiawan2019estimation.pdf) | [DOI](https://doi.org/10.1109/isitia.2019.8937225) |
+| 2019 | Sukemi | Identification using the K -Means Clustering and Gray Level Co-occurance Matrix (GLCM) At Maturity Fruit Oil Head | Proceedings of 2019 4th International Conference on Informatics and Computing Icic 2019 | [PDF](pdf/sukemi2019identification.pdf) | [DOI](https://doi.org/10.1109/icic47613.2019.8985681) |
 | 2018 | Alfatni M.S.M. | Real-time oil palm FFB ripeness grading system based on ANN, KNN and SVM classifiers | Iop Conference Series Earth and Environmental Science | [PDF](pdf/alfatni2018real.pdf) | [DOI](https://doi.org/10.1088/1755-1315/169/1/012067) |
 | 2018 | Fahmi F. | Oil palm fresh fruit bunch ripeness classification using back propagation and learning vector quantization | Iop Conference Series Materials Science and Engineering | [PDF](pdf/fahmi2018oil.pdf) | [DOI](https://doi.org/10.1088/1757-899x/434/1/012066) |
 | 2018 | Ibrahim Z. | Palm oil fresh fruit bunch ripeness grading recognition using convolutional neural network | Journal of Telecommunication Electronic and Computer Engineering | [PDF](pdf/ibrahim2018palm.pdf) |  |
 | 2018 | Sabri N. | Evaluation of color models for palm oil fresh fruit bunch ripeness classification | Indonesian Journal of Electrical Engineering and Computer Science | [PDF](pdf/sabri2018evaluation.pdf) | [DOI](https://doi.org/10.11591/ijeecs.v11.i2.pp549-557) |
 | 2018 | Salambue R. | Investigation of the ripeness of oil palm fresh fruit bunches using bio-speckle imaging | Journal of Physics Conference Series | [PDF](pdf/salambue2018investigation.pdf) | [DOI](https://doi.org/10.1088/1742-6596/978/1/012071) |
+| 2018 | Siddesha S. | Segmentation of oil palm crop bunch from tree images | Proceedings of the 2017 International Conference on Smart Technology for Smart Nation Smarttechcon 2017 | [PDF](pdf/siddesha2018segmentation.pdf) | [DOI](https://doi.org/10.1109/smarttechcon.2017.8358639) |
+| 2017 | Groß T. | Of maturity stages of oil palm fresh fruit bunches using multispectral imaging method | Acta Horticulturae | [PDF](pdf/gro2017maturity.pdf) | [DOI](https://doi.org/10.17660/actahortic.2017.1152.10) |
 | 2017 | Pamornnak B. | An automatic and rapid system for grading palm bunch using a Kinect camera | Computers and Electronics in Agriculture | [PDF](pdf/pamornnak2017automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.10.020) |
+| 2017 | Shiddiq M. | Ripeness detection simulation of oil palm fruit bunches using laser-based imaging system | Aip Conference Proceedings | [PDF](pdf/shiddiq2017ripeness.pdf) | [DOI](https://doi.org/10.1063/1.4973101) |
+| 2017 | Zolfagharnassab S. | Emissivity determination of oil palm fresh fruit ripeness using a thermal imaging technique | Acta Horticulturae | [PDF](pdf/zolfagharnassab2017emissivity.pdf) | [DOI](https://doi.org/10.17660/actahortic.2017.1152.26) |
 | 2016 | Shabdin M.K. | A study on the oil palm fresh fruit bunch (FFB) ripeness detection by using Hue, Saturation and Intensity (HSI) approach | Iop Conference Series Earth and Environmental Science | [PDF](pdf/shabdin2016study.pdf) | [DOI](https://doi.org/10.1088/1755-1315/37/1/012039) |
 | 2015 | Cherie D. | Advance models for camera-vision based oil content prediction of intact oil palm fruits (Elaeis Guineensis Jacq) on trees with nondestructive evaluation | International Journal on Advanced Science Engineering and Information Technology | [PDF](pdf/cherie2015advance.pdf) | [DOI](https://doi.org/10.18517/ijaseit.5.4.542) |
 | 2015 | Cherie D. | Optical characteristics of oil palm fresh fruits bunch (FFB) under three spectrum regions influence for harvest decision | International Journal on Advanced Science Engineering and Information Technology | [PDF](pdf/cherie2015optical.pdf) | [DOI](https://doi.org/10.18517/ijaseit.5.3.534) |
 | 2015 | Pamornnak B. | Oil content determination scheme of postharvest oil palm for mobile devices | Biosystems Engineering | [PDF](pdf/pamornnak2015oil.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2015.03.010) |
 | 2015 | Taparugssanagorn A. | A non-destructive oil palm ripeness recognition system using relative entropy | Computers and Electronics in Agriculture | [PDF](pdf/taparugssanagorn2015non.pdf) | [DOI](https://doi.org/10.1016/j.compag.2015.09.018) |
+| 2014 | Alfatni M.S.M. | Oil palm fruit maturity classification based on texture feature extraction of fruit thorns and supervised machine learning classifiers using image processing technique | Acta Horticulturae | [PDF](pdf/alfatni2014oil.pdf) | [DOI](https://doi.org/10.17660/actahortic.2014.1054.42) |
 | 2014 | Alfatni M.S.M. | Oil palm fresh fruit bunch ripeness classification based on rule-based expert system of ROI image processing technique results | Iop Conference Series Earth and Environmental Science | [PDF](pdf/alfatni2014oilb.pdf) | [DOI](https://doi.org/10.1088/1755-1315/20/1/012018) |
 | 2014 | Bensaeed O. | Oil palm fruit grading using a hyperspectral device and machine learning algorithm | Iop Conference Series Earth and Environmental Science | [PDF](pdf/bensaeed2014oil.pdf) | [DOI](https://doi.org/10.1088/1755-1315/20/1/012017) |
+| 2014 | Kassim M.S.M. | Oil palm fruit classifications by using near infrared images | Research Journal of Applied Sciences Engineering and Technology | [PDF](pdf/kassim2014oil.pdf) | [DOI](https://doi.org/10.19026/rjaset.7.517) |
 | 2014 | Makky M. | Automatic non-destructive quality inspection system for oil palm fruits | International Agrophysics | [PDF](pdf/makky2014automatic.pdf) | [DOI](https://doi.org/10.2478/intag-2014-0022) |
 | 2013 | Amosh L. | Adaptive region growing for automated oil palm fruit quality recognition | Lecture Notes in Computer Science Including Subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics | [PDF](pdf/amosh2013adaptive.pdf) | [DOI](https://doi.org/10.1007/978-3-319-02958-0_18) |
 | 2013 | Makky M. | Development of an automatic grading machine for oil palm fresh fruits bunches (FFBs) based on machine vision | Computers and Electronics in Agriculture | [PDF](pdf/makky2013development.pdf) | [DOI](https://doi.org/10.1016/j.compag.2013.02.008) |
@@ -546,7 +572,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2017 | Lal S. | Identification and counting of mature apple fruit based on BP feed forward neural network | Proceedings of 2017 3rd IEEE International Conference on Sensing Signal Processing and Security Icsss 2017 | [PDF](pdf/lal2017identification.pdf) | [DOI](https://doi.org/10.1109/ssps.2017.8071621) |
 | 2017 | Ramos P.J. | Automatic fruit count on coffee branches using computer vision | Computers and Electronics in Agriculture | [PDF](pdf/ramos2017automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.03.010) |
 
-## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (91)
+## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (94)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -624,6 +650,8 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2020 | Lin G. | Color-, depth-, and shape-based 3D fruit detection | Precision Agriculture | [PDF](pdf/lin2020color.pdf) | [DOI](https://doi.org/10.1007/s11119-019-09654-w) |
 | 2020 | Liu Z. | Improved Kiwifruit Detection Using Pre-Trained VGG16 with RGB and NIR Information Fusion | IEEE Access | [PDF](pdf/liu2020improved.pdf) | [DOI](https://doi.org/10.1109/access.2019.2962513) |
 | 2020 | Mirbod O. | Towards image-based measurement of accurate apple size and yield using stereo vision cameras | Asabe 2020 Annual International Meeting | [PDF](pdf/mirbod2020image.pdf) | [DOI](https://doi.org/10.13031/aim.202001115) |
+| 2020 | Tsoulias N. | In-situ detection of apple fruit using a 2D LiDAR laser scanner | 2020 IEEE International Workshop on Metrology for Agriculture and Forestry Metroagrifor 2020 Proceedings | [PDF](pdf/tsoulias2020situ.pdf) | [DOI](https://doi.org/10.1109/metroagrifor50201.2020.9277629) |
+| 2020 | Tu S. | Passion fruit detection and counting based on multiple scale faster R-CNN using RGB-D images | Precision Agriculture | [PDF](pdf/tu2020passion.pdf) | [DOI](https://doi.org/10.1007/s11119-020-09709-3) |
 | 2019 | Gené-Mola J. | Fruit detection in an apple orchard using a mobile terrestrial laser scanner | Biosystems Engineering | [PDF](pdf/genemola2019fruit.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2019.08.017) |
 | 2019 | Gené-Mola J. | KFuji RGB-DS database: Fuji apple multi-modal images for fruit detection with color, depth and range-corrected IR data | Data in Brief | [PDF](pdf/genemola2019kfuji.pdf) | [DOI](https://doi.org/10.1016/j.dib.2019.104289) |
 | 2019 | Hacking C. | Investigating 2-D and 3-D proximal remote sensing techniques for vineyard yield estimation | Sensors Switzerland | [PDF](pdf/hacking2019investigating.pdf) | [DOI](https://doi.org/10.3390/s19173652) |
@@ -641,6 +669,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2015 | Choi D. | Machine vision system for early yield estimation of citrus in a site-specific manner | 2015 ASABE International Meeting | [PDF](pdf/choi2015machine.pdf) | [DOI](https://doi.org/10.13031/aim.20152181863) |
 | 2015 | Herrero-Huerta M. | Vineyard yield estimation by automatic 3D bunch modelling in field conditions | Computers and Electronics in Agriculture | [PDF](pdf/herrerohuerta2015vineyard.pdf) | [DOI](https://doi.org/10.1016/j.compag.2014.10.003) |
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
+| 2013 | Hung C. | Orchard fruit segmentation using multi-spectral feature learning | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hung2013orchard.pdf) | [DOI](https://doi.org/10.1109/iros.2013.6697125) |
 
 ## R: Tinjauan terdahulu (105)
 
@@ -752,7 +781,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2015 | Gongal A. | Sensors and systems for fruit detection and localization: A review | Computers and Electronics in Agriculture | [PDF](pdf/gongal2015sensors.pdf) | [DOI](https://doi.org/10.1016/j.compag.2015.05.021) |
 | 2013 | Whalley J. | Applications of image processing in viticulture: A review | Proceedings 20th International Congress on Modelling and Simulation Modsim 2013 | [PDF](pdf/whalley2013applications.pdf) |  |
 
-## T: Metode yang dapat dipindahkan dari luar pertanian (82)
+## T: Metode yang dapat dipindahkan dari luar pertanian (83)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -834,6 +863,7 @@ Katalog ini memuat 789 kajian korpus `main6` yang PDF-nya tersedia, dari 789 kaj
 | 2016 | Zhang Y. | Single-image crowd counting via multi-column convolutional neural network | Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition | [PDF](pdf/zhang2016single.pdf) | [DOI](https://doi.org/10.1109/cvpr.2016.70) |
 | 2015 | Mur-Artal R. | ORB-SLAM: A Versatile and Accurate Monocular SLAM System | IEEE Transactions on Robotics | [PDF](pdf/murartal2015orb.pdf) | [DOI](https://doi.org/10.1109/tro.2015.2463671) |
 | 2015 | Zheng L. | Scalable person re-identification: A benchmark | Proceedings of the IEEE International Conference on Computer Vision | [PDF](pdf/zheng2015scalable.pdf) | [DOI](https://doi.org/10.1109/iccv.2015.133) |
+| 2014 | Timofte R. | Multi-view traffic sign detection, recognition, and 3D localisation | Machine Vision and Applications | [PDF](pdf/timofte2014multi.pdf) | [DOI](https://doi.org/10.1007/s00138-011-0391-3) |
 | 2013 | Salas-Moreno R.F. | SLAM++: Simultaneous localisation and mapping at the level of objects | Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition | [PDF](pdf/salasmoreno2013slam.pdf) | [DOI](https://doi.org/10.1109/cvpr.2013.178) |
 | 2013 | Wei Y.M. | Applications of structure from motion: A survey | Journal of Zhejiang University Science C | [PDF](pdf/wei2013applications.pdf) | [DOI](https://doi.org/10.1631/jzus.cide1302) |
 | 2013 | Wu C. | Towards linear-time incremental structure from motion | Proceedings 2013 International Conference on 3D Vision 3dv 2013 | [PDF](pdf/wu2013linear.pdf) | [DOI](https://doi.org/10.1109/3dv.2013.25) |
