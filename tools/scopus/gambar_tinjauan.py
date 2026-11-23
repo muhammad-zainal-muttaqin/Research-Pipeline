@@ -465,27 +465,60 @@ def gambar_sawit(mat):
 
 
 # ------------------------------------------- F7 metrik yang dilaporkan
+NAMA_METRIK = {"hitung": "Count agreement (MAE, RMSE, $R^2$, MAPE, count accuracy)",
+               "identitas": "Tracking or identity (MOTA, IDF1, HOTA, ID switches)",
+               "deteksi": "Detection quality (mAP, AP, F1)",
+               "tidak ada": "No quantitative metric"}
+NAMA_RUJUKAN = {"anotasi": "Annotated images or video", "pohon": "Hand count on the plant",
+                "panen": "Harvest count", "packhouse": "Packhouse count",
+                "tidak ada": "No count reference stated"}
+
+
+def batang_persen(ax, nama, hit, n, warna):
+    urut = list(nama)
+    vals = [100 * hit[k] / n for k in urut]
+    y = range(len(urut))[::-1]
+    ax.barh(y, vals, color=warna, height=0.6)
+    for yy, k, v in zip(y, urut, vals):
+        ax.text(v + 1, yy, f"{hit[k]} ({v:.0f}%)", va="center", fontsize=7.5)
+    ax.set_yticks(list(y))
+    ax.set_yticklabels([nama[k].replace(" (", "\n(") for k in urut], fontsize=7.5)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Share of studies (%)")
+
+
+def kajian_metode(mat):
+    return [r for r in mat if r["kode"] == "C1" and r["mekanisme"] != "DATA"]
+
+
 def gambar_metrik(mat):
-    c1 = [r for r in mat if r["kode"] == "C1" and r["mekanisme"] != "DATA"]
-    nama = {"hitung": "Count agreement (MAE, RMSE, $R^2$, MAPE, count accuracy)",
-            "identitas": "Tracking or identity (MOTA, IDF1, HOTA, ID switches)",
-            "deteksi": "Detection quality (mAP, AP, F1)",
-            "tidak ada": "No quantitative metric"}
+    c1 = kajian_metode(mat)
     berkode = [r for r in c1 if r["tingkat_metrik"].strip()]
     hit = Counter(x for r in berkode for x in set(r["tingkat_metrik"].split(";")) if x)
     kelas = sum(1 for r in c1 if r["per_kelas"] == "Y")
     fig, ax = plt.subplots(figsize=(4.6, 2.3))
-    urut = list(nama)
-    vals = [100 * hit[k] / len(berkode) for k in urut]
-    ax.barh(range(len(urut))[::-1], vals, color=[C["biru"], C["hijau"], C["abu"], C["abu_muda"]], height=0.6)
-    for i, (k, v) in enumerate(zip(urut, vals)):
-        ax.text(v + 1, len(urut) - 1 - i, f"{hit[k]} ({v:.0f}%)", va="center", fontsize=7.5)
-    ax.set_yticks(range(len(urut))[::-1])
-    ax.set_yticklabels([nama[k].replace(" (", "\n(") for k in urut], fontsize=7.5)
-    ax.set_xlim(0, 100)
-    ax.set_xlabel("Share of studies (%)")
+    batang_persen(ax, NAMA_METRIK, hit, len(berkode), [C["biru"], C["hijau"], C["abu"], C["abu_muda"]])
     simpan(fig, "F07_metrik")
     return hit, len(berkode), kelas
+
+
+def gambar_metrik_rujukan(mat):
+    """F07 ditambah panel rujukan hitung; dihitung seperti nRef* di angka_naskah.py."""
+    c1 = kajian_metode(mat)
+    berkode = [r for r in c1 if r["tingkat_metrik"].strip()]
+    hit = Counter(x for r in berkode for x in set(r["tingkat_metrik"].split(";")) if x)
+    rh = Counter(x for r in c1 for x in r["referensi_hitung"].split(";") if x)
+    fig, (a, b) = plt.subplots(1, 2, figsize=(7.2, 2.3), gridspec_kw={"wspace": 1.05})
+    batang_persen(a, NAMA_METRIK, hit, len(berkode), [C["biru"], C["hijau"], C["abu"], C["abu_muda"]])
+    batang_persen(b, NAMA_RUJUKAN, rh, len(c1), [C["abu"], C["oranye"], C["merah"], C["ungu"], C["abu_muda"]])
+    a.set_title("(a) Metric type", loc="left")
+    b.set_title("(b) Count reference", loc="left")
+    for ax in (a, b):
+        ax.set_xlim(0, 118)
+        ax.set_xticks(range(0, 101, 20))
+        ax.tick_params(axis="y", length=0)
+    simpan(fig, "F13_metrik_rujukan")
+    return {k: hit[k] for k in NAMA_METRIK}, {k: rh[k] for k in NAMA_RUJUKAN}, len(berkode), len(c1)
 
 
 # ------------------------------------------- F8 jaringan istilah
@@ -966,6 +999,8 @@ def main():
         gambar_foto_sawit()
     if mau("F12"):
         print("hasil", gambar_hasil(mat))
+    if mau("F13"):
+        print("metrik dan rujukan", gambar_metrik_rujukan(mat))
 
 
 if __name__ == "__main__":

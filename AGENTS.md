@@ -211,7 +211,7 @@ untuk setiap bagian yang sudah diperiksa.
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `literature/references/` | PDF baseline SawitMVC; `revisi-dosen-2026-07-23/` berisi delapan permintaan revisi dosen (`Chat.txt`, catatan primer, jangan dihapus) |
 | `manuscript/source/` | `main7.tex`, `main7-body.tex`, `main7-supplementary.tex`; `main6.tex`, `main6-body.tex`, `main6-supplementary.tex` (bahan tambahan), `main6-angka.tex` (keluaran `angka_naskah.py`), lampiran, `references6.bib`; naskah 182 sumber (`main.tex`, `main-elsarticle.tex`, `evidence-body.tex`, `references.bib`) dan `experiment-ledgers.tex` untuk laporan eksperimen |
-| `manuscript/figures/main6/` | Gambar F01–F12 (keluaran skrip) |
+| `manuscript/figures/main6/` | Gambar F01–F13 (keluaran skrip) |
 | `manuscript/templates/els-cas-templates/` | Bundel CAS Elsevier 2.4 (`cas-dc.cls`, `cas-common.sty`, `cas-model2-names.bst`) yang dipakai `main6.tex`; `main6.tex` berhenti bila kelas yang terbaca lebih tua |
 | `literature/example/` | Artikel contoh bentuk naskah `main6` (§12) |
 | `manuscript/reports/` | Laporan hasil eksperimen (`reports.tex` dan versi ringkas); figur rasternya di `manuscript/figures/` |
@@ -240,7 +240,7 @@ cd manuscript/source
 tectonic -Z search-path=../templates/els-cas-templates main6.tex   # cas-dc 2.4; latexmk/pdflatex tidak tersedia
 
 python3 tools/scopus/kode_bukti.py       # matriks bukti
-python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F12
+python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F13
 python3 tools/scopus/tabel_lampiran.py   # Lampiran A
 python3 tools/scopus/lampiran_kueri.py   # Lampiran B
 ```
