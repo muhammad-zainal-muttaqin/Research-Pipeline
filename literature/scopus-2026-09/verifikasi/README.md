@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (845), dan 819 di antaranya masuk peta.
+lengkapnya (881), dan 853 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
@@ -38,6 +38,7 @@ sawit dan Husin dkk. 2021 dikeluarkan, dengan persetujuan peninjau. Butir yang m
 | Pencitraan laboratorium (22 November 2026) | Dua laporan Ni dkk. (2020, 2021) tentang tandan blueberry | Keduanya dikeluarkan: tandan dipotong lalu difoto di laboratorium; peta 786 kajian, C1 236; disetujui peninjau |
 | PDF sawit tambahan (23 November 2026) | Empat kajian sawit yang PDF-nya baru diperoleh | Junos dkk. 2024, Septiarini dkk. 2020, dan Fadilah dkk. 2012 (konferensi) masuk kelompok sawit; Husin dkk. 2021 dikeluarkan karena tanpa evaluasi kuantitatif; peta 789 kajian, sawit 110; disetujui peninjau |
 | PDF tambahan (23 November 2026) | 31 laporan dari daftar PDF yang belum ada | 30 masuk: Koirala dkk. 2019, Sarron dkk. 2020, dan Linker 2017 pindah ke C1 (hitungan beberapa citra pohon digabung dengan koreksi statistik), Anderson dkk. 2019 pindah ke C1 (pelacakan); Cheng dkk. 2016 dikeluarkan karena buah tidak dicacah; lokasi 9 kajian sawit diperbaiki dari teks lengkap; peta 819 kajian, C1 240, sawit 122; disetujui peninjau |
+| PDF tambahan berikutnya (23 November 2026) | 36 laporan dari daftar PDF yang belum ada | 34 masuk: Vasconcelos dkk. 2024 dan De Narda dkk. 2024 pindah dari C2 ke C1, Li dkk. 2022 pindah dari C5 ke C1 (buah yang sama dari dua kamera stereo); Bazame dkk. 2022 dikeluarkan karena buah dicitrakan di corong mesin panen, Achraf dkk. 2024 karena buah tidak dicacah; lokasi 6 kajian sawit diisi dari teks lengkap; peta 853 kajian, C1 243, sawit 131; disetujui peninjau |
 
 
 ## Langkah berikutnya
