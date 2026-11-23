@@ -15,8 +15,8 @@ Anda.
     penyaringan, matriks bukti, log perubahan, dan skrip "are provided with
     it". Bila berkas itu diunggah ke repositori (misalnya Zenodo), tulis DOI
     atau tautannya di kalimat itu.
-  - Saat mengirim: unggah lima butir *highlights* (di `main6.tex`) sebagai
-    berkas terpisah, dan periksa kebijakan AI di *Guide for Authors* jurnal
+  - Saat mengirim: unggah [lima butir *highlights*](../../../manuscript/output/papers/main6-highlights.txt)
+    sebagai berkas terpisah dan periksa kebijakan AI di *Guide for Authors* jurnal
     *Computers and Electronics in Agriculture*. Abstrak kini 249 kata.
 
   Hapus semua `\authorcheck` sebelum dikirim. Dampaknya: tanpa isian ini,
