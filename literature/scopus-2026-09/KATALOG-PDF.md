@@ -1,19 +1,19 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 894 kajian korpus `main6` yang PDF-nya tersedia, dari 894 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 895 kajian korpus `main6` yang PDF-nya tersedia, dari 895 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 248 | 248 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 156 | 156 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 157 | 157 |
 | C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
 | R | Tinjauan terdahulu | 113 | 113 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 894 | 894 |
+| | **Jumlah** | 895 | 895 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (248)
 
@@ -268,7 +268,7 @@ Katalog ini memuat 894 kajian korpus `main6` yang PDF-nya tersedia, dari 894 kaj
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 | 2012 | Wang Q. | Design of crop yield estimation system for apple orchards using computer vision | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 | [PDF](pdf/wang2012design.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (156)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (157)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -396,6 +396,7 @@ Katalog ini memuat 894 kajian korpus `main6` yang PDF-nya tersedia, dari 894 kaj
 | 2019 | Kanwal Z. | Overlapped apple fruit yield estimation using pixel classification and hough transform | International Journal of Advanced Computer Science and Applications | [PDF](pdf/kanwal2019overlapped.pdf) | [DOI](https://doi.org/10.14569/ijacsa.2019.0100271) |
 | 2019 | Kestur R. | MangoNet: A deep semantic segmentation architecture for a method to detect and count mangoes in an open orchard | Engineering Applications of Artificial Intelligence | [PDF](pdf/kestur2019mangonet.pdf) | [DOI](https://doi.org/10.1016/j.engappai.2018.09.011) |
 | 2019 | Sathesh Kumar K. | Automated Yield Estimation of Fruits Using Multilayer Convolution Neural Networks | Proceedings of the 2019 International Conference on Advances in Computing and Communication Engineering Icacce 2019 | [PDF](pdf/sathesh2019automated.pdf) | [DOI](https://doi.org/10.1109/icacce46606.2019.9079955) |
+| 2019 | Zhang X. | Fast Detection and Yield Estimation of Ripe Citrus Fruit Based on Machine Vision | Guangdong Agricultural Sciences | [PDF](pdf/zhang2019fast.pdf) | [DOI](https://doi.org/10.16768/j.issn.1004-874x.2019.07.022) |
 | 2018 | Behera S. | On-Tree Detection and Counting of Apple Using Color Thresholding and CHT | Proceedings of the 2018 IEEE International Conference on Communication and Signal Processing Iccsp 2018 | [PDF](pdf/behera2018tree.pdf) | [DOI](https://doi.org/10.1109/iccsp.2018.8524363) |
 | 2018 | Fu L. | Kiwifruit yield estimation using image processing by an Android mobile phone | IFAC Papersonline | [PDF](pdf/fu2018kiwifruit.pdf) | [DOI](https://doi.org/10.1016/j.ifacol.2018.08.137) |
 | 2018 | Gayathri Devi T. | Image Processing System for Automatic Segmentation and Yield Prediction of Fruits using Open CV | International Conference on Current Trends in Computer Electrical Electronics and Communication Ctceec 2017 | [PDF](pdf/gayathri2018image.pdf) | [DOI](https://doi.org/10.1109/ctceec.2017.8455137) |

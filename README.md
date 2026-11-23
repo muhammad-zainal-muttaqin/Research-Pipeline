@@ -4,7 +4,7 @@ Repositori ini menyatukan dua jalur riset tentang tandan buah segar kelapa sawit
 
 1. Tinjauan pustaka untuk jurnal terindeks Scopus. Naskah aktif **`main6`**,
    *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and
-   Design Space for Class-Wise Inventories*, memetakan 894 kajian
+   Design Space for Class-Wise Inventories*, memetakan 895 kajian
    (2012–2026) yang teks lengkapnya dinilai, dan mengelompokkan 248 kajian multi-pengamatan ke dalam enam
    mekanisme asosiasi identitas (M0–M5). Korpus lama 182 ringkasan tentang YOLO,
    RGB-D, dan deteksi tandan tetap tersedia sebagai bahan latar.
@@ -41,13 +41,13 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 
 | Lokasi | Isi |
 |---|---|
-| [`literature/`](literature/) | Tinjauan pustaka: korpus Scopus `main6` (`scopus-2026-09/`, termasuk 894 ringkasan per kajian di `entri/`), 182 ringkasan lama, sintesis, entri ditahan, teks terekstrak, dan PDF sumber |
+| [`literature/`](literature/) | Tinjauan pustaka: korpus Scopus `main6` (`scopus-2026-09/`, termasuk 895 ringkasan per kajian di `entri/`), 182 ringkasan lama, sintesis, entri ditahan, teks terekstrak, dan PDF sumber |
 | [`experiments/`](experiments/) | Eksperimen: status, log, metrik, sub-laporan, skrip (`code/`), hasil (`results/`), log training, dan split |
 | [`manuscript/`](manuscript/) | Naskah: sumber LaTeX, figur, panduan penulisan, laporan, dan keluaran PDF/PPTX |
 | [`pipeline/`](pipeline/) | Deliverable produksi: pipeline YOLO 4-kanal untuk kamera Orbbec Gemini |
 | [`tools/`](tools/) | Skrip utilitas: pipeline korpus `main6` (`scopus/`) dan pembuat dek presentasi |
-| [`site/`](site/) | Pembuat Ruang Baca (1.076 entri: 182 korpus lama + 894 entri `main6`) dan pustaka kliennya |
-| [`index.html`](index.html) | Ruang Baca publik hasil build (1.076 entri), tetap di akar untuk GitHub Pages |
+| [`site/`](site/) | Pembuat Ruang Baca (1.077 entri: 182 korpus lama + 895 entri `main6`) dan pustaka kliennya |
+| [`index.html`](index.html) | Ruang Baca publik hasil build (1.077 entri), tetap di akar untuk GitHub Pages |
 
 `literature/pdf/` dan `datasets/` adalah bahan lokal besar yang sengaja
 tidak masuk Git.
