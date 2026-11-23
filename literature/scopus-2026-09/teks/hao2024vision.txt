@@ -1,0 +1,910 @@
+A Vision-Based Two-Stage Fruit Outer Diameter Detection Method
+Yifei Hao, Shuaizheng Yan, Zhengxing Wu, Senior Member, IEEE, Bingwei He, Chenghua Li,
+and Junzhi Yu, Fellow, IEEE
+Abstract— Regarding
+the
+mobile
+monitoring
+system
+in
+agricultural
+automation,
+the
+outer
+diameter
+monitoring
+of
+greenhouse
+vegetables
+has
+signiﬁcant
+implications
+for
+accurately regulating fruit growth and cultivation plans. In this
+paper, a novel vision-based two-stage outer diameter detection
+method is proposed, including the segmentation and outer
+diameter calculation of greenhouse tomato images. To address
+the issues of multiple tomatoes in a single image and the
+similarity in color between tomatoes and the background, a
+YOLOv8 network embedded with convolutional block attention
+module is constructed for detection and segmentation in the
+ﬁrst stage. Additionally, to solve the problem of inaccurate
+outer diameter detection caused by different tomato poses and
+pedicles, a deﬁned central axis method is proposed, which can
+adaptively ﬁlter out the maximum outer diameter candidates
+and calculate accurate values utilizing depth information in the
+world coordinate system. The backbone network is ﬁne-tuned
+on the pre-trained YOLOv8 model with 1000 tomato images.
+Extensive measurement experiments, involving 215 tomatoes in
+80 images, is conducted to validate the effectiveness of our
+proposed approach. Compared to the ground truth, we obtain a
+measurement error of 4.27 mm, the coefﬁcient of determination
+value R2 is 0.9349.
+I. INTRODUCTION
+The introduction of greenhouse cultivation techniques
+and specialized nutritional management has signiﬁcantly
+shortened the growth cycles of fruits [1]. Consequently,
+plenty of agricultural automation technologies have been
+developed for different tasks such as monitoring [2],
+harvesting [3], [4], and grading [5]. Among these processes,
+This work was supported in part by the National Natural Science
+Foundation of China under Grant 62403135 and 62373353, in part by
+Beijing Nova Program under Grant 20230484457, and in part by Fuzhou
+University Research Start-up Fund XRC-2310 (Corresponding author:
+Shuaizheng Yan)
+Y. Hao and B. He are with the Department of Mechanical Engineering,
+Fuzhou University, Fuzhou 350108, China (e-mail: 878445181@qq.com;
+mebmhe@fzu.edu.cn).
+S. Yan is with the Department of Mechanical Engineering, Fuzhou
+University, Fuzhou 350108, China, and also with the Laboratory of
+Cognitive and Decision Intelligence for Complex Systems, Institute of
+Automation, Chinese Academy of Sciences, Beijing 100190, China (e-mail:
+shuaizheng.yan@fzu.edu.cn).
+C. Li is with Guangzhou Shenghui Cleaning Service Co., Ltd.,
+Guangzhou 511436, China, (e-mail: li13326410182@126.com).
+Z. Wu is with the Key Laboratory of Cognition and Decision Intelligence
+for Complex Systems, Institute of Automation, Chinese Academy of
+Sciences, Beijing 100190, China, and also with the School of Artiﬁcial
+Intelligence, University of Chinese Academy of Sciences, Beijing 100049,
+China (e-mail: zhengxing.wu@ia.ac.cn).
+J. Yu is with the Key Laboratory of Cognition and Decision Intelligence
+for Complex Systems, Institute of Automation, Chinese Academy of
+Sciences, Beijing 100190, China, and also with the State Key Laboratory for
+Turbulence and Complex Systems, Department of Advanced Manufacturing
+and Robotics, BIC-ESAT, College of Engineering, Peking University,
+Beijing 100871, China (e-mail: junzhi.yu@ia.ac.cn).
+D
+F
+G
+H
+I
+J
+K
+E
+Fig. 1.
+Tomatoes under various photographic conditions. (a) and (b)
+illustrate multiple fruits in a single image, (c)∼(e) encompass diverse
+shooting angles, and (f)∼(h) represent different lighting conditions.
+visual-based fruit size detection plays a pivotal role in
+accurately assessing and managing crop growth. However,
+the existing technology has limitations in terms of algorithm
+applicability and accuracy, requiring further exploration.
+Currently, vision-based outer diameter detection primarily
+targets spherical fruits, such as apples, mangoes, oranges,
+and tomatoes. The previous approaches can be categorized
+into two main methods. The ﬁrst method involves geometric
+ﬁtting of segmented fruit images, using elliptical major axis
+to calculate fruit outer diameter [6]. The second method
+uses bounding boxes to select fruits, outer diameter with
+the length and width of the bounding box [7]. Several other
+methods extract the area within the bounding box and assume
+the fruit as a circle to measure outer diameter [8]. Both
+methods can obtain the outer diameter of fruits and perform
+well on speciﬁc datasets. However, regarding greenhouse
+tomatoes, various challenges may arise during the detection
+process, as showed in Fig. 1. Firstly, green tomatoes
+may confuse neural networks in the learning process due
+to their color similarity with the background. Secondly,
+some tomato images captured from an overhead perspective
+will inevitably include stem and leaves, which cannot be
+effectively removed and may interfere with geometric ﬁtting
+of the ﬁrst method. In contrast, the second method requires
+the detection box to be perpendicular to the photo borders,
+while tomatoes may grow in various orientations. In addition,
+the inﬂuence of lighting is signiﬁcant, especially in dim or
+979-8-3315-0964-4/24/$31.00 © 2024 IEEE
+268
+Proceedings of the 2024 IEEE
+International Conference on Robotics and Biomimetics
+December 10-14, 2024, Bangkok, Thailand
+2024 IEEE International Conference on Robotics and Biomimetics (ROBIO) | 979-8-3315-0964-4/24/$31.00 ©2024 IEEE | DOI: 10.1109/ROBIO64047.2024.10907381
+Authorized licensed use limited to: Universitas Airlangga. Downloaded on July 24,2026 at 06:41:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+bright environments where the contour of tomatoes cannot
+be accurately extracted.
+To solve these problems, we propose a vision-based
+two-stage approach for outer diameter detection. Departing
+from traditional segmentation approaches such as Mask
+R-CNN [9], U-Nte [10], PSPNet [11] the algorithm adopts
+an enhanced YOLOv8 model as the backbone network to
+expedite detection speed. Furthermore, a novel measurement
+approach is introduced for tomato diameter detection that
+aligns closely with manual measurement logic.
+The contributions of this study are summarized as follows:
+• We
+propose
+a
+vision-based
+two-stage
+fruit
+outer
+diameter detection method that can monitor tomatoes’
+sizes with natural greenhouse background.
+• We
+propose
+an
+improved
+ﬁne-tuned
+network
+for
+accurate detection and segmentation of greenhouse
+tomatoes, and design an algorithm to assess the
+segmented posture.
+• We develop a novel deﬁned central axis outer diameter
+calculation
+method
+based
+on
+pedicle
+differences.
+Experimental results demonstrate the effectiveness and
+superiority of the proposed method.
+II. RELATED WORK
+Image processing technology is widely used in plant
+phenotype research owing to its capabilities of feature
+extraction and analysis [12], [13]. The early detection
+methods for tomato outer diameter mostly used traditional
+vision algorithm to detect tomato edges. For instance, Ji et
+al. [14] proposed a method to segment the tomato using
+the color difference, and then measured the vertical and
+horizontal outer diameters of tomato employing the mask
+image. However, traditional methods are only applicable to
+harvested tomato images, and its accuracy in identiﬁcation
+and measurement is relatively low.
+With the developments of deep learning and neural
+network,
+there
+have
+been
+great
+changes
+in
+tomato
+recognition. Bai et al. [15] employed a various of algorithms
+to extract tomato area, perimeter, and closed circle radius,
+improved tomato classiﬁcation. Zu et al. [16] utilized
+Mask R-CNN for segmenting tomato images and obtaining
+phenotype data. The experimental results showed that the
+F1-Score of bounding box and mask region achieved 92.0%.
+Zheng et al. [17] modiﬁed the YOLOv5n-seg model to
+achieve better performance with a smaller model size.
+While most studies focus on improving tomato recognition
+effectiveness, little attention has been given to accurately
+measuring the outer diameter of tomatoes in real greenhouse
+environments due to factors such as posture variations and
+stem/leaf obstructions. Therefore, this paper proposes a
+method to precisely identify the maximum outer diameter
+of greenhouse tomatoes during their recognition process.
+III. VISION-BASED TWO-STAGE OUTER DIAMETER
+DETECTION METHODOLOGY
+The vision-based outer diameter detection method consists
+of two stages. The ﬁrst part is an end-to-end network for
+&RQY
+N V 
+&I
+Q 
+633)
+&RQY
+N V 
+&RQY
+N V 
+&I
+Q 
+&RQY
+N V 
+&I
+Q 
+&RQY
+N V 
+&I
+Q 
+8SVDPSOH
+&RQFDW
+&I
+Q 
+8SVDPSOH
+&RQFDW
+&I
+Q 
+&RQY
+N V 
+&RQFDW
+&I
+Q 
+&RQY
+N V 
+&RQFDW
+&I
+Q 
+&%$0
+&%$0
+&%$0
+6HJPHQW
+KHDG
+6HJPHQW
+KHDG
+6HJPHQW
++HDG
+3URWR
+6HJPHQW
+KHDG
+ 
+&RQY
+N V 
+&RQY
+N V 
+&RQY
+N V 
+&RQYG
+&RQYG
+&RQYG
+5HVKDSH
+5HVKDSH
+5HVKDSH
+&RQFDW
+<2/2Y
+&%$0
+%DFNERQH
+1HFN
++HDG
+,QSXW
+Fig. 2.
+The architecture of detection and segmentation network.
+detection and segmentation of tomatoes. The second part is
+to determine the outer diameter and calculate its true size.
+A. Detection and Segmentation of Tomato
+You Only Look Once (YOLO) is a single-stage object
+detection model based on convolutional neural networks with
+end-to-end training capabilities. In the ﬁeld of agricultural
+robots, the model has been widely used in the detection of
+agricultural products, such as horticultural ﬂowers [18], food
+crops [19], fruits and vegetables [20].
+While the original YOLOv8 network demonstrates high
+accuracy in detecting tomatoes in most images, it encounters
+difﬁculties in scenarios with poor lighting, tomatoes scattered
+around the image edges, and fruits that blend closely in
+color with the background. To address this issue, we have
+chosen to integrate an attention mechanism. This addition
+aims to enhance the network’s ability to prioritize and
+effectively on identifying tomato fruits amidst complex
+visual environments.
+Considering
+multiple
+fruits
+and
+color
+confusion
+in
+greenhouse tomato images, we adopt the Convolutional
+Block Attention Module (CBAM) proposed by Woo et
+al. [21]. This module combines channel attention module
+and spatial attention module, aiming to process the feature
+layer through two modules. The overall architecture can be
+summarized by
+F′ = MC (F) ⊗F
+(1)
+F′′ = MS (F′) ⊗F′
+(2)
+where ⊗denotes element-wise multiplication. F indicates
+the
+input
+feature
+map.
+MC
+and
+MS
+represent
+the
+one-dimensional channel attention map and two-dimensional
+spatial attention map, respectively.
+269
+Authorized licensed use limited to: Universitas Airlangga. Downloaded on July 24,2026 at 06:41:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+The CBAM module is adopted for capability to resolve the
+speciﬁc requirements of greenhouse tomato images. Firstly,
+due to the similarity in color between green tomatoes and
+background, the channel attention allows for amplifying
+subtle differences between two color channels. Secondly, as
+some tomato fruits are scattered around the image periphery,
+the spatial attention emphasizes the importance of different
+locations
+where
+tomatoes
+may
+appear.
+Regarding
+the
+embedding approach of CBAM module, hotspot experiments
+conducted on the original YOLOv8 network reveals that
+attention is primarily concentrated in layers 14, 17, and
+20. Therefore, we integrate the CBAM module after these
+layers and construct the modiﬁed YOLOv8_CBAM network
+structure, as shown in Fig. 2.
+In addition, the algorithm usually fails to accurately detect
+outer contours and diameters when more than 50% of
+the fruit is covered by leaves. Therefore, we utilize the
+proportion of a mask pattern to the segmented outer circle,
+which can evaluate the level of occlusion in segmentation
+results, to ﬁlter bad instances. A higher ratio indicates
+a more comprehensive segmentation outcome for tomato
+samples, while a lower score signiﬁes severe occlusion and
+indicates it unsuitable for subsequent estimation of outer
+diameters. Through extensive experiments, we determined
+that a threshold score of 0.5 is effective for ﬁltering.
+B. Selecton and Measurement of Tomato Outer Diameter
+In the second stage of the method, a diameter estimation
+algorithm based on geometric assumptions is presented.
+To simulate the manual measurement, tomato is generally
+regarded as a spheroid, thus, the stalk connects at the short
+axis, and the long axis diameter of the tomato is considered
+to be the maximum outer diameter. However, in practice, we
+ﬁnd that the ﬂower pedicle seriously affects the selection of
+the maximum outer diameter of the tomato, since the ﬂower
+pedicle part is difﬁcult to be removed in the segmentation.
+Thus, two different cases should be discussed. For tomatoes
+that do not have the ﬂower pedicle, we take the line of
+the furthest two pixels as the maximum estimated outer
+diameter. Regarding those tomatoes with ﬂower pedicles,
+we propose a novel diameter estimation method according
+to manual measurement principle. After determining the
+maximum outer diameter of tomatoes in the image, we
+calculate the true size of the maximum outer diameter relying
+on the transformation between the pixel coordinate system
+and the world coordinate system. The algorithm ﬂow chart
+is shown in Fig. 3.
+Through comparison of pixels’ RGB values, we ﬁnd that
+the color of ﬂower pedicle is darker than that of fruit. In
+particular, this discrepancy of contrast is more intense from
+the green channel. Hence, an algorithm is proposed to extract
+edges from the green channel to determine the presence or
+absence of a ﬂower pedicle. First, we segment tomatoes and
+transform them into green channel. Thereafter, we employ
+the Canny edge detection algorithm to extract the edges of
+the entire tomato, and then ﬁll the pattern of tomato with
+white pixels. If there are still large edge pixels in the image at
+6SOLWLPDJH
+7KHWRPDWR
+FODVVLILFDWLRQ
+,VWKHUHSHGLFOH"
+6HOHFWWKHIDUWKHVW
+HGJHSRLQWDVRXWHU
+GLDPHWHU
+6HOHFWWKHRXWHU
+GLDPHWHUZLWKWKH
+FHQWUDOD[LVPHWKRG
+'HWHUPLQHRXWHU
+GLDPHWHULQLPDJH
+'HSWKSRLQW
+FORXGLPDJH
+$SSUR[LPDWHGHSWK
+YDOXHHVWLPDWLRQ
+&DOFXODWHWKHWUXHVL]H
+1R
+<HV
+3L[HOFRRUGLQDWHV
+FRUUHVSRQGHQFH
+Fig. 3.
+The ﬂow chart of the tomato outer diameter calculation algorithm.
+this point, it indicates that this instance has a ﬂower pedicle.
+On the other hand, if there is little edge pixels, it means
+that the tomato image does not have a ﬂower pedicle. We
+utilize a threshold that is the ﬂower pedicle pixel ratio Rp
+as follows:
+Rp = Pp
+Pt
+(3)
+where Pp and Pt represent the pixels of pedicle and tomato
+parts, respectively. The threshold is identiﬁed to be 0.015
+through experiments with over 40 random tomato samples.
+When the ratio value exceeds 0.015, we can conﬁdently
+conclude that the tomato image contains a pedicle.
+After classiﬁcation, for those tomato images without
+ﬂower pedicles, we can ﬁnd the two pixels furthest apart
+on the edges by employing traversing method. The proposed
+method for measuring the maximum outer diameter of
+tomatoes affected by ﬂower pedicle is based on a deﬁned
+central axis, which follows manual tomato measurement
+principles. This approach involves identifying the central
+axis projected from top to bottom of the fruit, regardless
+of its spatial structure. By aligning the top, bottom and
+center of the fruit, we can accurately locate both the center
+of the tomato fruit and that of the ﬂower pedicle. The
+connecting line between them serves as the central axis
+projection for measuring tomato dimensions. Besides, the
+basic transformation of two-dimensional (2D) coordinates of
+centroid (uc, vc) is carried out, translating the centroid to the
+origin of the pixel coordinate system. The central axis can be
+reconnected with the v axis, which is expressed as follows:
+⎡
+⎣
+ue
+ve
+1
+⎤
+⎦=
+⎡
+⎣
+1
+0
+−uc
+0
+1
+−vc
+0
+0
+1
+⎤
+⎦
+⎡
+⎣
+cosθ
+−sinθ
+0
+sinθ
+cosθ
+0
+0
+0
+1
+⎤
+⎦
+⎡
+⎣
+uc
+vc
+1
+⎤
+⎦
+(4)
+where
+(ue, ve)
+represent
+the
+changed
+coordinates,
+θ
+represents the angle of rotation. The two edge pixels with
+the same v value can form the outer diameter of the
+tomato perpendicular to the central axis. The tomato’s
+270
+Authorized licensed use limited to: Universitas Airlangga. Downloaded on July 24,2026 at 06:41:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+D
+E
+F
+G
+Fig. 4.
+The outer diameter selection results under different lighting and
+posture conditions.
+Fig. 5.
+Clustering results of tomato and background pixels with DPC
+algorithm.
+maximum outer diameter can be determined by identifying
+the coordinates of its two endpoints with the longest length,
+as shown in Fig. 4.
+After ﬁnding the maximum outer diameter, the pixel
+coordinate
+system
+should
+be
+transformed
+into
+the
+world coordinate system to calculate its real size. The
+transformation process is shown as follows:
+⎡
+⎢⎢⎣
+Xw
+Yw
+Zw
+1
+⎤
+⎥⎥⎦= ZcK−1
+2 K−1
+1
+⎡
+⎣
+u
+v
+1
+⎤
+⎦
+(5)
+where K1
+is the internal parameter of camera from
+calibration. K2 is the external parameter of the camera. The
+shooting angle is not ﬁxed in this paper, and the external
+parameter of the camera is not calculated. Zc represents
+the depth value, which has been recorded in tomato images
+collection. If we use depth information of the endpoint on the
+outer diameter, there may be single-digit pixels representing
+background due to limitations in segmentation. Additionally,
+variations in lighting conditions may result in certain edges
+of tomatoes missing depth. To address these issues, we
+propose a method to estimate depth value of the plane
+where the maximum outer diameter is located. Note that
+after segmentation, the depth information of an individual
+tomato consists of both background and tomato depth values.
+The background pixel depth is considered interference, while
+concentrated depths are observed in the plane containing
+the maximum outer diameter from the centroid of tomato.
+Therefore, we extract pixel depth value of each tomato and
+its distance from the centroid as 2D data. The Density Peak
+Clustering Algorithm (DPC) is applied to spontaneously
+cluster this data, and the clustering results are displayed in
+Fig. 5. The green part on the far right is the background
+pixel, while the red part on the left indicates the tomato
+pixel. The blue part illustrates the combination of tomato
+and background pixels. The cluster center of the green part is
+Fig. 6.
+Training curves comparison of different segmentation networks.
+TABLE I
+COMPARISON OF THE BEST MODEL PERFORMANCE
+Model
+Precision/%
+Recall/%
+mAP50/%
+mAP50-95/%
+YOLOv8n
+90.175
+82.609
+93.209
+73.667
+Ours
+90.779
+86.335
+94.632
+74.121
+distinct to be removed from the clustering results. The depth
+value of the plane at which the maximum outer diameter of
+tomato is nearly equal to the mean value of the cluster center
+of the tomato pixel region. Therefore, the real length of outer
+diameter can be calculated as follows:
+LT = LS
+f × Zd
+(6)
+where LT denotes the actual size of the tomato outer
+diameter, LS represents the image size of the tomato
+outer diameter. f is the focal length, and Zd denotes the
+approximate depth value.
+IV. EXPERIMENTS AND ANALYSES
+To evaluate effectiveness of the proposed method, we
+conducted experimental validations for both the improved
+network model and the overall two-stage outer diameter
+detection algorithm. The main emphasis was on the practical
+effectiveness of the tomato detection and the accuracy of
+the designed algorithm for measuring the outer diameter of
+tomatoes.
+A. Model Training and Validation
+To train the network, we captured RGB images of tomato
+fruits in the greenhouse using a handheld Femto Bolt
+depth camera, totaling 1125 images. After selection, 1000
+high-quality images were retained. To ensure experimental
+robustness, no standardized shooting angles or conditions
+were imposed during data collection. The 1000 tomato
+images were classiﬁed into training, testing, and validation
+sets using an 8:1:1 ratio. For the training process, we set the
+period to 300 epochs with a batch size of 2. The learning
+rate was 0.01, and the input size was resized to 640×640.
+Regarding
+the
+evaluation
+metrics
+of
+network,
+the
+Precision, Recall, the average accuracy of the IOU threshold
+of 0.5, and the average accuracy of different IOU thresholds
+(from 0.5 to 0.95, with step size of 0.05) were employed.
+271
+Authorized licensed use limited to: Universitas Airlangga. Downloaded on July 24,2026 at 06:41:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+D
+E
+F
+G
+H
+I
+J
+K
+Fig. 7.
+Comparison of heatmaps. (a)∼(d) are heatmaps of YOLOv8, (e)∼(h) are corresponding heatmaps of YOLOv8_CBAM.
+Fig. 8. Comparison between the approximate depth value and the measured
+value under the DPC clustering algorithm.
+The Precision and Recall are calculated as follows:
+Precision =
+TP
+TP + FP × 100%
+(7)
+Recall =
+TP
+TP + FN × 100%
+(8)
+where TP indicates that the algorithm correctly detects a
+tomato, FP indicates that the algorithm incorrectly identiﬁes
+a non-tomato as a tomato, and FN signiﬁes that the algorithm
+incorrectly classiﬁes a tomato as a non-tomato.
+The training reached its peak performance at epoch 287.
+The overall training process is illustrated in Fig. 6. It is
+evident that two network models exhibited nearly identical
+training performance before epoch 200. However, starting
+from epoch 200, the proposed network model gradually
+surpassed the original model. Table I presents a comparative
+analysis of the performance metrics for the two networks.
+The YOLOv8_CBAM model shows improvements across
+all metrics compared to YOLOv8, particularly achieving a
+signiﬁcant increase of 4% in Recall. This result demonstrates
+that the proposed network can accurately identify target
+objects in multiple fruit scenarios, thereby reducing the
+occurrence of missed detections. To validate the effectiveness
+of adding the CBAM module, we compared training
+heatmaps of original and proposed networks, as shown in
+Fig. 7. It is evident that the improved network model with the
+CBAM module exhibits greater concentration on the tomato
+regions compared to original model, showing improvement
+in reducing attention dispersion.
+D
+E
+F
+G
+Fig. 9.
+Immature tomato fruits and tomatoes with a severe lack of depth
+information. (a) and (b) are immature tomato fruits, (c) and (d) are tomatoes
+with a severe lack of depth information.
+TABLE II
+EVALUATION OF THE FRUIT DIAMETER ESTIMATION
+Items
+R2
+MAE/mm
+SDE/mm
+MAPE/%
+Originial data
+0.9264
+4.61
+3.61
+10.02
+Cleansing data
+0.9349
+4.27
+2.79
+8.09
+B. Performance Evaluation Index
+We employed the R-Squared (R2), Mean Absolute Error
+(MAE), Standard Deviation of Errors (SDE), and Mean
+Absolute Percentage Error (MAPE) as the evaluation metrics.
+The R2 ranges from 0 to 1. The closer the value is to 1, the
+more consistent the measured value is with true value.
+C. Experimental Results Analysis
+A total of 215 tomatoes were measured in 80 images,
+with an average processing time of 34 ms per image. The
+experimental results indicate that 23 tomatoes were not
+recognized, and 12 tomatoes were obscured to measure their
+outer diameter. The method achieved an effective detection
+rate of 89.3%. The comparison between the measured values
+and the ground truth of remaining 180 tomatoes is shown
+in Fig. 8, and quantitative metrics are shown in Table II.
+The results show that MAE is only 4.61 mm, which is
+within an acceptable range. However, the lower effective
+detection rate had an impact on the measurement accuracy of
+the outer diameter, thus, we conducted further experimental
+analysis. Concerning the tomatoes that were not detected, we
+observed that out of the 23 tomatoes, 21 had fruit diameters
+smaller than 15 mm, as shown in Figs. 9(a) and 9(b). These
+immature tomatoes were not recognized and labeled during
+manual annotation, hence they were not detected. Secondly,
+regarding the tomatoes with errors in diameter measurement,
+examination of their depth point cloud revealed severe
+272
+Authorized licensed use limited to: Universitas Airlangga. Downloaded on July 24,2026 at 06:41:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+deﬁciencies in depth information, as shown in Figs. 9(c) and
+9(d). The second row in Table II shows corrected results by
+masking above interfering instances.
+D. Discussion
+The proposed vision-based two-stage method for tomato
+diameter
+detection
+can
+effectively
+measures
+sizes
+of
+tomatoes
+in
+greenhouse
+environments.
+The
+introduced
+attention mechanism notably enhances detection accuracy
+through addressing the problem of similar colors between
+tomatoes
+and
+backgrounds.
+Furthermore,
+the
+proposed
+deﬁned central axis method can rectify inaccurate tomato
+diameter positioning caused by various growth postures.
+Given
+the
+potential
+for
+color
+interference
+causing
+segmentation errors in fruits, it is essential to incorporate
+and construct a three-dimensional model of the fruits while
+leveraging precise depth information [22], [23]. How to
+deeply integrate point cloud processing and image processing
+to achieve better segmentation effect is the key to the
+problem. Besides, The classiﬁcation of tomato fruit could
+be more detailed. Defective tomatoes, shielded tomatoes, and
+young tomato fruits should be completed in the detection and
+segmentation step, like the work in Ireri et al. [24] By using
+a system to identify defects in tomatoes and grade them, we
+could establish a dynamic growth model for tomato fruit to
+monitor the growth state of tomato dynamically [25].
+V. CONCLUSION AND FUTURE WORK
+In this paper, a novel vision-based two-stage detection
+method is proposed, which achieves good measurement of
+outer diameter for greenhouse tomatoes. We achieve the
+detection and segmentation of tomatoes by embedding the
+CBAM module into YOLOv8 model, solving problems such
+as dispersed tomato positions and similarity in color between
+background and tomatoes. Furthermore, a deﬁned central
+axis method is developed to address the issue of difﬁculty
+in determining the position of tomato diameter due to
+interference from fruit pedicles. Measurement experiments
+demonstrate the effectiveness and detection accuracy of the
+proposed method, which provides a promising autonomous
+monitoring technology for agricultural robots.
+In future, we will focus on improving the segmentation of
+different fruits and depth estimation accuracy to monitor the
+entire growth process of different fruits.
+REFERENCES
+[1] D. Savvas, “Current knowledge and recent technological developments
+in nutrition and irrigation of greenhouse crops,” Acta Hortic.,
+vol. 1268, pp. 1–12, 2019.
+[2] L. M. M. Tijskens, S. Van Mourik, J. A. Dieleman, and R. E.
+Schouten, “Size development of tomatoes growing in trusses: Linking
+time of fruit set to diameter,” J. Sci. Food Agric., vol. 100, no. 10,
+pp. 4020–4028, 2020.
+[3] Z. Li, F. Miao, Z. Yang, P. Chai, and S. Yang, “Factors affecting human
+hand grasp type in tomato fruit-picking: A statistical investigation
+for ergonomic development of harvesting robot,” Comput. Electron.
+Agric., vol. 157, pp. 90–97, 2019.
+[4] M.
+Abdulsalam
+and
+N.
+Aouf,
+“VitRob
+pipeline:
+A
+seamless
+teleoperation pipeline for advanced virtual reality-robot interface
+applied for precision agriculture,” in Proc. 2023 IEEE Int. Conf. Rob.
+Biomimetics (ROBIO), Samui, Thailand, Dec. 2023, pp. 1–6.
+[5] L. Liu, Z. Li, Y. Lan, Y. Shi, and Y. Cui, “Design of a tomato classiﬁer
+based on machine vision,” PloS One, vol. 14, no. 7, pp. e0219803,
+2019.
+[6] Z. Wang, K. Walsh, and B. Verma, “On-Tree mango fruit size
+estimation using RGB-D images,” Sensors, vol. 17, no. 12, pp. 2738,
+2017.
+[7] S. H. Jang, S. P. Moon, Y. J. Kim, and S. H. Lee, “Development of
+potato mass estimation system based on deep learning,” Appl. Sci.,
+vol. 13, no. 4, pp. 2614, 2023.
+[8] J. Liu, G. Zhao, S. Liu, Y. Liu, H. Yang, J. Sun, Y. Yan, G. Fan, J.
+Wang, and H. Zhang, “New progress in intelligent picking: online
+detection of apple maturity and fruit diameter based on machine
+vision,” Agronomy, vol. 14, no. 4, pp. 721, 2024.
+[9] K. He, G. Gkioxari, P. Dollár, and R. Girshick, “Mask R-CNN,” IEEE
+Trans. Pattern Anal. Mach. Intell., vol. 42, no. 2, pp. 386–397, 2020.
+[10] O. Ronneberger, P. Fischer, and T. Brox, “U-NET: Convolutional
+Networks for Biomedical Image Segmentation,” Lect. Notes Comput.
+Sci., pp. 234–241, 2015, doi: 10.1007/978-3-319-24574-4_28.
+[11] H. Zhao, J. Shi, X. Qi, X. Wang, and J. Jia, “Pyramid scene parsing
+network,” in Proc. IEEE Conf Comput. Vis. Pattern Recognit. (CVPR),
+Hawaii, United States, Jul. 2017, pp. 2881–2890.
+[12] Y. Jiang and C. Li, “Convolutional neural networks for image-based
+high-throughput plant phenotyping: a review,” Plant Phenomics,
+vol. 2020, Art. No. 4152816, 2020.
+[13] G. Wu, Y. Liu, and B. Hu, “Image-Based measurement of phenotypic
+parameters of chinese cabbage,” in Proc. 2023 IEEE Int. Conf. Rob.
+Biomimetics (ROBIO), Samui, Thailand, Dec. 2023, pp. 1–6.
+[14] P. Ji, J. Wang, and H. Chen, “Based image tomato identiﬁcation and
+geometric dimensioning,” Anhui Agricultural Sciences, vol. 67, no. 33,
+pp. 16426–16428, 2012.
+[15] Y. Bai, S. Mao, J. Zhou, and B. Zhang, “Clustered tomato detection
+and picking point location using machine learning-aided image
+analysis for automatic robotic harvesting,” Precis. Agric., vol. 24,
+no. 2, pp. 727–743, 2023.
+[16] L. Zu, Y. Zhao, J. Liu, F. Su, Y. Zhang, and P. Liu, “Detection
+and segmentation of mature green tomatoes based on Mask R-CNN
+with automatic image acquisition approach,” Sensors, vol. 21, no. 23,
+pp. 7842, 2021.
+[17] S.
+Zheng,
+Y.
+Liu,
+W.
+Weng,
+X.
+Jia,
+S.
+Yu,
+and
+Z.
+Wu,
+“Tomato recognition and localization method based on improved
+YOLOV5N-SEG model and binocular stereo vision,” Agronomy,
+vol. 13, no. 9, pp. 2339, 2023.
+[18] C. Qi, J. Gao, S. Pearson, H. Harman, K. Chen, and L. Shu, “Tea
+chrysanthemum detection under unstructured environments using the
+TC-YOLO model,” Expert Syst. Appl., vol. 193, pp. 116473, 2022.
+[19] M. H. Junos, A. S. M. Khairuddin, S. Thannirmalai, and M.
+Dahari, “An optimized YOLO-based object detection model for crop
+harvesting system,” IET Image Proc., vol. 15, no. 9, pp. 2112–2125,
+2021.
+[20] L. G. Fahad, S. F. Tahir, U. Rasheed, H. Saqib, M. Hassan, and
+H. Alquhayz, “Fruits and vegetables freshness categorization using
+deep learning,” Computers, Materials & Continua, vol. 71, no. 3,
+pp. 5083–5098, 2022.
+[21] S. Woo, J. Park, J.-Y. Lee, and I. S. Kweon, “CBAM: Convolutional
+block attention module,” in Proc. Eur. Conf. Comput. Vis. (ECCV),
+Munich, Germany, Sep. 2018, pp. 3–19.
+[22] J. Zhang, X. Zhao, Z. Chen, and Z. Lu, “A review of deep
+learning-based semantic segmentation for point cloud,” IEEE access,
+vol. 7, pp. 179118–179113, 2019.
+[23] J. Luo, D. Zhang, and T. Yi, “3D semantic segmentation for grape
+bunch point cloud based on feature enhancement,” in Proc. 2023 IEEE
+Int. Conf. Rob. Biomimetics (ROBIO), Samui, Thailand, Dec. 2023,
+pp. 1–6.
+[24] D. Ireri, E. Belal, C. Okinda, N. Makange, and C. Ji, “A computer
+vision system for defect discrimination and grading in tomatoes using
+machine learning and image processing,”, Artif. Intell. Agric., vol. 2,
+pp. 28–37, 2019.
+[25] J.
+J.
+González-Barbosa,
+A.
+RamÃrez-Pedraza,
+F.
+J.
+Ornelas-RodrÃguez,
+D.
+M.
+Cordova-Esparza,
+and
+E.
+A.
+González-Barbosa,
+“Dynamic
+measurement
+of
+Portos
+tomato
+seedling growth using the Kinect 2.0 sensor,” Agric., vol. 12, no. 4,
+pp. 449, 2022.
+273
+Authorized licensed use limited to: Universitas Airlangga. Downloaded on July 24,2026 at 06:41:53 UTC from IEEE Xplore.  Restrictions apply. 
