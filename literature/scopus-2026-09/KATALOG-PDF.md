@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 895 kajian korpus `main6` yang PDF-nya tersedia, dari 895 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 896 kajian korpus `main6` yang PDF-nya tersedia, dari 896 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -11,9 +11,9 @@ Katalog ini memuat 895 kajian korpus `main6` yang PDF-nya tersedia, dari 895 kaj
 | C3 | Pencitraan TBS kelapa sawit | 147 | 147 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
-| R | Tinjauan terdahulu | 113 | 113 |
+| R | Tinjauan terdahulu | 114 | 114 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 895 | 895 |
+| | **Jumlah** | 896 | 896 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (248)
 
@@ -736,7 +736,7 @@ Katalog ini memuat 895 kajian korpus `main6` yang PDF-nya tersedia, dari 895 kaj
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
 | 2013 | Hung C. | Orchard fruit segmentation using multi-spectral feature learning | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hung2013orchard.pdf) | [DOI](https://doi.org/10.1109/iros.2013.6697125) |
 
-## R: Tinjauan terdahulu (113)
+## R: Tinjauan terdahulu (114)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -787,6 +787,7 @@ Katalog ini memuat 895 kajian korpus `main6` yang PDF-nya tersedia, dari 895 kaj
 | 2025 | Wang W. | Research Progress and Development Trend of Visual Detection Methods for Selective Fruit Harvesting Robots | Agronomy | [PDF](pdf/wang2025research.pdf) | [DOI](https://doi.org/10.3390/agronomy15081926) |
 | 2025 | Xiao X. | Key Technologies for Machine Vision for Picking Robots: Review and Benchmarking | Machine Intelligence Research | [PDF](pdf/xiao2025key.pdf) | [DOI](https://doi.org/10.1007/s11633-024-1517-1) |
 | 2025 | Yang X. | Research progress on binocular stereo vision technology and its applications in smart agriculture | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/yang2025research.pdf) | [DOI](https://doi.org/10.11975/j.issn.1002-6819.202410177) |
+| 2024 | Anand R. | Fruit Counting and Analysis Using Artificial Intelligence Approaches | Artificial Intelligence Techniques in Smart Agriculture | [PDF](pdf/anand2024fruit.pdf) | [DOI](https://doi.org/10.1007/978-981-97-5878-4_7) |
 | 2024 | Azizi A. | Image processing and artificial intelligence for apple detection and localization: A comprehensive review | Computer Science Review | [PDF](pdf/azizi2024image.pdf) | [DOI](https://doi.org/10.1016/j.cosrev.2024.100690) |
 | 2024 | Chen M. | Orchard-Wide Visual Perception and Autonomous Operation of Fruit Picking Robots: A Review | Smart Agriculture | [PDF](pdf/chen2024orchard.pdf) | [DOI](https://doi.org/10.12133/j.smartag.sa202405022) |
 | 2024 | Chen Z. | Key Technologies for Autonomous Fruit- and Vegetable-Picking Robots: A Review | Agronomy | [PDF](pdf/chen2024key.pdf) | [DOI](https://doi.org/10.3390/agronomy14102233) |
