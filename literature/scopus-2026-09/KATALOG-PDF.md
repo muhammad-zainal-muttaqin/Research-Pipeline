@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 903 kajian korpus `main6` yang PDF-nya tersedia, dari 903 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 904 kajian korpus `main6` yang PDF-nya tersedia, dari 904 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -12,8 +12,8 @@ Katalog ini memuat 903 kajian korpus `main6` yang PDF-nya tersedia, dari 903 kaj
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
 | R | Tinjauan terdahulu | 117 | 117 |
-| T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 903 | 903 |
+| T | Metode yang dapat dipindahkan dari luar pertanian | 87 | 87 |
+| | **Jumlah** | 904 | 904 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (249)
 
@@ -862,7 +862,7 @@ Katalog ini memuat 903 kajian korpus `main6` yang PDF-nya tersedia, dari 903 kaj
 | 2015 | Gongal A. | Sensors and systems for fruit detection and localization: A review | Computers and Electronics in Agriculture | [PDF](pdf/gongal2015sensors.pdf) | [DOI](https://doi.org/10.1016/j.compag.2015.05.021) |
 | 2013 | Whalley J. | Applications of image processing in viticulture: A review | Proceedings 20th International Congress on Modelling and Simulation Modsim 2013 | [PDF](pdf/whalley2013applications.pdf) |  |
 
-## T: Metode yang dapat dipindahkan dari luar pertanian (86)
+## T: Metode yang dapat dipindahkan dari luar pertanian (87)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -897,6 +897,7 @@ Katalog ini memuat 903 kajian korpus `main6` yang PDF-nya tersedia, dari 903 kaj
 | 2023 | Kirillov A. | Segment Anything | Proceedings of the IEEE International Conference on Computer Vision | [PDF](pdf/kirillov2023segment.pdf) | [DOI](https://doi.org/10.1109/iccv51070.2023.00371) |
 | 2023 | Peng J. | Visual SLAM Based on Object Detection Network: A Review | Computers Materials and Continua | [PDF](pdf/peng2023visual.pdf) | [DOI](https://doi.org/10.32604/cmc.2023.041898) |
 | 2023 | Uddin M.K. | Person Re-Identification with RGB–D and RGB–IR Sensors: A Comprehensive Survey | Sensors | [PDF](pdf/uddin2023person.pdf) | [DOI](https://doi.org/10.3390/s23031504) |
+| 2022 | Chen W. | Recent Research of Incremental Structure from Motion for Unmanned Aerial Vehicle Images | Wuhan Daxue Xuebao Xinxi Kexue Ban Geomatics and Information Science of Wuhan University | [PDF](pdf/chen2022recent.pdf) | [DOI](https://doi.org/10.13203/j.whugis20220130) |
 | 2022 | Dai Y. | A survey of detection-based video multi-object tracking | Displays | [PDF](pdf/dai2022survey.pdf) | [DOI](https://doi.org/10.1016/j.displa.2022.102317) |
 | 2022 | Meinhardt T. | TrackFormer: Multi-Object Tracking with Transformers | Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition | [PDF](pdf/meinhardt2022trackformer.pdf) | [DOI](https://doi.org/10.1109/cvpr52688.2022.00864) |
 | 2022 | Rakai L. | Data association in multiple object tracking: A survey of recent techniques | Expert Systems with Applications | [PDF](pdf/rakai2022data.pdf) | [DOI](https://doi.org/10.1016/j.eswa.2021.116300) |
