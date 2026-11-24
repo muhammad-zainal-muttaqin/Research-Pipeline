@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (942), dan 906 di antaranya masuk peta.
+lengkapnya (943), dan 907 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
@@ -53,6 +53,7 @@ sawit dan Husin dkk. 2021 dikeluarkan, dengan persetujuan peninjau. Butir yang m
 | PDF tambahan ketiga belas (24 November 2026) | 1 laporan dari daftar PDF yang belum ada | Chen dkk. 2022 tetap metode dari luar pertanian (tinjauan naratif berbahasa Mandarin tentang SfM inkremental untuk citra drone; pertanian hanya disebut sebagai bidang penerapan). Peta 904 kajian; disetujui peninjau |
 | PDF tambahan keempat belas (24 November 2026) | 1 laporan dari daftar PDF yang belum ada | Tan dkk. 2026 tetap tinjauan terdahulu (tinjauan naratif berbahasa Mandarin tentang pengenalan buah tomat; pencacahan hanya disebut sebagai penerapan). PDF diperoleh dari situs jurnal karena DOI di rekaman Scopus salah ketik. Peta 905 kajian; disetujui peninjau |
 | PDF tambahan kelima belas (24 November 2026) | 1 laporan dari daftar PDF yang belum ada | Chen dkk. 2025 tetap tinjauan terdahulu (tinjauan naratif berbahasa Mandarin tentang pembelajaran semi-terawasi untuk citra tanaman; pencacahan buah hanya satu metode citra tunggal). Peta 906 kajian; disetujui peninjau |
+| PDF tambahan keenam belas (24 November 2026) | 1 laporan dari daftar PDF yang belum ada | Hao dkk. 2023 tetap di kelompok deteksi dengan depth (detektor apel dua masukan, citra warna dan kedalaman, tanpa pencacahan). Peta 907 kajian; disetujui peninjau |
 
 
 ## Langkah berikutnya

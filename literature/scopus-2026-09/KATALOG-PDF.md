@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 906 kajian korpus `main6` yang PDF-nya tersedia, dari 906 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 907 kajian korpus `main6` yang PDF-nya tersedia, dari 907 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -10,10 +10,10 @@ Katalog ini memuat 906 kajian korpus `main6` yang PDF-nya tersedia, dari 906 kaj
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 158 | 158 |
 | C3 | Pencitraan TBS kelapa sawit | 149 | 149 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 109 | 109 |
 | R | Tinjauan terdahulu | 119 | 119 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 87 | 87 |
-| | **Jumlah** | 906 | 906 |
+| | **Jumlah** | 907 | 907 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (249)
 
@@ -627,7 +627,7 @@ Katalog ini memuat 906 kajian korpus `main6` yang PDF-nya tersedia, dari 906 kaj
 | 2017 | Lal S. | Identification and counting of mature apple fruit based on BP feed forward neural network | Proceedings of 2017 3rd IEEE International Conference on Sensing Signal Processing and Security Icsss 2017 | [PDF](pdf/lal2017identification.pdf) | [DOI](https://doi.org/10.1109/ssps.2017.8071621) |
 | 2017 | Ramos P.J. | Automatic fruit count on coffee branches using computer vision | Computers and Electronics in Agriculture | [PDF](pdf/ramos2017automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.03.010) |
 
-## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (108)
+## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (109)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -683,6 +683,7 @@ Katalog ini memuat 906 kajian korpus `main6` yang PDF-nya tersedia, dari 906 kaj
 | 2023 | Barbole D.K. | GrapesNet: Indian RGB & RGB-D vineyard image datasets for deep learning applications | Data in Brief | [PDF](pdf/barbole2023grapesnet.pdf) | [DOI](https://doi.org/10.1016/j.dib.2023.109100) |
 | 2023 | Ferrer-Ferrer M. | Simultaneous fruit detection and size estimation using multitask deep neural networks | Biosystems Engineering | [PDF](pdf/ferrerferrer2023simultaneous.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2023.07.010) |
 | 2023 | Gené-Mola J. | Looking behind occlusions: A study on amodal segmentation for robust on-tree apple fruit size estimation | Computers and Electronics in Agriculture | [PDF](pdf/genemola2023looking.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.107854) |
+| 2023 | Hao P.F. | YOLO-RD-Apple orchard heterogenous image obscured fruit detection model | Journal of Graphics | [PDF](pdf/hao2023yolo.pdf) | [DOI](https://doi.org/10.11996/jg.j.2095-302x.2023030456) |
 | 2023 | Liu L. | RGB-D Heterogeneous Image Feature Fusion for YOLOfuse Apple Detection Model | Agronomy | [PDF](pdf/liu2023rgb.pdf) | [DOI](https://doi.org/10.3390/agronomy13123080) |
 | 2023 | Miranda J.C. | AKFruitYield: Modular benchmarking and video analysis software for Azure Kinect cameras for fruit size and fruit yield estimation in apple orchards | Softwarex | [PDF](pdf/miranda2023akfruityield.pdf) | [DOI](https://doi.org/10.1016/j.softx.2023.101548) |
 | 2023 | Miranda J.C. | Assessing automatic data processing algorithms for RGB-D cameras to predict fruit size and weight in apples | Computers and Electronics in Agriculture | [PDF](pdf/miranda2023assessing.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.108302) |

@@ -8,16 +8,16 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,578
 - Dinilai kelayakannya dari judul dan abstrak 1,145 (dengan abstrak 891; judul dan sumber saja 254)
 - Dikeluarkan di tahap kelayakan abstrak 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
-- Laporan dicari teks lengkapnya 1013; tidak diperoleh 76 (C1 1, C2 32, C3 20, C4 8, C5 12, R 3, T 0)
+- Laporan dicari teks lengkapnya 1013; tidak diperoleh 75 (C1 1, C2 32, C3 20, C4 8, C5 11, R 3, T 0)
 - PDF ada, menunggu penilaian teks lengkap 0 (C1 0, C2 0, C3 0, C4 0, C5 0, R 0, T 0)
-- Dinilai dari teks lengkap 937; dikeluarkan 36: E1 2, E2 10, E3 2, E5 19, E8 3
-- Masuk dari Scopus 901: C1 248, C2 156, C3 149, C4 36, C5 107, R 118, T 87
+- Dinilai dari teks lengkap 938; dikeluarkan 36: E1 2, E2 10, E3 2, E5 19, E8 3
+- Masuk dari Scopus 902: C1 248, C2 156, C3 149, C4 36, C5 108, R 118, T 87
 - Metode lain 5, teks lengkap diperoleh 5: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
-- Total kajian masuk 906
-- Kajian per tahun: 2012: 8, 2013: 12, 2014: 12, 2015: 16, 2016: 20, 2017: 25, 2018: 28, 2019: 37, 2020: 64, 2021: 70, 2022: 81, 2023: 108, 2024: 142, 2025: 168, 2026: 114, 2027: 1
+- Total kajian masuk 907
+- Kajian per tahun: 2012: 8, 2013: 12, 2014: 12, 2015: 16, 2016: 20, 2017: 25, 2018: 28, 2019: 37, 2020: 64, 2021: 70, 2022: 81, 2023: 109, 2024: 142, 2025: 168, 2026: 114, 2027: 1
 - Multi-pengamatan per tahun: 2012: 2, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 3, 2018: 4, 2019: 9, 2020: 16, 2021: 19, 2022: 21, 2023: 31, 2024: 43, 2025: 57, 2026: 34
-- Dengan abstrak 724 dari 906; PDF teks lengkap 906 (teks terekstrak 906); multi-pengamatan dengan PDF 249 dari 249
-- Peta istilah: 43 istilah, 303 tautan; istilah identitas 24-36 kajian; detection 548; counting 383
+- Dengan abstrak 724 dari 907; PDF teks lengkap 907 (teks terekstrak 907); multi-pengamatan dengan PDF 249 dari 249
+- Peta istilah: 43 istilah, 303 tautan; istilah identitas 24-36 kajian; detection 549; counting 383
 
 ## Seksi 3: kajian multi-pengamatan
 
@@ -59,8 +59,8 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 7: kedalaman dan sensor lain
 
-- Kajian 108; modalitas (kemunculan): RGB-D 73, RGB 20, stereo 14, LiDAR 7, NIR 3, monocular depth 2, thermal 2, multispectral 1
-- Tanaman: apple 37, tomato 13, (tanaman tidak disebut) 12, grape 11, citrus 10
+- Kajian 109; modalitas (kemunculan): RGB-D 73, RGB 21, stereo 14, LiDAR 7, NIR 3, monocular depth 2, thermal 2, multispectral 1
+- Tanaman: apple 38, tomato 13, (tanaman tidak disebut) 12, grape 11, citrus 10
 
 ## Seksi 8: kelapa sawit
 
