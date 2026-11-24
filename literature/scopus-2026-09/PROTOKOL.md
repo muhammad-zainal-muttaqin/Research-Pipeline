@@ -48,7 +48,7 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 19, E8 2) | 35 |
 | Total masuk peta (895 Scopus dan 5 metode lain) | 900 |
 
-Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 121 PDF baru pada 23 November 2026, dan 2 PDF baru pada 24 November 2026): korpus dibatasi pada kajian yang PDF-nya
+Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, dan 2 PDF baru pada 24 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
 Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
 eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
@@ -56,7 +56,7 @@ kelompok diperiksa terhadap teks sumber sebelum diterapkan. Perubahannya
 tercatat di `verifikasi/log_perubahan.csv` sebagai "AI, belum disetujui
 peninjau" sampai peninjau menyetujuinya. Keputusan untuk 325 PDF yang
 ditambahkan pada 20 November 2026, 3 PDF yang ditambahkan pada 21 November
-2026, 99 PDF yang ditambahkan pada 23 November 2026, dan 2 PDF yang ditambahkan
+2026, 123 PDF yang ditambahkan pada 23 November 2026, dan 2 PDF yang ditambahkan
 pada 24 November 2026 disetujui peninjau pada hari yang sama.
 E8 hanya dipakai pada tahap teks lengkap: laporan kedua dari kajian yang sudah
 masuk lewat laporan lain (bab buku Parico dkk. 2023, sama dengan artikel
