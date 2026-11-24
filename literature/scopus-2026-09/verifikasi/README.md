@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (933), dan 898 di antaranya masuk peta.
+lengkapnya (935), dan 900 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
@@ -47,6 +47,7 @@ sawit dan Husin dkk. 2021 dikeluarkan, dengan persetujuan peninjau. Butir yang m
 | PDF tambahan kedelapan (23 November 2026) | 2 laporan dari daftar PDF yang belum ada | Zhang dkk. 2019 tetap di kelompok hitung dari satu foto. Li dkk. 2014 dikeluarkan karena hanya mengukur diameter apel dari citra RGB dan tidak mencacah buah. Peta 895 kajian; disetujui peninjau |
 | PDF tambahan kesembilan (23 November 2026) | 1 laporan dari daftar PDF yang belum ada | Anand dkk. 2024 tetap tinjauan terdahulu (bab buku naratif tanpa metode pencarian; hitung ganda antarcitra tidak dibahas); peta 896 kajian; disetujui peninjau |
 | PDF tambahan kesepuluh (23 November 2026) | 2 laporan dari daftar PDF yang belum ada | Kadir dkk. 2022 tetap di kelompok sawit (deteksi tandan di tanah untuk mesin pengumpul, kamera RGB-D, tanpa pencacahan). Gunawan dkk. 2026 tetap tinjauan terdahulu (tinjauan naratif drone untuk sawit tanpa metode pencarian; hitung ganda antarcitra tidak dibahas). Peta 898 kajian, sawit 148; disetujui peninjau |
+| PDF tambahan kesebelas (24 November 2026) | 2 laporan dari daftar PDF yang belum ada | Chowdhury dkk. 2024 tetap di kelompok sawit (deteksi kematangan tandan dengan YOLOv6 dari 80 citra, tanpa pencacahan); lokasinya diubah dari tidak disebut menjadi di pohon dan di tanah menurut contoh citra. Dutta dkk. 2025 tetap tinjauan terdahulu (tinjauan naratif AI untuk produksi buah tanpa metode pencarian; hitung ganda antarcitra tidak dibahas). Peta 900 kajian, sawit 149; disetujui peninjau |
 
 
 ## Langkah berikutnya
