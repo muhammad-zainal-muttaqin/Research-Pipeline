@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (940), dan 904 di antaranya masuk peta.
+lengkapnya (941), dan 905 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
@@ -51,6 +51,7 @@ sawit dan Husin dkk. 2021 dikeluarkan, dengan persetujuan peninjau. Butir yang m
 | Laporan ganda (24 November 2026) | Chowdhury dkk. 2024 dan Chowdhury dkk. 2025 | Ke-14 nilai YOLOv6 di kedua laporan sama persis walaupun ukuran data yang dinyatakan berbeda (80 dan 2.000 citra). Chowdhury dkk. 2024 dikeluarkan sebagai laporan kedua dari kajian yang sudah masuk; kajian dihitung sekali lewat laporan 2025. Peta 899 kajian, sawit 148; disetujui peninjau |
 | PDF tambahan kedua belas (24 November 2026) | 4 laporan dari daftar PDF yang belum ada | Xia dkk. 2023 pindah dari kelompok hitung satu foto ke kelompok gabungan beberapa pengamatan (pelacakan jeruk di video ponsel dengan fitur penampilan dan gerak). Dhonju dkk. 2024 tetap di kelompok hitung satu foto (hitungan dari sistem kamera dipakai untuk menempatkan bak panen). Yuchao dkk. 2025 tetap tinjauan terdahulu (tanpa metode pencarian). Shiddiq dkk. 2022 tetap di kelompok sawit; lokasi, modalitas, dan jumlah pandangnya diisi dari teks lengkap (laboratorium, kamera warna dan laser, depan dan belakang). Peta 903 kajian; disetujui peninjau |
 | PDF tambahan ketiga belas (24 November 2026) | 1 laporan dari daftar PDF yang belum ada | Chen dkk. 2022 tetap metode dari luar pertanian (tinjauan naratif berbahasa Mandarin tentang SfM inkremental untuk citra drone; pertanian hanya disebut sebagai bidang penerapan). Peta 904 kajian; disetujui peninjau |
+| PDF tambahan keempat belas (24 November 2026) | 1 laporan dari daftar PDF yang belum ada | Tan dkk. 2026 tetap tinjauan terdahulu (tinjauan naratif berbahasa Mandarin tentang pengenalan buah tomat; pencacahan hanya disebut sebagai penerapan). PDF diperoleh dari situs jurnal karena DOI di rekaman Scopus salah ketik. Peta 905 kajian; disetujui peninjau |
 
 
 ## Langkah berikutnya

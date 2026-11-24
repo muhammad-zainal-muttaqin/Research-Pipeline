@@ -5,7 +5,8 @@ Scopus (tampilan STANDARD) hanya memberi penulis pertama, jadi daftar penulis
 lengkap, volume, nomor, dan halaman diambil dari Crossref berdasarkan DOI.
 Bila Crossref tidak memberi penulis, DOI, atau halaman, OpenAlex dipakai (lewat
 DOI, atau lewat judul yang sama persis dengan tahun yang sama). Daftar penulis yang
-dibaca dari PDF (--penulis-pdf) menggantikan daftar dari kedua layanan itu. Respons kedua
+dibaca dari PDF (--penulis-pdf) menggantikan daftar dari kedua layanan itu; kolom keempat
+berkas itu, bila diisi, adalah DOI tercetak di PDF yang menggantikan DOI Scopus. Respons kedua
 layanan disimpan di berkas cache agar skrip dapat diulang tanpa memanggil API lagi.
 
 Contoh:
@@ -219,7 +220,7 @@ def main():
     ap.add_argument("--cache", required=True)
     ap.add_argument("--cache-openalex", required=True)
     ap.add_argument("--penulis-pdf", required=True,
-                    help="TSV kunci, penulis (format BibTeX), tempat dibaca di PDF")
+                    help="TSV kunci, penulis (format BibTeX), tempat dibaca di PDF, DOI tercetak di PDF (opsional)")
     ap.add_argument("--keluar", required=True)
     args = ap.parse_args()
 
@@ -234,6 +235,14 @@ def main():
                 d = dict(rec[r["eid"]])
                 d["key"] = r["key"]
                 pilih[r["key"]] = d
+    pdf_aut = {}
+    for line in open(args.penulis_pdf, encoding="utf-8"):
+        if line.strip() and not line.startswith("#"):
+            k, aut, _, *doi_pdf = line.rstrip("\n").split("\t")
+            assert k in pilih, f"kunci penulis_pdf tanpa rekaman: {k}"
+            pdf_aut[k] = aut.split(" and ")
+            if doi_pdf:
+                pilih[k]["doi"] = doi_pdf[0]
     cache = {}
     cp = Path(args.cache)
     if cp.exists():
@@ -270,12 +279,6 @@ def main():
             oa[d["key"]] = keep
             fo.write(json.dumps({"key": d["key"], "work": keep}) + "\n")
             time.sleep(0.2)
-    pdf_aut = {}
-    for line in open(args.penulis_pdf, encoding="utf-8"):
-        if line.strip() and not line.startswith("#"):
-            k, aut, _ = line.rstrip("\n").split("\t")
-            pdf_aut[k] = aut.split(" and ")
-    assert set(pdf_aut) <= set(pilih), f"kunci penulis_pdf tanpa rekaman: {sorted(set(pdf_aut) - set(pilih))}"
     with open(args.keluar, "w", newline="\n") as f:
         f.write("% Dibuat oleh tools/scopus/buat_bib.py dari rekaman Scopus, Crossref, dan OpenAlex.\n\n")
         for key in sorted(pilih):

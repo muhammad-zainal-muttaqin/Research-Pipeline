@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 904 kajian korpus `main6` yang PDF-nya tersedia, dari 904 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 905 kajian korpus `main6` yang PDF-nya tersedia, dari 905 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -11,9 +11,9 @@ Katalog ini memuat 904 kajian korpus `main6` yang PDF-nya tersedia, dari 904 kaj
 | C3 | Pencitraan TBS kelapa sawit | 149 | 149 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
-| R | Tinjauan terdahulu | 117 | 117 |
+| R | Tinjauan terdahulu | 118 | 118 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 87 | 87 |
-| | **Jumlah** | 904 | 904 |
+| | **Jumlah** | 905 | 905 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (249)
 
@@ -740,7 +740,7 @@ Katalog ini memuat 904 kajian korpus `main6` yang PDF-nya tersedia, dari 904 kaj
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
 | 2013 | Hung C. | Orchard fruit segmentation using multi-spectral feature learning | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hung2013orchard.pdf) | [DOI](https://doi.org/10.1109/iros.2013.6697125) |
 
-## R: Tinjauan terdahulu (117)
+## R: Tinjauan terdahulu (118)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -764,6 +764,7 @@ Katalog ini memuat 904 kajian korpus `main6` yang PDF-nya tersedia, dari 904 kaj
 | 2026 | Pugazhendi P. | Advances in agricultural fruit detection using you only look once (YOLO) algorithm: A review | Smart Agricultural Technology | [PDF](pdf/pugazhendi2026advances.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.101896) |
 | 2026 | Rong Z. | Research progress on precision orchard yield estimation based on multi-source information perception sensors | Frontiers in Plant Science | [PDF](pdf/rong2026research.pdf) | [DOI](https://doi.org/10.3389/fpls.2026.1759956) |
 | 2026 | Syahputra W.N.H. | Deep Learning for Ripeness Grading of Oil Palm Fresh Fruit Bunches: A Comprehensive Review of Convolutional Neural Network Approaches | Trends in Sciences | [PDF](pdf/syahputra2026deep.pdf) | [DOI](https://doi.org/10.48048/tis.2026.13227) |
+| 2026 | Tan R. | Review on tomato target recognition technology based on deep learning | Journal of Chinese Agricultural Mechanization | [PDF](pdf/tan2026review.pdf) | [DOI](https://doi.org/10.13733/j.jcam.issn.2095-5553.2026.07.028) |
 | 2026 | Wang D. | Toward robust in-field fruit quality evaluation: A critical review of emerging nondestructive technologies and devices | Food Research International | [PDF](pdf/wang2026robust.pdf) | [DOI](https://doi.org/10.1016/j.foodres.2025.118058) |
 | 2026 | Wang H. | Image-Based, 3D reconstruction for smart farming Applications: A review | Computers and Electronics in Agriculture | [PDF](pdf/wang2026image.pdf) | [DOI](https://doi.org/10.1016/j.compag.2026.111828) |
 | 2026 | Wei Q. | Volume Estimation of Agricultural Products Using 2D Images: From Laboratory to Orchard | Horticulturae | [PDF](pdf/wei2026volume.pdf) | [DOI](https://doi.org/10.3390/horticulturae12070776) |

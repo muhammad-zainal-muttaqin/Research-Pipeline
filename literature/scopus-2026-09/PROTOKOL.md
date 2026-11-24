@@ -44,11 +44,11 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
 | Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 77 |
-| Dinilai dari teks lengkap (935 Scopus dan 5 metode lain) | 940 |
+| Dinilai dari teks lengkap (936 Scopus dan 5 metode lain) | 941 |
 | Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 19, E8 3) | 36 |
-| Total masuk peta (899 Scopus dan 5 metode lain) | 904 |
+| Total masuk peta (900 Scopus dan 5 metode lain) | 905 |
 
-Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, dan 7 PDF baru pada 24 November 2026): korpus dibatasi pada kajian yang PDF-nya
+Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, dan 8 PDF baru pada 24 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
 Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
 eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
@@ -80,7 +80,7 @@ Kode yang sama dipakai pada tahap teks lengkap.
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 149 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 |
-| R | Tinjauan terdahulu | 117 |
+| R | Tinjauan terdahulu | 118 |
 | T | Metode yang dapat dipindahkan dari luar pertanian, termasuk model deteksi, segmentasi, dan estimasi kedalaman umum yang menjadi dasar pipeline | 87 |
 
 Dua aturan berlaku saat menetapkan kode (keputusan Fatma, 5 Oktober 2026):

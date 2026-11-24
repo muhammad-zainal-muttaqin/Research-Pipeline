@@ -6,6 +6,8 @@ identitas untuk kajian C1 diperiksa ulang secara manual dan disimpan di
 bukti/mekanisme_C1.txt; berkas itu menimpa kode otomatis.
 
 Keluaran: bukti/matriks_bukti.csv (satu baris per kajian yang masuk peta).
+DOI diambil dari rekaman Scopus, kecuali kajian yang punya DOI tercetak di PDF
+pada kolom keempat ../penulis_pdf.tsv.
 
 Tahap teks lengkap: kajian yang lolos tahap abstrak hanya masuk matriks bila
 PDF-nya ada di pdf/<key>.pdf dan keputusannya di
@@ -228,6 +230,16 @@ def muat_manual(path, lengkap=False):
     return out
 
 
+def muat_doi_pdf(path):
+    doi = {}
+    for line in open(path, encoding="utf-8"):
+        if line.strip() and not line.startswith("#"):
+            k, _, _, *d = line.rstrip("\n").split("\t")
+            if d:
+                doi[k] = d[0]
+    return doi
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--topik", default="literature/scopus-2026-09/topik")
@@ -244,6 +256,7 @@ def main():
     tanaman_platform = muat_tanaman_platform(bukti / "tanaman_platform_C1.txt")
     ada_verif = args.kolom_verifikasi or any(any(v[4:]) for v in manual.values())
     rec = {r["eid"]: r for r in csv.DictReader(open(topik / "records_all.csv"))}
+    doi_pdf = muat_doi_pdf(topik.parent / "penulis_pdf.tsv")
     enr = {}
     for line in open(topik / "enrich.jsonl"):
         e = json.loads(line)
@@ -280,7 +293,7 @@ def main():
         kode_manual = manual.get(i, ("",) * (4 + len(KOLOM_VERIFIKASI)))
         mek, akm, kelas, hasil = kode_manual[:4]
         b = {
-            "idx": i, "key": r["key"], "eid": r["eid"], "doi": r["doi"],
+            "idx": i, "key": r["key"], "eid": r["eid"], "doi": doi_pdf.get(r["key"], r["doi"]),
             "year": r["year"], "first_author": r["first_author"],
             "title": r["title"], "source": r["source"],
             "doc_type": r["doc_type"], "cited_by": r["cited_by"],
