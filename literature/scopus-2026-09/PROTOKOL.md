@@ -45,8 +45,8 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
 | Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 83 |
 | Dinilai dari teks lengkap (930 Scopus dan 5 metode lain) | 935 |
-| Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 19, E8 2) | 35 |
-| Total masuk peta (895 Scopus dan 5 metode lain) | 900 |
+| Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 19, E8 3) | 36 |
+| Total masuk peta (894 Scopus dan 5 metode lain) | 899 |
 
 Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, dan 2 PDF baru pada 24 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
@@ -61,7 +61,9 @@ pada 24 November 2026 disetujui peninjau pada hari yang sama.
 E8 hanya dipakai pada tahap teks lengkap: laporan kedua dari kajian yang sudah
 masuk lewat laporan lain (bab buku Parico dkk. 2023, sama dengan artikel
 *Sensors* 2021; PDF rekaman konferensi Silwal dkk. 2015, berisi artikel
-*Trans. ASABE* 2016 yang tercatat sendiri). Kajiannya dihitung sekali.
+*Trans. ASABE* 2016 yang tercatat sendiri; makalah konferensi Chowdhury dkk.
+2024, yang ke-14 nilai YOLOv6-nya sama persis dengan Chowdhury dkk. 2025).
+Kajiannya dihitung sekali.
 
 Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (23), E2 hanya
 pascapanen atau laboratorium (18), E3 model hasil tanpa deteksi tingkat buah (25),
@@ -75,7 +77,7 @@ Kode yang sama dipakai pada tahap teks lengkap.
 |---|---|---:|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 248 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 157 |
-| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 149 |
+| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 148 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 |
 | R | Tinjauan terdahulu | 116 |

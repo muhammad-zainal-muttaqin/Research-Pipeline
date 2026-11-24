@@ -10,14 +10,14 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dikeluarkan di tahap kelayakan abstrak 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
 - Laporan dicari teks lengkapnya 1013; tidak diperoleh 83 (C1 1, C2 34, C3 21, C4 8, C5 12, R 6, T 1)
 - PDF ada, menunggu penilaian teks lengkap 0 (C1 0, C2 0, C3 0, C4 0, C5 0, R 0, T 0)
-- Dinilai dari teks lengkap 930; dikeluarkan 35: E1 2, E2 10, E3 2, E5 19, E8 2
-- Masuk dari Scopus 895: C1 247, C2 155, C3 149, C4 36, C5 107, R 115, T 86
+- Dinilai dari teks lengkap 930; dikeluarkan 36: E1 2, E2 10, E3 2, E5 19, E8 3
+- Masuk dari Scopus 894: C1 247, C2 155, C3 148, C4 36, C5 107, R 115, T 86
 - Metode lain 5, teks lengkap diperoleh 5: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
-- Total kajian masuk 900
-- Kajian per tahun: 2012: 8, 2013: 12, 2014: 12, 2015: 16, 2016: 20, 2017: 25, 2018: 28, 2019: 37, 2020: 64, 2021: 70, 2022: 79, 2023: 107, 2024: 142, 2025: 166, 2026: 113, 2027: 1
+- Total kajian masuk 899
+- Kajian per tahun: 2012: 8, 2013: 12, 2014: 12, 2015: 16, 2016: 20, 2017: 25, 2018: 28, 2019: 37, 2020: 64, 2021: 70, 2022: 79, 2023: 107, 2024: 141, 2025: 166, 2026: 113, 2027: 1
 - Multi-pengamatan per tahun: 2012: 2, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 3, 2018: 4, 2019: 9, 2020: 16, 2021: 19, 2022: 21, 2023: 30, 2024: 43, 2025: 57, 2026: 34
-- Dengan abstrak 722 dari 900; PDF teks lengkap 900 (teks terekstrak 900); multi-pengamatan dengan PDF 248 dari 248
-- Peta istilah: 43 istilah, 302 tautan; istilah identitas 24-36 kajian; detection 547; counting 382
+- Dengan abstrak 722 dari 899; PDF teks lengkap 899 (teks terekstrak 899); multi-pengamatan dengan PDF 248 dari 248
+- Peta istilah: 43 istilah, 302 tautan; istilah identitas 24-36 kajian; detection 546; counting 382
 
 ## Seksi 3: kajian multi-pengamatan
 
@@ -64,11 +64,11 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 8: kelapa sawit
 
-- Kajian 149 (matriks: 149)
-- Tugas: KLS 64, DET 36, SENSOR 16, MUTU 16, LF 10, DATA 4, HIT 3
-- Lokasi: PABRIK 42, KEBUN 28, ? 26, POHON 19, WEB 13, TANAH 12, CAMPUR 6, UAV 3
-- Modalitas: RGB 125, TERMAL 5, MSI 4, RGB+DEPTH 3, HSI 2, RGB+LASER 2, RGB+NIR 1, RGB+RADAR 1, MSI+NIR 1, STEREO 1, LIDAR 1, MSI+TERMAL 1, LASER 1, RGB+NIR+DEPTH 1
-- Multipandang Y: 17; kelas per instans Y: 114
+- Kajian 148 (matriks: 148)
+- Tugas: KLS 64, DET 35, SENSOR 16, MUTU 16, LF 10, DATA 4, HIT 3
+- Lokasi: PABRIK 42, KEBUN 28, ? 26, POHON 19, WEB 13, TANAH 12, CAMPUR 5, UAV 3
+- Modalitas: RGB 124, TERMAL 5, MSI 4, RGB+DEPTH 3, HSI 2, RGB+LASER 2, RGB+NIR 1, RGB+RADAR 1, MSI+NIR 1, STEREO 1, LIDAR 1, MSI+TERMAL 1, LASER 1, RGB+NIR+DEPTH 1
+- Multipandang Y: 17; kelas per instans Y: 113
 - Kajian pencacahan (HIT): hamdani2026automated, naftali2024palm, prasetyo2020automatic
 - Kajian multipandang: arief2026machine, cherie2015advance, cherie2015optical, cherie2020optical, cherie2021non, fadilah2012intelligent, hidayat2024establishing, junior2023video, naftali2024palm, omar2024outdoor, salambue2018investigation, shiddiq2024multispectral, shiddiq2024neural, suharjito2023annotated, suharjito2023real, suharjito2025oil, wang2024novel
 

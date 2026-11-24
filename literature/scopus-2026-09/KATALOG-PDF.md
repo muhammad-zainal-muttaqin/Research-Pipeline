@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 900 kajian korpus `main6` yang PDF-nya tersedia, dari 900 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 899 kajian korpus `main6` yang PDF-nya tersedia, dari 899 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -8,12 +8,12 @@ Katalog ini memuat 900 kajian korpus `main6` yang PDF-nya tersedia, dari 900 kaj
 |---|---|---|---|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 248 | 248 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 157 | 157 |
-| C3 | Pencitraan TBS kelapa sawit | 149 | 149 |
+| C3 | Pencitraan TBS kelapa sawit | 148 | 148 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 | 36 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 108 | 108 |
 | R | Tinjauan terdahulu | 116 | 116 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 86 | 86 |
-| | **Jumlah** | 900 | 900 |
+| | **Jumlah** | 899 | 899 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (248)
 
@@ -430,7 +430,7 @@ Katalog ini memuat 900 kajian korpus `main6` yang PDF-nya tersedia, dari 900 kaj
 | 2013 | Yamamoto K. | Detection and counting of intact tomato fruits on tree using image analysis and machine learning methods | Conference Proceeding 5th International Conference Tae 2013 Trends in Agricultural Engineering 2013 | [PDF](pdf/yamamoto2013detection.pdf) |  |
 | 2012 | Ye X. | Fruit yield estimation through multispectral imaging | Advances in Citrus Nutrition | [PDF](pdf/ye2012fruit.pdf) | [DOI](https://doi.org/10.1007/978-94-007-4171-3_30) |
 
-## C3: Pencitraan TBS kelapa sawit (149)
+## C3: Pencitraan TBS kelapa sawit (148)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -482,7 +482,6 @@ Katalog ini memuat 900 kajian korpus `main6` yang PDF-nya tersedia, dari 900 kaj
 | 2025 | Zaman B. | A Hybrid Approach for Handling Occlusion in UAV Images of Fresh Oil Palm Fruit Bunches Based on Computer Vision | Proceedings International Seminar on Intelligent Technology and Its Applications Isitia | [PDF](pdf/zaman2025hybrid.pdf) | [DOI](https://doi.org/10.1109/isitia66279.2025.11137494) |
 | 2024 | Bakar J.A. | Color-Based Ripeness Classification of Oil Palm Fresh Fruit Bunches Using Convolution Neural Networks and Data Augmentation | 2024 IEEE 7th International Conference on Electronics and Communication Engineering Icece 2024 | [PDF](pdf/bakar2024color.pdf) | [DOI](https://doi.org/10.1109/icece63871.2024.10976938) |
 | 2024 | Bonet I. | Deep Learning Model to Predict the Ripeness of Oil Palm Fruit | International Conference on Agents and Artificial Intelligence | [PDF](pdf/bonet2024deep.pdf) | [DOI](https://doi.org/10.5220/0012434600003636) |
-| 2024 | Chowdhury A.K. | Oil Palm Fresh Fruit Branch Ripeness Detection Using YOLOV6 Algorithm | Lecture Notes in Mechanical Engineering | [PDF](pdf/chowdhury2024oil.pdf) | [DOI](https://doi.org/10.1007/978-981-97-0169-8_14) |
 | 2024 | Goh J.Y. | Vision Language Models for Oil Palm Fresh Fruit Bunch Ripeness Classification | 2024 IEEE 8th International Conference on Signal and Image Processing Applications Icsipa 2024 | [PDF](pdf/goh2024vision.pdf) | [DOI](https://doi.org/10.1109/icsipa62061.2024.10686009) |
 | 2024 | Harmiansyah | Detection of new oil palm fruit bunches based on deep learning | Iop Conference Series Earth and Environmental Science | [PDF](pdf/harmiansyah2024detection.pdf) | [DOI](https://doi.org/10.1088/1755-1315/1379/1/012003) |
 | 2024 | Hidayat M.R. | Establishing a Standard Operating Procedure (SOP) for Palm Oil Plantation FFB Image Capture: Utilizing YOLOv8 for Counting and Ripeness Classification | 2024 6th International Conference on Cybernetics and Intelligent System Icoris 2024 | [PDF](pdf/hidayat2024establishing.pdf) | [DOI](https://doi.org/10.1109/icoris63540.2024.10903724) |
