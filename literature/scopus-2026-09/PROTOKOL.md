@@ -44,11 +44,11 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
 | Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 63 |
-| Dinilai dari teks lengkap (938 Scopus dan 5 metode lain) | 943 |
-| Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 19, E8 3) | 36 |
-| Total masuk peta (902 Scopus dan 5 metode lain) | 907 |
+| Dinilai dari teks lengkap (950 Scopus dan 5 metode lain) | 955 |
+| Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 20, E8 3) | 37 |
+| Total masuk peta (913 Scopus dan 5 metode lain) | 918 |
 
-Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, dan 10 PDF baru pada 24 November 2026): korpus dibatasi pada kajian yang PDF-nya
+Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, 10 PDF baru pada 24 November 2026, dan 12 PDF baru pada 27 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
 Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
 eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
@@ -56,8 +56,9 @@ kelompok diperiksa terhadap teks sumber sebelum diterapkan. Perubahannya
 tercatat di `verifikasi/log_perubahan.csv` sebagai "AI, belum disetujui
 peninjau" sampai peninjau menyetujuinya. Keputusan untuk 325 PDF yang
 ditambahkan pada 20 November 2026, 3 PDF yang ditambahkan pada 21 November
-2026, 123 PDF yang ditambahkan pada 23 November 2026, dan 6 PDF yang ditambahkan
-pada 24 November 2026 disetujui peninjau pada hari yang sama.
+2026, 123 PDF yang ditambahkan pada 23 November 2026, 6 PDF yang ditambahkan
+pada 24 November 2026, dan 12 PDF yang ditambahkan pada 27 November 2026 disetujui
+peninjau pada hari yang sama.
 E8 hanya dipakai pada tahap teks lengkap: laporan kedua dari kajian yang sudah
 masuk lewat laporan lain (bab buku Parico dkk. 2023, sama dengan artikel
 *Sensors* 2021; PDF rekaman konferensi Silwal dkk. 2015, berisi artikel
@@ -75,11 +76,11 @@ Kode yang sama dipakai pada tahap teks lengkap.
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 249 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 158 |
-| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 149 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 36 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 109 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 251 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 162 |
+| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 151 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 38 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 110 |
 | R | Tinjauan terdahulu | 119 |
 | T | Metode yang dapat dipindahkan dari luar pertanian, termasuk model deteksi, segmentasi, dan estimasi kedalaman umum yang menjadi dasar pipeline | 87 |
 
