@@ -23,4 +23,4 @@ Data berupa 904 citra dengan 11.267 tomat. Sebesar 60% citra berasal dari Kaggle
 
 Pada 135 citra uji dengan 1.996 tomat, YOLOv11 saja menemukan 1.677 tomat (0,84), sedangkan YOLOv11 dengan SAHI menemukan 1.896 (0,95). Per kelas, nilainya naik dari 0,84 menjadi 0,94 untuk matang penuh, dari 0,78 menjadi 0,98 untuk setengah matang, dan dari 0,89 menjadi 0,92 untuk hijau.
 
-Akurasi hitung adalah rasio jumlah terdeteksi terhadap jumlah acuan, sehingga deteksi palsu dapat menutupi buah yang terlewat. Setiap citra dicacah sendiri.
+Irisan SAHI berukuran 300×300 piksel dan bertumpang tindih 30%, tetapi cara menggabungkan kotak di daerah tumpang tindih tidak dijelaskan. Akurasi hitung adalah rasio jumlah terdeteksi terhadap jumlah acuan, sehingga deteksi palsu atau ganda dapat menutupi buah yang terlewat. Setiap citra dicacah sendiri.
