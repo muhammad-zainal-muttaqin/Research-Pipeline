@@ -43,12 +43,13 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan pada tahap kelayakan abstrak | 132 |
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
-| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 56 |
+| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 55 |
+| Teks lengkap diperoleh, menunggu keputusan peninjau | 1 |
 | Dinilai dari teks lengkap (957 Scopus dan 5 metode lain) | 962 |
 | Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 21, E8 3) | 38 |
 | Total masuk peta (919 Scopus dan 5 metode lain) | 924 |
 
-Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, 10 PDF baru pada 24 November 2026, dan 19 PDF baru pada 27 November 2026): korpus dibatasi pada kajian yang PDF-nya
+Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, 10 PDF baru pada 24 November 2026, dan 20 PDF baru pada 27 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
 Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
 eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
@@ -183,10 +184,10 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   dengan cara yang sama; label C1 diterapkan lewat Cek 5. Empat kajian dari
   penelusuran daftar pustaka ditambahkan ke `topik/tambahan_metode_lain.csv`.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF tersedia untuk 840 dari 1.013 kajian Scopus dan kelima rekaman metode lain (`KATALOG-PDF.md`); hanya
-  kajian itu yang dinilai pada tahap teks lengkap. Setiap PDF di `pdf/`
+- PDF tersedia di `pdf/` untuk 958 dari 1.013 laporan Scopus dan kelima laporan
+  dari metode lain. Penilaian teks lengkap memerlukan PDF. Setiap PDF di `pdf/`
   punya teks di `teks/`. Enam PDF jurnal CSAM yang fonnya tanpa pemetaan
   Unicode (`guo2023real`, `tu2026passion`, `wang2024camellia`,
   `wu2025counting`, `xiao2024camellia`, `zhu2022identification`) dan empat PDF hasil pindaian atau dengan teks rusak
-  (`chen2017counting`, `cheng2021method`, `harmiansyah2024detection`, `xu2025three`) dibaca dengan OCR. PDF `santhi2026streamlined` berupa pindaian halaman dan teksnya dibuat dengan OCR RapidOCR. Teks lengkap `li2021yield` adalah terjemahan mesin berbahasa Inggris dari *postprint* ChinaXiv 202302.00205 yang diterbitkan ChinaRxiv, karena PDF penerbit berbayar dan PDF asli ChinaXiv menolak unduhan otomatis. Teks lengkap `dhonju2024harvest` adalah Bab 8 tesis penulis pertama yang memuat makalah Acta Horticulturae itu. Teks lengkap `xia2023lightweight` dan `yuchao2025review` berbahasa Mandarin dengan abstrak berbahasa Inggris. Daftar PDF yang belum ada (56 laporan per 27 November 2026) tercantum di
+  (`chen2017counting`, `cheng2021method`, `harmiansyah2024detection`, `xu2025three`) dibaca dengan OCR. PDF `santhi2026streamlined` berupa pindaian halaman dan teksnya dibuat dengan OCR RapidOCR. Teks lengkap `li2021yield` adalah terjemahan mesin berbahasa Inggris dari *postprint* ChinaXiv 202302.00205 yang diterbitkan ChinaRxiv, karena PDF penerbit berbayar dan PDF asli ChinaXiv menolak unduhan otomatis. Teks lengkap `dhonju2024harvest` adalah Bab 8 tesis penulis pertama yang memuat makalah Acta Horticulturae itu. Teks lengkap `xia2023lightweight` dan `yuchao2025review` berbahasa Mandarin dengan abstrak berbahasa Inggris. Daftar PDF yang belum ada (55 laporan per 27 November 2026) tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.

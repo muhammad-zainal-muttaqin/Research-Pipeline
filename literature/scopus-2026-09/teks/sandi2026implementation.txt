@@ -1,0 +1,673 @@
+Implementation and Optimization of a Machine
+Learning Model for Pineapple Fruit Counting in
+Aerial Imagery
+Johnny Zaet Aguero Sand´ı1, Jason Leit´on Jim´enez1, Luis Diego Noguera Mena1
+1Instituto Tecnol´ogico de Costa Rica
+{johnny.zaet08, jleiton, lnoguera}@itcr.ac.cr
+Abstract—The pineapple industry is a cornerstone of Costa
+Rica’s agricultural economy, but faces significant challenges
+in optimizing monitoring processes, which rely heavily on
+costly and imprecise manual counting methods. This study
+focuses on the development and optimization of an automated
+system for counting pineapple fruits from georeferenced
+aerial imagery, with the goal of high accuracy with a
+reduced dependence on specialized hardware. The imple-
+mented methodology integrates image super-resolution tech-
+niques with deep learning. We utilized the Real-ESRGAN+
+model to improve image quality, processing each tile at
+an effective resolution of 1280 x 1280px, which proved
+crucial for identifying small fruits. A robust data set of
+1,640 images was constructed through an iterative active
+learning process. The YOLOv8s model was trained and
+optimized using this dataset. The final system generates a
+vector layer in Shapefile format (.shp), integrating the results
+with Geographic Information Systems (GIS). Quantitative
+results demonstrate high model effectiveness, achieving a
+mean Average Precision mAP@0.5 of 0.965 on the test set.
+The evaluation of complete orthomosaics showed strong
+counting reliability, with percentage errors below 10% in
+three of the four case studies, including images unseen during
+training. The super-resolution stage was identified as the
+main computational bottleneck, accounting for more than
+96% of the total processing time. The proposed approach,
+combining super-resolution, iterative dataset refinement, and
+the YOLOv8s architecture, offers a robust and precise
+solution for automating pineapple fruit counting, providing
+an effective tool for precision agriculture.
+Index Terms—Object Detection, Deep Learning, YOLOv8,
+Precision
+Agriculture,
+Fruit
+Counting,
+Image
+Super-
+Resolution, Geographic Information Systems (GIS), Aerial
+Imagery.
+I. INTRODUCTION
+The pineapple industry has historically been a critical
+economic driver in Costa Rica, representing one of the
+main agricultural exports of the country [1]. Costa Rica
+has established itself as a global leader in pineapple pro-
+duction, contributing significantly to socioeconomic devel-
+opment. However, the industry currently faces challenges
+related to improving production efficiency and ensuring
+sustainability in the face of market fluctuations and climate
+change [2].
+The monitoring of pineapple cultivation is essential,
+particularly for organizations such as the United Nations
+Development Program (PNUD), the Ministry of Environ-
+ment and Energy (MINAE) and the National Center for
+Geoenvironmental Information (CENIGA), which moni-
+tor the expansion dynamics of pineapples due to both
+economic impact and environmental repercussions [3].
+Although satellite imagery and remote sensing techniques
+are used, fruit counting and supervision methods remain
+predominantly manual, leading to high costs and potential
+inaccuracies.
+The adoption of advanced technologies, specifically Ar-
+tificial Intelligence (AI) and Deep Learning (DL), offers a
+viable alternative to automate and optimize these processes
+[4]. This implementation can significantly improve crop
+management and improve productivity sustainably [5].
+Furthermore, methodologies incorporating active learning
+and image super-resolution, such as Real-ESRGAN, have
+shown positive results by increasing sample quality and
+reducing the need for specialized hardware during infer-
+ence.
+This project aims to implement and optimize a Machine
+Learning model, based on YOLOv8, for the automated
+counting of pineapple fruits in high-resolution aerial im-
+agery. The workflow addresses the challenges posed by
+large-sized TIFF images by fragmenting them into smaller
+sections and applying super-resolution techniques (Real-
+ESRGAN+) to enhance detail. This approach seeks to
+improve accuracy and lower hardware requirements, facil-
+itating wider adoption in resource-limited environments.
+II. BACKGROUND AND RELATED WORK
+A. Object Detection and Deep Learning
+Deep Learning (DL), a subdiscipline of Machine Learn-
+ing (ML), uses deep neural network architectures to pro-
+cess complex data. Artificial neural networks, organized
+into layers, transform information, allowing for complex
+data processing via nonlinear activation functions and
+optimization algorithms [6]. Deep neural networks, with
+multiple hidden layers, are capable of learning complex
+patterns directly from raw data, reducing the need for
+manual feature engineering [7].
+Convolutional Neural Networks (CNNs) have revolu-
+tionized computer vision due to their ability to detect local
+patterns like edges and textures in grid-structured data,
+such as images. CNN architectures typically consist of
+convolutional layers, pooling layers, and fully connected
+layers, which synergistically extract relevant features for
+classification and prediction [6].
+Object detection involves identifying the presence of
+an object and its exact location using bounding boxes
+979-8-3315-4517-8/26/$31.00 © 2026 IEEE
+
+[8]. Early methods based on low-level features have been
+largely replaced by CNN-based algorithms such as R-
+CNN, Fast R-CNN, and YOLO, which significantly im-
+proved detection speed and accuracy [9], [6], [8].
+B. YOLO and YOLOv8 Architecture
+The YOLO algorithm (You Only Look Once) addresses
+object detection as a direct regression problem, simulta-
+neously predicting bounding boxes and class probabilities
+in a single network pass, resulting in significantly faster
+detection [8]. YOLOv8, released by Ultralytics in 2023,
+represents a notable advancement in terms of precision and
+efficiency, particularly for detecting small objects [10].
+The YOLOv8 architecture is divided into the backbone
+and the head. The backbone, a modified CSPDarknet53,
+uses 53 convolutional layers to extract essential features
+[11]. The head translates these features into concrete pre-
+dictions, including location and category [12]. YOLOv8
+incorporates a self-attention mechanism and a Feature
+Pyramid Network (FPN) for multiscale detection, enabling
+the identification of objects of various sizes.
+While several object detection models such as Faster
+R-CNN, EfficientDet, and YOLO-NAS offer competitive
+accuracy, YOLOv8 was selected for this study due to its
+favorable trade-off between detection precision, inference
+speed, and hardware efficiency. Unlike two-stage detectors
+like Faster R-CNN, which tend to have higher latency,
+YOLOv8’s one-stage architecture enables real-time in-
+ference, which is essential for large-scale aerial image
+processing. Furthermore, compared to EfficientDet, which
+often requires complex scaling and tuning, YOLOv8 pro-
+vides a more streamlined deployment with state-of-the-
+art performance, particularly for small object detection
+tasks. YOLOv8 also demonstrated better compatibility
+with custom training pipelines, active learning cycles, and
+integration with GIS-ready output formats, making it an
+optimal choice for the constraints and objectives of this
+project.
+C. Image Processing and Geospatial Data
+Precision Agriculture (PA) leverages technologies such
+as Unmanned Aerial Vehicles (UAVs or drones) for de-
+tailed crop monitoring [13]. Aerial imagery, often provided
+as orthomosaics, is commonly stored in GeoTIFF format.
+GeoTIFF extends the TIFF standard by embedding spatial
+information, including the Coordinate Reference System
+(CRS) and Geotransformation data, allowing the image to
+function as a georeferenced raster map [14].
+Geographic Information Systems (GIS) are used to
+manage and analyze spatially linked data. Georeferencing
+is the crucial process for assigning real-world coordinates
+to data [15]. Vector data, represented by points, lines, or
+polygons, is frequently used for analysis. The Shapefile
+(.shp) format is a standard for exchanging geospatial
+vector data , and is used in this project to represent
+detected fruits as georeferenced points [16].
+D. Super-resolution and Data Augmentation
+The quality of the input data is paramount for the
+performance of deep learning models. Data Augmentation
+increases the diversity of the training set by applying trans-
+formations (geometric, photometric, or generative meth-
+ods such as MixUp/Mosaic) while preserving semantic
+meaning [17]. These techniques regularize the model and
+prevent overfitting [18].
+Real-ESRGAN (Realistic Enhanced Super-Resolution
+Generative Adversarial Network) is a super-resolution
+technique based on GANs that enhances image resolution,
+recovering fine details. Real-ESRGAN+ incorporates high-
+order degradation modeling, using purely synthetic data
+to simulate realistic sensor artifacts and digital editing
+effects. This approach improves the quality of images,
+which is essential when dealing with low-resolution Aerial
+Imagery [19].
+III. METHODOLOGY
+The automated pineapple fruit counting system uses
+an agile and iterative methodology that encompasses the
+research, analysis, design, implementation, and evaluation
+phases. The system processes high-resolution orthomo-
+saics, generating a report with automated fruit counts,
+detection coordinates, and marked images.
+A. Development Environment and Tools
+The project was implemented in Python, using a local
+workstation environment optimized for intensive Linux
+training (Ubuntu 24.04 LTS). The hardware included an
+Intel Core i7-11700 CPU and an NVIDIA GeForce RTX
+3060 12 GB GPU. Key software libraries included Py-
+Torch, Ultralytics YOLOv8, Real-ESRGAN, Rasterio, and
+GeoPandas. Roboflow was used for data management,
+augmentation, and collaborative labeling.
+B. System Design and Workflow
+The system workflow consists of several stages (Fig. 1):
+input image selection, fragmentation, super-resolution,
+prediction, alignment, and optimization.
+Fig. 1. Second-level system diagram
+1) Fragmentation
+and
+Super-Resolution:
+High-
+resolution orthomosaics are fragmented into manageable
+tiles, initially 640 x 640 px, to optimize GPU memory
+usage and inference time. Before inference, each tile
+undergoes super-resolution using Real-ESRGAN+. This
+process scales the fragments, enhancing details that
+are often lost in low-resolution aerial imagery. The
+enhanced images are then resized to 1280 x 1280 px for
+compatibility with the YOLOv8 model.
+2) Prediction and Alignment: The enhanced tiles are
+processed by the YOLOv8 model, which performs object
+detection and predicts bounding boxes with associated
+confidence scores. Detections are filtered by confidence
+thresholds.
+Subsequently, the detections are aligned with the origi-
+nal orthomosaic coordinate system. This requires a double
+
+adjustment: (i) rescaling, using a scale factor s=0.5 to
+translate from 1280 x 1280 px back to the physical size
+of the original block, and (ii) displacement, by adding
+the coordinates of the upper left corner of the block.
+This procedure ensures spatial coherence and accurate
+localization within the global context of the image.
+3) Geospatial Output Generation: The final step in-
+volves transforming the pixel coordinates of the detected
+bounding boxes into real-world geographic coordinates.
+This is achieved by extracting georeferencing metadata
+from the original GeoTIFF file using libraries such as
+Rasterio [20] and applying affine transformation equations.
+The resulting data, representing each detected pineapple
+fruit as a georeferenced point, is saved as a Shapefile
+(.shp) [16]. This output facilitates direct visualization and
+analysis within GIS software such as QGIS.
+C. Dataset Preparation and Evolution
+The data set was subjected to an iterative refinement
+process.
+1) Initial Dataset (640px): Started with 49 images,
+augmented to 117 images using data augmentation
+(flips and rotations). This data set revealed limita-
+tions in the detection of small fruits due to detail
+loss after Real-ESRGAN+ processing and resizing
+to 640 x 640 px.
+2) Improved Dataset (1280px): A second version
+used 84 images, subjected to Real-ESRGAN+ (x4
+scaling) and resized to 1280 x 1280 px. This res-
+olution maintained optimal visual quality and fine
+detail. Augmentation transformations were applied
+via Roboflow [21], expanding the dataset to 616
+images.
+3) Final Dataset (1280px with Active Learning):
+An active learning cycle was implemented to refine
+the model further by identifying and manually re-
+labeling 150 challenging images (e.g., low confi-
+dence detections). Applying the same augmentation
+pipeline expanded the final dataset to 1640 images.
+The final data set contains 74,628 annotations for the
+’pineapple’ class. Notably, 408 images (24.9% of the total)
+contained no annotations (negative examples), a strategy
+employed to improve the model’s discrimination capability
+and reduce false positives.
+The impact of super-resolution on labeling quality was
+demonstrated through an experiment comparing autola-
+beling with and without Real-ESRGAN+. The super-
+resolution increased the number of annotations proposed
+by 123% for a representative image, confirming that Real-
+ESRGAN+ enhances the visibility of small fruits and fine
+textures, leading to a higher quality data set for the training
+of the detection model.
+IV. RESULTS AND ANALYSIS
+The final model was the YOLOv8s variant, selected
+based on its optimal balance between mAP50 (90%)
+and acceptable VRAM consumption (4.5 GB) during ex-
+ploratory training on the RTX 3060 GPU. The final model
+used the expanded 1640-image dataset (1280px resolution)
+and was trained for 25 epochs (Table I).
+TABLE I
+MAIN HYPERPARAMETERS USED IN THE FINAL YOLOV8S MODEL
+TRAINING ON 1640 IMAGES (BASED ON ’ARGS.YAML’)
+Hyperparameter
+Value
+Base model for retraining
+’best.pt’ (from training with 616 images)
+Dataset
+1640 images (1280x1280px)
+Epochs
+25
+Patience
+100
+Warmup epochs
+3.0
+Warmup momentum
+0.8
+Warmup bias lr
+0.1
+Batch size
+8
+Initial learning rate (lr0)
+0.01
+Final learning rate (lrf)
+0.01
+Momentum
+0.937
+Weight decay
+0.0005
+Box loss gain
+7.5
+Class loss gain
+0.5
+DFL loss gain
+1.5
+Augmentation HSV-Hue
+0.015
+Augmentation
+HSV-
+Saturation
+0.7
+Augmentation HSV-Value
+0.4
+Augmentation Flip LR (fli-
+plr)
+0.5
+Mosaic
+1.0
+Close mosaic
+10
+A. Model Performance Metrics
+The training and validation curves (Fig. 2) demonstrated
+effective convergence. Both Train Box Loss and Train
+Class Loss decreased continuously, indicating a simul-
+taneous improvement in bounding box regression and
+classification without saturation or underfit [22]. Train
+DFL Loss also decreased, suggesting a fine adjustment
+of the box offsets [23].
+Fig. 2.
+raining and Validation Metrics of the Final YOLOv8s Model
+(1640 Images) After 25 Epochs
+Precision and Recall stabilized above 0.90 after 18
+epochs, achieving a strong balance between false positives
+and false negatives, which is essential for automated
+agricultural inventories.
+The model achieved a mAP50 of 0.965 and a mAP50:0.95
+of 0.66, representing an 8 percentage point increase in
+
+mAP50:95 compared to the initial results. The high value
+mAP50:95 confirms that the model not only detects more
+fruits, but also places tighter bounding boxes, crucial for
+accurate counting in dense clusters [24].
+B. Final Model Performance Curves
+The
+F1-Confidence,
+Precision-Confidence,
+Recall-
+Confidence, and Precision-Recall (PR) curves (Fig. 3) for
+the final YOLOv8s model, trained on a dataset of 1640
+images with a resolution of 1280px, derive the following
+conclusions:
+• F1-Confidence Curve: The model achieved a maxi-
+mum F1 score of 0.889 at a confidence threshold of
+approximately c ≈0.34. This represents the optimal
+balance between precision and recall.
+• Precision-Confidence Curve: The precision of the
+model remained above 0.90 throughout the range,
+reaching a maximum value of 0.998 at c ≈0.95.
+This indicates that the model is highly accurate in its
+positive predictions.
+• Recall-Confidence Curve: The maximum recall was
+0.982 with a confidence of c = 0. Recall remained
+above 0.90 up to c ≈0.62, suggesting that moderate
+confidence thresholds allow a good balance between
+true detections and false positives.
+• Precision-Recall (PR) Curve: The area under the
+curve (AP@0.5) was 0.965. This high value confirms
+the robust performance of the detector, as it effec-
+tively balances both precision and recall.
+Fig. 3.
+Model Performance Metrics (F1-Conf, P-Conf, R-Conf, PR
+curves) of the final YOLOv8s model (1640 images)
+C. Prediction in Individual Images (Final Model)
+This study quantifies the performance of two models,
+Model v1 (trained on 616 images) and Model v2 (trained
+on 1640 images through active learning), for pineapple
+fruit counting. Their detections were compared with man-
+ual counts in four orthomosaics (Table II). Performance
+was measured using absolute and percentage errors relative
+to manual count.
+The results consistently demonstrate the superiority of
+Model v2, which significantly reduces the counting error.
+For orthomosaics seen during training (WENDY006 and
+FRUTA B12), Model v2 achieves a notable reduction in
+percentage error, from 45.70% to 3.19% and from 52.96%
+to 6.62%, respectively. Similarly, on unseen orthomosaics
+(Lote Cerro and Lote Planta), which serve as a more
+rigorous test of generalization, Model v2 outperforms
+Model v1. The percentage error for Lote Cerro drops from
+41.08% to 8.78%. Although the Lote Planta orthomosaic
+presented a greater challenge, Model v2 still achieved a
+substantial improvement, reducing the error from 75.00%
+to 38.54% despite intrinsic complexities such as high weed
+density.
+TABLE II
+COMPARISON OF PINEAPPLE FRUIT COUNTS AND ERROR
+ESTIMATION FOR MODEL V1 AND MODEL V2 IN SELECTED
+ORTHOMOSAICS
+Manual
+Model v1
+Model v2
+Count
+Count
+E.%
+Count
+E.%
+WENDY006
+407
+221
+45.70%
+394
+3.19%
+FRUTA B12
+423
+199
+52.96%
+395
+6.62%
+Lote Cerro
+706
+416
+41.08%
+644
+8.78%
+Lote Planta
+288
+72
+75.00%
+177
+38.54%
+Average Error %
+53.68%
+14.28%
+D. Orthomosaic Prediction and Counting Accuracy
+To validate the system’s robustness in real-world scenar-
+ios, four complete orthomosaics were processed, including
+two seen (WENDY006, FRUTA B12) and two unseen
+(Lote Cerro, Lote Planta) during training.
+The final model (Model v2, trained on 1640 images)
+was compared with a previous model (Model v1, trained
+on 616 images). The results, summarized in Table 12 (in
+source document) , consistently demonstrate the superior-
+ity of Model v2 and the effectiveness of the active learning
+approach.
+For WENDY006, Model v2 reduced the counting error
+from 45.70% (Model v1) to 3.19%. For FRUTA B12,
+the error decreased from 52.96% to 6.62%. Crucially, for
+unseen orthomosaics, Model v2 significantly outperformed
+Model v1. The error for Lote Cerro dropped from 41.08%
+to 8.78%. Although Lote Planta presented the highest
+challenge due to unique characteristics (e.g., dense weed
+coverage), Model v2 reduced the error from 75.00% to
+38.54%.
+In general, Model v2 demonstrated high reliability,
+achieving counting errors below 10% in three of the four
+case studies.
+E. Processing Times and Computational Bottleneck
+The
+processing
+times
+for
+the
+orthomosaics
+were
+recorded (Table III). The super-resolution stage (TSR) was
+identified as the main computational bottleneck, consum-
+ing an average of 96.30% of the total processing time for
+each orthomosaic. For instance, Lote Planta required 118
+minutes and 53 seconds for super-resolution out of a total
+of 123 minutes and 19 seconds. In contrast, the inference
+stage (TIN) with YOLOv8s was efficient, processing a
+large number of tiles in minutes.
+
+TABLE III
+PROCESSING TIMES AND COUNT RESULTS FOR PREVIOUSLY SEEN
+AND UNSEEN ORTHOMOSAICS
+Metric
+Test 1
+Test 2
+Test 3
+Test 4
+Name
+WENDY006
+FRUTA B12
+Lote Cerro
+Lote Planta
+Storage (MB)
+662.7
+553.2
+1556.48
+1249.28
+Generated
+441
+864
+1792
+2318
+tiles
+TSR (min)
+23:02
+44:11
+92:32
+118:53
+TIN (min)
+00:29
+00:52
+02:02
+02:20
+TP P (min)
+00:17
+00:30
+01:11
+01:35
+TGR (min)
+00:13
+00:10
+00:23
+00:31
+TT otal (min)
+24:01
+45:43
+96:12
+123:19
+Final count
+30471
+21102
+36852
+7120
+(pineapples)
+SR = Super-resolution, IN = Inference, PP = Post-
+processing, GR = Georeference
+F. Geospatial Output Validation
+The system successfully generates a Shapefile (.shp)
+layer with georeferenced locations for each detected fruit.
+Visualization in QGIS confirmed the precise alignment of
+the generated vector points (red dots) with the visible
+pineapple fruits in the original GeoTIFF orthomosaic
+(Fig. 4). This validation confirms the successful applica-
+tion of coordinate transformations and the integrity of the
+geospatial output, providing a practical tool for precision
+agriculture applications.
+Fig. 4.
+Visual validation in QGIS: A Shapefile layer (red points)
+was superimposed on the original GeoTIFF orthomosaic. (Lote Cerro).
+Correct spatial alignment of the detections was observed
+V. CONCLUSIONS
+The implemented solution, which combines Real-
+ESRGAN+ super-resolution with the YOLOv8s architec-
+ture, is an effective approach for automated pineapple
+fruit counting in large-scale aerial imagery. By processing
+images at an effective resolution of 1280 x 1280 px
+and expanding the data set through active learning, the
+final model achieved a mAP@0.5 of 0.965, validating the
+hypothesis that effective resolution and data set quality
+significantly improve the detection of small objects.
+The system demonstrated high reliability in practical
+applications, achieving counting errors below 10% in three
+of the four test cases, including unseen orthomosaics.
+However, the super-resolution stage remains the main
+computational bottleneck, consuming more than 96% of
+the total processing time. Automation of workflow and
+generation of georeferenced Shapefile output provide a
+valuable and practical tool for crop management in preci-
+sion agriculture.
+VI. RECOMMENDATIONS AND FUTURE WORK
+To further enhance the solution’s practical utility, we
+recommend:
+1) Implementing Parallelism in Super-resolution:
+Explore and implement parallelism techniques using
+distributed processing or CUDA Streams to sig-
+nificantly reduce the execution time of the super-
+resolution phase.
+2) Expanding Dataset Diversity and Optimizing
+Image Acquisition: Incorporate orthomosaics from
+various farms and different environmental conditions
+to improve the resilience and generalizability of
+the model. Although Real-ESRGAN+ is valuable,
+acquiring images with the highest possible native
+resolution is recommended for future work to reduce
+dependence on intensive preprocessing.
+3) Extensive
+Agronomic
+Validation:
+Conduct
+a
+broader validation in collaboration with experts in
+the pineapple industry, comparing system counts
+with traditional estimation methodologies to robustly
+quantify the impact of technology.
+These enhancements would ensure more efficient pro-
+cessing and consistent performance, paving the way for
+advanced applications such as real-time monitoring during
+drone flights.
+REFERENCES
+[1] Secretar´ıa
+Ejecutiva
+de
+Planificaci´on
+Sectorial
+Agropecuaria
+(SEPSA), “An´alisis estad´ıstico del sector agropecuario de costa rica
+2018,” 2018. Accedido: 15-Feb-2025.
+[2] Programa de las Naciones Unidas para el Desarrollo (PNUD),
+“Informe sobre monitoreo de cultivos de pi˜na en costa rica,” PNUD
+Series, vol. 14, no. 2, pp. 34–41, 2019.
+[3] A. Obando, “El auge de la pi˜na en costa rica,” 2017. Accedido:
+10-Ene-2025.
+[4] M. Garc´ıa and P. L´opez, “Aplicaci´on de faster r-cnn para la
+detecci´on de frutos de manzana,” Revista de Innovaci´on Agr´ıcola,
+vol. 7, no. 3, pp. 221–228, 2021.
+[5] X. Wang and Y. Li, “Utilizing yolov5 for tomato detection in
+greenhouse environments,” International Journal of Precision Agri-
+culture, vol. 12, no. 4, pp. 145–153, 2022.
+[6] M. Nielsen, “Neural networks and deep learning: Chapter 6,” 2015.
+Consultado: 10 de febrero de 2025.
+[7] R. Sakshi and Girija, “Introduction to deep learning and its related
+case studies,” in Proc. IEEE International Interdisciplinary Human-
+itarian Conference for Sustainability (IIHC-2022), pp. 1097–1103,
+IEEE, 2022.
+[8] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, “You only
+look once: Unified, real-time object detection,” in Proc. IEEE
+Conference on Computer Vision and Pattern Recognition (CVPR),
+pp. 779–788, 2016.
+[9] Evidently AI Team, “How to interpret a confusion matrix for a
+machine learning model,” 2024. Consultado: 20 de marzo de 2025.
+[10] Ultralytics, “Yolov8: State-of-the-art model for vision ai tasks,”
+2024. Consultado: 25 de marzo de 2025.
+[11] J. Torres, “Yolov8 architecture: A deep dive into its architecture,”
+2024. Consultado: 25 de marzo de 2025.
+[12] Modelbit, “Yolov8 model guide: Real-time object detection model
+explained,” 2024. Consultado: 02 de abril de 2025.
+[13] F. J. Pierce and P. C. Robert, “Precision agriculture,” Advances in
+Agronomy, vol. 67, pp. 1–179, 1997. Revisado: 18-May-2025.
+[14] Open Geospatial Consortium (OGC), “Ogc geotiff standard,” tech-
+nical report 19-008r4, Open Geospatial Consortium, 2019. Acce-
+dido: 21-May-2025.
+[15] P. A. Longley, M. F. Goodchild, D. J. Maguire, and D. W. Rhind,
+Geographic Information Systems and Science. Wiley, 4 ed., 2015.
+Revisado: 21-May-2025.
+[16] Environmental Systems Research Institute (Esri), “Esri shapefile
+technical description,” white paper, Esri, 1998. Accedido: 20-May-
+2025.
+
+[17] T. Kumar, A. Mileo, R. Brennan, and M. Bendechache, “Image
+data augmentation approaches: A comprehensive survey and future
+directions,” 2023. Consultado: 21 de abril de 2025.
+[18] S. Yang, W. Xiao, M. Zhang, S. Guo, J. Zhao, and F. Shen, “Image
+data augmentation for deep learning: A survey,” 2022. Consultado:
+16 de abril de 2025.
+[19] X. Wang, L. Xie, C. Dong, and Y. Shan, “Real-esrgan: Training
+real-world blind super-resolution with pure synthetic data,” 2021.
+Consultado: 21 de abril de 2025.
+[20] Mapbox, “Rasterio: Geographic raster data access,” 2025. Acce-
+dido: 22-May-2025.
+[21] M. Faizan, “Roboflow,” 2022. Consultado: 12 de febrero de 2025.
+[22] Z. Ge, S. Liu, F. Wang, Z. Li, and J. Sun, “Yolox: Exceeding yolo
+series in 2021,” arXiv preprint arXiv:2107.08430, 2021. Accedido:
+10-Jun-2025.
+[23] X. Li, W. Wang, L. Wu, S. Chen, X. Hu, J. Li, J. Tang, and
+J. Yang, “Generalized focal loss: Learning qualified and distributed
+bounding boxes for dense object detection,” in Advances in Neural
+Information Processing Systems 33 (NeurIPS 2020), 2020. Acce-
+dido: 10-Jun-2025.
+[24] M. Sozzi, A. Cantalamessa, M. Cogato, M. Al-amin, M. M. S. R.
+B. W. S. M. Hossain, and G. F. Roberto, “Grape cluster detec-
+tion, segmentation, and tracking using deep learning: A review,”
+Agronomy, vol. 12, no. 5, p. 1141, 2022. Accedido: 10-Jun-2025.
