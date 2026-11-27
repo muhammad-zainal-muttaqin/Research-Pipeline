@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 924 kajian korpus `main6` yang PDF-nya tersedia, dari 924 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 925 kajian korpus `main6` yang PDF-nya tersedia, dari 925 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 252 | 252 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 253 | 253 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 162 | 162 |
 | C3 | Pencitraan TBS kelapa sawit | 154 | 154 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 39 | 39 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 111 | 111 |
 | R | Tinjauan terdahulu | 119 | 119 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 87 | 87 |
-| | **Jumlah** | 924 | 924 |
+| | **Jumlah** | 925 | 925 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (252)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (253)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -39,6 +39,7 @@ Katalog ini memuat 924 kajian korpus `main6` yang PDF-nya tersedia, dari 924 kaj
 | 2026 | Pardo-Beainy C. | Maturity and size estimation with yield mapping for hydroponic strawberries using machine vision | Smart Agricultural Technology | [PDF](pdf/pardobeainy2026maturity.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.102416) |
 | 2026 | Park D. | Incremental 3D Crop Model Association for Real-Time Counting in Dense Orchards | IEEE Robotics and Automation Letters | [PDF](pdf/park2026incremental.pdf) | [DOI](https://doi.org/10.1109/lra.2026.3662648) |
 | 2026 | Piazolo J. | Enhanced grape tracking (using deep neural networks) with an extended matching algorithm for SORT and DeepSORT | Computers and Electronics in Agriculture | [PDF](pdf/piazolo2026enhanced.pdf) | [DOI](https://doi.org/10.1016/j.compag.2026.111529) |
+| 2026 | Sandí J.Z.A. | Implementation and Optimization of a Machine Learning Model for Pineapple Fruit Counting in Aerial Imagery | 2026 6th International Conference on Innovative Research in Applied Science Engineering and Technology Iraset 2026 | [PDF](pdf/sandi2026implementation.pdf) | [DOI](https://doi.org/10.1109/iraset68627.2026.11538886) |
 | 2026 | Santos T.T. | Multi-Fruit Tracking and 3-D Structure Recovery via CoTracker | Revista De Informatica Teorica E Aplicada | [PDF](pdf/santos2026multi.pdf) | [DOI](https://doi.org/10.22456/2175-2745.150960) |
 | 2026 | Si N. | Citrus yield estimation based on multi- object tracking in video streams using an improved YOLOv8n model | Journal of Fruit Science | [PDF](pdf/si2026citrus.pdf) | [DOI](https://doi.org/10.13925/j.cnki.gsxb.20250487) |
 | 2026 | Szolc H. | Vision-Based Automatic Fruit Counting with UAV | Lecture Notes in Networks and Systems | [PDF](pdf/szolc2026vision.pdf) | [DOI](https://doi.org/10.1007/978-3-032-08359-3_23) |

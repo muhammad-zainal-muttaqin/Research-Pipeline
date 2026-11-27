@@ -44,10 +44,9 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
 | Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 55 |
-| Teks lengkap diperoleh, menunggu keputusan peninjau | 1 |
-| Dinilai dari teks lengkap (957 Scopus dan 5 metode lain) | 962 |
+| Dinilai dari teks lengkap (958 Scopus dan 5 metode lain) | 963 |
 | Dikeluarkan pada tahap teks lengkap (E1 2, E2 10, E3 2, E5 21, E8 3) | 38 |
-| Total masuk peta (919 Scopus dan 5 metode lain) | 924 |
+| Total masuk peta (920 Scopus dan 5 metode lain) | 925 |
 
 Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026, 3 PDF baru pada 21 November 2026, 123 PDF baru pada 23 November 2026, 10 PDF baru pada 24 November 2026, dan 20 PDF baru pada 27 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
@@ -58,7 +57,7 @@ tercatat di `verifikasi/log_perubahan.csv` sebagai "AI, belum disetujui
 peninjau" sampai peninjau menyetujuinya. Keputusan untuk 325 PDF yang
 ditambahkan pada 20 November 2026, 3 PDF yang ditambahkan pada 21 November
 2026, 123 PDF yang ditambahkan pada 23 November 2026, 6 PDF yang ditambahkan
-pada 24 November 2026, dan 19 PDF yang ditambahkan pada 27 November 2026 disetujui
+pada 24 November 2026, dan 20 PDF yang ditambahkan pada 27 November 2026 disetujui
 peninjau pada hari yang sama.
 E8 hanya dipakai pada tahap teks lengkap: laporan kedua dari kajian yang sudah
 masuk lewat laporan lain (bab buku Parico dkk. 2023, sama dengan artikel
@@ -77,7 +76,7 @@ Kode yang sama dipakai pada tahap teks lengkap.
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 252 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 253 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 162 |
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 154 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 39 |
