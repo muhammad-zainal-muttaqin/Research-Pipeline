@@ -1,0 +1,824 @@
+Automated Pineapple Fruit Detection 
+and Counting System Using Machine 
+Learning 
+Diana Mej´ıas–Hern´andez1, Jason Leit´on–Jim´enez2, 
+Luis Chavarr´ıa–Zamora2(B), and Luis Barboza–Artavia2 
+1 Tecnol´ogico de Costa Rica, Cartago, Costa Rica 
+2 Escuela de Ingenier´ıa en Computadores, Tecnol´ogico de Costa Rica, 
+Cartago, Costa Rica
+{jleiton,lachavarria,labarboza}@itcr.ac.cr 
+Abstract. This study presents an automated pineapple fruit detec-
+tion and counting system designed for precision agriculture using high-
+resolution UAV orthomosaic imagery. The proposed approach integrates 
+dataset expansion, active learning, super-resolution preprocessing, and 
+an ensemble of YOLOv8 models to improve detection performance, par-
+ticularly for early-stage fruits. Experimental results demonstrate that 
+the system achieves high detection accuracy (mAP@0.5 above 92%), sig-
+niﬁcantly reduces false negatives, and increases detected fruit counts by 
+128% compared to baseline models. Additionally, the system maintains 
+practical c omputational performance on both GPU and CPU platforms, 
+enabling scalable deployment in real-world agricultural scenarios. The 
+ﬁndings highlight the importance of data-centric strategies and ensemble 
+learning in addressing challenges such as occlusion, illumination variabil-
+ity, and small object detection.
+Keywords: Pineapple detection · YOLOv8 · Precision agriculture · 
+Ob ject detection · UA V imagery
+1
+Introduction 
+Automatic fruit detection in agricultural environments has signiﬁcantly 
+advanced due to recent developments in deep learning and the increased avail-
+ability of highresolution aerial imagery. Traditional computer vision approaches 
+relied heavily on handcrafted features, such as color, shape, and texture descrip-
+tors; however, these methods struggled in real ﬁeld conditions where illumina-
+tion, occlusion, and plant v ariability introduce additional complexity. The intro-
+duction of convolutional neural networks (CNNs) enabled more robust feature 
+extraction, allowing o bject detection architectures to address these challenges
+eﬀectively.
+Despite recent advances in deep learning-based object detection, existing 
+pineapple detection systems still face signiﬁcant limitations w hen applied to
+c The Author(s), under exclusive license to Springer Nature Switzerland AG 2026 
+K. Arai and P. Lorenz (Eds.): CVC 2026, LNNS 2036, pp. 35–52, 2026. 
+https://doi.org/10.1007/978-3-032-29558-3_3
+
+36
+D. Mej´ıas–Hern´andez et al.
+real agricultural environments. In particular, early-stage fruits are often small, 
+partially occluded, and visually similar to surrounding vegetation, leading to 
+high false-negative rates. Additionally, many existing a pproaches rely on limited 
+datasets and lack generalization across varying illumination conditions and ﬁeld
+variability.
+The main research problem addressed in this work is how to improve detec-
+tion accuracy and robustness for pineapple fruits across diﬀerent growth stages. 
+To address this, this study proposes a data-cen tric and ensemble-based detection
+framework.
+The main objective of this research is to develop an automated pineapple 
+detection and counting system that improves recall for early-stage fruits while 
+maintaining high precision and computational eﬃciency.
+Recent advances in deep learning, particularly convolutional neural networks 
+(CNNs), have signiﬁcantly improved object detection performance in complex 
+visual scenes. Unlike traditional computer vision methods that rely on hand-
+crafted features, CNN-based detectors can automatically learn robust feature 
+representations from data, enabling more reliable detection under challenging 
+ﬁeld conditions. Among these approaches, one-stage detectors such as t he You 
+Only Look Once (YOLO) family have gained prominence due to their favorable 
+balance between accuracy and inference speed, making t hem suitable for large
+aerial orthomosaics captured by unmanned aerial vehicles (UAVs).
+This work proposes an automated pineapple fruit detection and counting sys-
+tem based on an ensemble of YOLOv8 models, combined with dataset enhance-
+ment, active learning, and a scalable processing pipeline for high-resolution 
+orthomosaic imagery. The system is designed to improve detection performance 
+across diﬀerent fruit development stages while maintaining computational feasi-
+bility for both GPU and CPU deployments. Through quantitative and qualitative 
+evaluations, the proposed approach aims to demonstrate a robust and practical
+solution for large-scale agricultural monitoring.
+The remainder of this study is organized as follows: Sect. 2 reviews related 
+work in pineapple detection and object detection methods. Section 3 describes 
+the proposed methodology, including dataset preparation, mo del selection, and 
+system design. Section 4 presents the experimental results, while Sect. 5 provides 
+a detailed analysis and comparison with existing approaches. Finally, Sect. 6 
+concludes the study and outlines directions f or future researc h.
+2
+Related Work 
+2.1
+UAV-Based Pineapple Detection 
+One of the earliest comprehensive studies on pineapple detection from UAV 
+imagery was presented by Wang et al. [17]. Their work applied Faster R-CNN 
+and Mask R-CNN to identify pineapple plants and fruits in high-resolution drone 
+images. The study demonstrated that deep learning methods could produce reli-
+able detection and segmentation under varying illumination and ﬁeld conditions. 
+Mask R-CNN, in particular, provided improved object delineation due to its
+
+Automated Pineapple Fruit Detection and Counting
+37
+instance segmentation capabilities, although at the cost of increased computa-
+tional complexity. The authors reported competitive values of mean Average 
+Precision (mAP), while highlighting limitations regarding inference time, mak-
+ing these models less s uitable for large-scale, real-time agricultural pipelines. 
+This research established a foundational benchmark f or subsequent studies using
+UAV-based pineapple detection.
+Early UAV-based pineapple monitoring has demonstrated that deep learn-
+ing can support yield-related workﬂows, but performance depends strongly on 
+growth stage, occlusion, and imaging setup. Shiu et al. [14] used high-resolution 
+UAV imagery (centimeter-level GSD) and applied Faster R-CNN to locate and 
+count mature fruits (including fruits covered by protective materials), while Mask 
+R-CNN was used to delineate net-covered areas. Although the study reported 
+strong precision on mature targets, it explicitly notes that detecting other growth 
+stages is substantially more challenging and suggests super-resolution as a poten-
+tial strategy to improve interpretability in diﬃcult stages [14]. 
+2.2
+YOLO-Based Detection in Agriculture 
+More recently, state-of-the-art approaches have shifted toward one-stage detec-
+tors such as the YOLO family, which oﬀer faster inference while maintaining high 
+accuracy. A n otable advancement was introduced by Li et al. through the DPD-
+YOLO detector [9]. Built upon YOLOv8, the proposed architecture incorporates 
+attention mechanisms and enhanced feature aggregation modules designed to 
+handle dense pineapple arrangements and heavy occlusions commonly found in 
+commercial plantations. Their experiments demonstrated substantial improve-
+ments in precision, recall, and mAP compared to the baseline YOLOv8 model. 
+Additionally, the authors reported improved robustness when detecting fruits 
+partially covered by foliage, addressing one of the primary limitations of earlier 
+detectors such as R-CNN variants. These innovations position DPD-YOLO as a
+modern and eﬃcient solution for fruit detection tasks using aerial imagery.
+In ﬁeld-oriented real-time applications, lightweight pineapple detectors have 
+been proposed to enable deployment on agricultural machinery. For example, 
+ESLC-YOLOv8 introduces lightweight architectural modules and reports high 
+accuracy with a small model size, targeting real-time pineapple r ecognition in
+complex environments [13]. Complementary systems also extend beyond detec-
+tion into maturity classiﬁcation and downstream e stimation tasks; Langpoklak-
+pam  et al. [8] combine YOLOv8-based detection with ripeness classiﬁcation and 
+size/weight prediction from drone imagery, illustrating h ow detection perfor-
+mance impacts complete pineapple monitoring pipelines.
+Finally, recent studies have demonstrated the eﬀectiveness of single-stage 
+object detectors for agricultural applications. In particular, Garcia-Downing e t
+al. [6] proposed an automated system for coﬀee plant detection and counting
+
+38
+D. Mej´ıas–Hern´andez et al.
+using drone imagery and the YOLO algorithm. Their approach focuses on large-
+scale plantations with varying illumination conditions and asymmetric layouts. 
+The study highlights key challenges such as canopy overlap, lighting variability, 
+and background similarity, which are consistent with the limitations observed i n
+dense agricultural environments.
+2.3
+Dataset Limitations and Active Learning 
+A recurring limitation in agricultural detection studies is that dataset creation 
+and annotation are expensive and often insuﬃciently diverse, which can reduce 
+generalization under conditions [2]. 
+To reduce annotation burden and eﬃciently grow training sets, active learn-
+ing for object detection selects i nformative samples for human review under a
+limited budget [18]. 
+Data quality plays a fundamental role in machine learning (ML) performance. 
+The Garbage In, Garbage Out (GIGO) principle highlights that biased datasets 
+inevitably produce unreliable predictions [11]. 
+In agricultural detection and counting tasks, limited dataset diversity and 
+incomplete labeling are repeatedly identiﬁed as major causes of p oor generaliza-
+tion, especially under occlusion and varying phenological stages [2]. 
+A structured division of the dataset into training, validation, and testing 
+subsets is essential for fair evaluation and preventing overﬁtting [4]. 
+2.4
+Small Object Detection and Super-Resolution 
+In addition, super-resolution has been studied as a means to improve small-
+object detection in aerial and remote sensing imagery by enhancing spatial detail 
+before detection [1]. In this work, we apply Real-ESRGAN [16] as a practical 
+blind super-resolution method for real-world image degradations.
+2.5
+Ensemble Learning and Detection Fusion 
+For large orthomosaics, detection is commonly performed on image tiles, which 
+introduces duplicate detections near tile boundaries and across overlapping 
+regions. Ensemble strategies can improve robustness but require principled fusion 
+of overlapping boxes. Weighted Boxes Fusion (WBF) is a widely u sed method 
+to fuse detections from multiple models by computing conﬁdence-weighted box 
+averages rather than suppressing boxes via NMS alone [15]. 
+Ensemble methods combine multiple models to increase robustness and 
+reduce variance [5]. In agricultural applications, ensembles help mitigate the 
+challenges of illumination variability, occlusion, and fruit size changes. YOLO-
+based ensembles can aggregate predictions from models trained under diﬀerent 
+hyperparameters or augmentations, improving small-object detection reliability.
+
+Automated Pineapple Fruit Detection and Counting
+39
+2.6
+Fundamentals of Object Detection 
+Convolutional neural networks (CNNs) represent the core architecture behind 
+modern detection systems due to their ability t o extract hierarchical visual fea-
+tures from raw pixels [3,7]. 
+Object detection integrate both localization and classiﬁcation of multiple 
+objects within an image. Early approaches included region-based pipelines such 
+as R-CNN and Faster R-CNN, which divided detection into prop osal and classi-
+ﬁcation stages. Although accurate, these approaches are computationally expen-
+sive and unsuitable for processing large orthomosaics.
+Single-shot detectors like SSD [10] improved speed by performing detection 
+in a single forward pass; however, small-object detection remains challenging in 
+aerial and remote sensing imagery due to limited pixel footprint, background 
+clutter, and scale variation.
+The YOLO algorithm is object detection framework that performs object 
+localization and classiﬁcation, simultaneously. Unlike designs, such as Faster R-
+CNN, which generate region proposals prior to classiﬁcation, YOLO formulates 
+object detection as a direct regression problem [12]. 
+YOLO processes the entire input image in a single forward pass through a 
+convolutional neural network (CNN). The image is divided into an S × S grid, 
+where each grid cell is responsible for predicting bounding boxes and class prob-
+abilities for objects whose centers fall within that cell. Each predicted bounding 
+box is deﬁned by ﬁve parameters: the center coordinates ( x, y), width w, height
+h, and conﬁdence score.
+YOLO predicts bounding boxes, conﬁdence scores, and class probabilities 
+in a uniﬁed stage [12]. This enables real-time inference and makes YOLO well 
+suited f or aereal imagery and ﬁeld deplo yment.
+The conﬁdence score reﬂects the probability that an object exists within the 
+bounding box and the accuracy of t he predicted localization. Class probabilities 
+are estimated as P(class | object) [12]. The ﬁnal detection score for a given class 
+is computed, as shown in Eq. (1): 
+Score = P (object) × P (class|object)
+(1) 
+2.7
+Research Gap and Contribution 
+Overall, prior pineapple and agricultural detection works highlight several per-
+sistent limitations: reduced recall for small or early-stage fruits, limited dataset 
+diversity and high annotation cost. Motivated by these gaps, our approach 
+combines dataset expansion and active-learning-driven re-annotation, super-
+resolution preprocessing to improve small fruit visibility, and an ensemble of 
+YOLOv8 detectors with explicit duplicate ﬁltering and conﬁdence consolidation
+tailored to orthomosaic-scale inference.
+
+40
+D. Mej´ıas–Hern´andez et al.
+3
+Methodology 
+3.1
+Dataset Creation 
+The Roboﬂow tool is useful for the dataset creation. There is an existing limi-
+tation in the amount of data available, as well as the lack of personnel to label 
+all the images. It is expected, since labeling is a time-in tense task and very
+expensive.
+To improve the amount of data in the dataset, data augmentation is applied 
+to labeled images. This introduces diversity to the dataset and av oids overﬁtting.
+The data are separated into three subsets to ensure that the models are 
+trained with suﬃcient data while reserving unseen samples for validation and 
+testing. This split allows the evaluation of model performance on data outside
+the training set.
+The dataset is split for training, validation and testing as follo ws:
+1. Training set: 70% of the images 
+2. Validation set: 15% of the images 
+3. Test set: 15% of the images 
+3.2
+Model Selection 
+The selection process began by evaluating two variants of the YOLOv8 family, 
+such as YOLOv8n and YOLOv8s, chosen due to their complementary strengths.
+To explore the performance space, several conﬁgurations were implement ed 
+for each a rchitecture:
+1. Default YOLO settings and extended training e pochs. 
+2. Optimization via SGD with manual learning r ate.
+3. Fine-tuning, using reduced learning rates. 
+4. Intensive data augmen tation. 
+For each trained model, performance was evaluated with standard object-
+detection metrics, suc h as:
+1. mAP50 
+2. Precision 
+3. Recall 
+Alongside, visual evaluation was applied, since it is crucial because certain error 
+may not signiﬁcan tly aﬀect global metrics but remain unacceptable for agricul-
+tural operation.
+To enhance reliability, outputs from multiple models are combined through 
+an ensemble strategy described in Fig. 1. This i ncludes: 
+1. Spatial duplicate ﬁltering: using a pixel-tolerance criterion to eliminate redun-
+dant boxes predicted by diﬀerent models. Each predicted b ounding box is rep-
+resented as in Eq. (2), while the duplicate decision rule is deﬁned in Eq. (3).
+
+Automated Pineapple Fruit Detection and Counting
+41
+Fig. 1. Flowchart to integrate mo dels without duplicates.
+b =  [x1,  y1,  x2,  y2],
+b =  [x1,  y1,  x2, y2]
+(2) 
+δ(b, b )  =  
+⎧ 
+⎪
+⎨ 
+⎪
+⎩ 
+1, 
+|x1 − x1| <  ε  ∧ |y1 − y1| <  ε  
+∧ |x2 − x2| <  ε  ∧ |y2 − y2| < ε
+0,
+otherwise
+(3) 
+In Eq. (3), two detections are considered duplicates when the diﬀerences 
+between their corresponding corner co ordinates are smaller than the toler-
+ance threshold ε.
+2. Conﬁdence-based consolidation prioritizes detections that are consistent 
+across models. After grouping duplicates across models, fused detections are 
+computed using a conﬁdence-weighted average similar in spirit to b ox-fusion
+methods [15]. Let C be a cluster of duplicate boxes {(bk,  sk )}|C| 
+k=1 selected by 
+Eq. (3), where sk is the conﬁdence score. The fused box ˆb and f used score ˆs 
+are computed as Eqs. (4) and (5): 
+ˆb =
+k∈C skbk 
+k∈C s k 
+,
+(4) 
+ˆs = 1 
+|C| k ∈C 
+sk.
+(5) 
+Only fused detections with ˆs ≥ smin are retained for ﬁnal c ounting.
+
+42
+D. Mej´ıas–Hern´andez et al.
+3.3
+System Design 
+The design for the Pineapple Fruit Detection and Counting System follows a 
+pipeline, shown in Fig. 2. Each stage is as follo ws:
+1. Image Fragmentation into 1280×1280 Tiles: To accommodate the com-
+putational constraints, the original orthomosaic is partitioned into ﬁxed-size 
+tiles o f 1280x1280 pixels.
+2. Inference and Coordinate Recording: Each image tile is independently 
+processed by the detection model, which produces a set of predictions regard-
+ing bounding boxes, class lab els and conﬁdence scores. The system stores the 
+predictions along with their tile-relative coordinates.
+3. Spatial Alignment with Original Orthomosaic: Following the inference 
+across all tiles, the systems projects the tile-based detections into the coordi-
+nate system of the original orthomosaic. 
+Let tile t have top-left oﬀset (Δxt,  Δyt) in the orthomosaic coordinate system. 
+A detected bounding box in tile coordinates is b(t) =  [x (t) 
+1 ,  y  (t) 
+1 ,  x  (t) 
+2 ,  y  (t) 
+2 ]. The 
+corresponding orthomosaic-level box is: 
+b(global) = 
+[ x (t) 
+1 
++ Δxt,  y  
+(t) 
+1 
++ Δyt, 
+x ( t)
+2
++ Δxt, y(t)
+2
++ Δyt ]
+(6) 
+To ensure spatial consistency across tiles, detections are transformed from 
+tile-level coordinates to the orthomosaic reference frame. As shown in Eq. (6), 
+each bounding box is translated using the tile oﬀset.
+4. Visualization of Detections on the Orthomosaic: Once the coordinate 
+alignment is complete, the bounding boxes are rendered into the orthomo-
+saic image. This visualization pro vides an intuitive way to ev aluate detection
+performance.
+5. Extraction and Structuring: The system extract quantitative and spatial 
+information from the aligned detections. This includes the o bjects counts, 
+geospatial coordinates a nd distribution metrics.
+6. Generation of Report and Visualization Assets: The system compiles 
+all processed outputs into a visualization assets, since the pipeline generates a 
+shapeﬁle containing the spatially aligned detection geometries. The shapeﬁle 
+format facilitates integration with geographic information system platforms 
+and specialized visualization tools.
+3.4
+Training Pipeline 
+The proposed training pipeline incorporates an active learning strategy to reﬁne 
+the detection model through continuous interaction b etween predictions, error 
+analysis, and dataset enhancement. The diagram in Fig. 3 summarizes this pro-
+cess. 
+The process begins with an initial dataset. This dataset serves as the foun-
+dation for the ﬁrst training iteration. While the initial labels provide a baseline
+
+Automated Pineapple Fruit Detection and Counting
+43
+Pineapple Detection and Counting 
+System 
+Image 
+fragmentation 
+into 
+1280x1280 
+images. 
+Predictions 
+and 
+coordinate 
+storage. 
+Alignment of 
+predictions 
+with the 
+original 
+image. 
+Draw 
+detections 
+on the 
+original 
+image 
+Extraction of 
+results for 
+visualization 
+Orthomosaic 
+Report 
+Visualization 
+Fig. 2. Pineapple detection and counting s ystem pip eline.
+for model learning, they may be incomplete, particularly for early-stage fruits 
+(60130 days), whic h motivates the integration of active learning.
+The initial dataset is enhanced using Real ERSGAN which is a model used 
+to apply a super-resolution ﬁlter to images. In this context, is to improve the 
+visual clarity of the small pineapples, reduce noise and low resolution in aerial 
+data and produce inputs that better expose f ruit characteristics to the detection
+model.
+After training, the model’s predictions are analyzed to detect failure patterns. 
+This step includes identifying false negatives and false positives, as well as l ow-
+conﬁdence detections.
+Once the data is analyzed, the samples enter the active learning loop, where 
+humans review the model’s incorrect predictions. In this step, missing annota-
+tions are added and incorrect bo unding boxes are corrected.
+The corrected annotated data is reintegrated to the dataset, producing an 
+enhanced dataset. The model is retrained using the updated dataset, which closes 
+the learning loop. The basic idea is to improve the model’s abilit y to detect fruits 
+varying conditions. This iteration process is repeated un til performance reaches
+a desired coverage.
+dataset 
+Train
+Result 
+Analysis 
+Real-
+ERSGAN 
+Preprocesing 
+dataset enhanced 
+Active Learning 
+Labeling 
+Training scheme with active learning 
+Fig. 3. Active learning scheme for training. 
+4
+Results 
+4.1
+Dataset Creation 
+A key objective of the project was to improve detection accuracy, especially 
+for fruits between 60 and 130 days of development, where the initial model
+
+44
+D. Mej´ıas–Hern´andez et al.
+showed high false-negative rates. To address this limitation, the dataset under-
+went expansion and re-annotation using Roboﬂow as the primary management 
+platform. The process involved integrating tiles extracted directly from orthomo-
+saics and incorporating active learning cycles. As shown in Table 1, the dataset 
+increased from 1, 232 images / 88, 524 labels to 2, 471 images / 171, 900 labels, 
+more than doubling the available training data. This expansion improv ed the 
+dataset’s representativeness for young fruit stages and enhanced generalization 
+across varying illumination and terrain textures.
+Table 1. Dataset extension results 
+Dataset
+Number of images Total of l abels 
+Original Dataset 1232
+88524 
+Extended Dataset 2471
+171900 
+Table 2 presents a quantitative comparison between the initial dataset and 
+the enhanced dataset using three key object detection metrics.
+The mAP50 value remains almost unchanged between the two datasets from 
+91.2% to 91.4%, indicating that the overall detection capability of the model, in 
+terms of both bounding-box alignment and classiﬁcation, remains stable despite 
+the signiﬁcant growth and r estructuring of the dataset. This consistency demon-
+strates that the enhanced dataset does not degrade global performance and
+maintains strong localization accuracy.
+Table 2. Quantitative evaluation comparison between the initial and the enhanced 
+dataset.
+Dataset
+mAP50 precision recall 
+Initial Dataset
+91.2% 80.6%
+85.9% 
+Enhanced Dataset 91.4% 90.0%
+83.9% 
+The most notable improvement is observed in precision, which rises from 
+80.6% to 90.0%. This represents a substantial reduction in false positives, mean-
+ing the model trained on the enhanced dataset is far more selective and produces 
+fewer incorrect detections. In practical terms, the enhanced dataset allows the 
+model to better distinguish true pineapples from visually similar bac kground
+elements, resulting in more trustworthy detections.
+On the other hand, recall decreases slightly from 85.9% to 83.9%, suggesting 
+that the model becomes marginally more conservative, missing a small number 
+of true positives that were previously detected. This shift reﬂects a common 
+trade-oﬀ: improving precision (reducing false positives) often leads to a slight
+increase in false negatives.
+
+Automated Pineapple Fruit Detection and Counting
+45
+4.2
+Model Selection 
+The selection of the ﬁnal detection models required a comparison of multiple 
+YOLOv8 variants trained under diﬀerent optimization strategies, data augmen-
+tation schemes, and learning-rate schedules. Because the dataset was signiﬁ-
+cantly expanded and reﬁned, it was important to evaluate the numerical perfor-
+mance and the qualitative visual consistency of the detections, where the initial 
+mo del showed high rates of false negatives.
+Table 3 summarizes the quantitative and qualitative evaluation of all tested 
+conﬁgurations for YOLOv8n and YOLOv8s, highlighting their mAP50, preci-
+sion, recall, and whether the model exhibited improved visual detection quality 
+during qualitative inspection.
+Table 3. Comparison of training conﬁgurations and performance of YOLOv8n and 
+YOLOv8s mo dels.
+Model
+Conﬁguration
+Visual mAP50 Precision Recall 
+YOLOv8n Default (50 epochs)
+Yes
+93.4
+85.0
+83.0 
+YOLOv8s SGD + manual LR
+Yes
+92.0
+86.0
+87.0 
+Fine-tuning
+No
+92.7
+90.0
+86.0 
+Intensive augmentation No
+93.0
+89.0
+84.0 
+Default (25 epochs)
+No
+88.0
+86.5
+81.0 
+Default (50 epochs)
+Yes
+92.0
+83.0
+86.0 
+It is important to note that the best-performing models are not necessarily 
+those with the highest numerical metrics alone, but those t hat also demonstrate 
+strong visual consistency and stable detection patterns across complete ortho-
+mosaics. Table 4 presents the metrics of the three models s elected for ensemble 
+integration.
+The combined quantitative and qualitative evaluation revealed that no sin-
+gle model consistently outperformed others in every scenario. Instead, each con-
+tributed distinct advantages. Higher recall for early-stage fruit detection (SGD 
++ manual LR). Stable inference with low computational demand (YOLOv8n). 
+Balanced precisionrecall trade-oﬀ with improved visual behavior (YOLOv8s 50-
+epoch default). Therefore, the ensemble strategy is considered as optimal app-
+roach to improve the detection system.
+4.3
+System Results 
+To complement the quantitative evaluation of the models, a qualitative 
+visual analysis was conducted to determine how the detection capabilities 
+improved after dataset enhancement, model retraining, and the integration 
+of the YOLOv8 ensemble. Figures 4 to 6 illustrate a representative section of 
+the Lote Cerro transparent mosaic group1 orthomosaic. Figure 4 shows the
+
+46
+D. Mej´ıas–Hern´andez et al.
+Table 4. Summary of metrics for the models selected f or the ensem ble.
+Model
+Conﬁguration
+mAP50 Precision Recall 
+YOLOv8n Default (50 epochs) 93.4
+85.0
+83.0 
+YOLOv8s SGD + manual LR 92.0
+86.0
+87.0 
+YOLOv8s Default (50 epochs) 92.0
+83.0
+86.0 
+orthomosaic region before detection, Fig. 5 presents the detections produced by 
+the initial model, and Fig. 6 shows the detections obtained with the optimized 
+model. This visual comparison highlights the eﬀect of the proposed optimiza-
+tions.
+Quantitatively, the improvements are reﬂected in the number of detections. 
+For instance, orthomosaic called Lote Cerro transparent mosaic group1,  has  
+high variability in pineapples’ fruits such as forms and color. Detections increased 
+from 36, 852 to 84, 202 representing a 128% improvement in fruits recognition. 
+These results conﬁrm a reduction in false negatives and a stronger ability to
+detect the early stages of pineapples.
+Beyond the raw increase in detections, this improvement suggests that the 
+model is becoming more robust to intra-class variability, which is particularly 
+relevant in agricultural environments. Pineapple fruits present signiﬁcant het-
+erogeneity in size, orientation, occlusion by leaves, and chromatic appearance 
+due to illumination changes and diﬀerent maturation stages. The large gain 
+in detections indicate that the enhanced approach is less sensitive to these 
+sources of va riation and can generalize better across challenging visual condi-
+tions. This robustness is especially important in orthomosaics, where spatial 
+resolution changes slightly across tiles a nd where shadows, soil reﬂections, and
+plant overlap often degrade object visibility.
+From a detection-performance perspective, the reduction in false negatives is 
+critical for crop monitoring tasks. Missing early-stage fruits can directly aﬀect 
+yield estimation models and decision-support systems for fertilization, irrigation, 
+and harvest planning. By substantially increasing the number of recognized fruits 
+without a proportional increase in spurious detections, the system demonstrates 
+improved sensitivity while maintaining practical reliability. Consequently, these 
+results not only show a quantitative gain but also imply a qualitative improve-
+ment in the model’s suitability for precision agriculture applications, where early 
+and consistent detection across growth stages is essential for accurate ﬁeld-level
+analytics.
+Figure 7 demonstrated a comparison of processing times for three orthomo-
+saics under two diﬀerent computational conditions: CPU time and GPU time.
+These measurements illustrate how long each processing stage takes when 
+generating predictions across full orthomosaics. The y-axis represents total pro-
+cessing time in minutes, allowing direct comparison of performance between CPU
+and GPU execution.
+
+Automated Pineapple Fruit Detection and Counting
+47
+Fig. 4. Section of the orthomosaic Lote Cerro transparent mosaic group1 without 
+pineapple fruit detections.
+Fig. 5. Section of the orthomosaic 
+Lote Cerro transparent mosaic group1 
+with pineapple fruit detections 
+using the initial mo del. 
+Fig. 6. 
+Section of the orthomosaic 
+Lote Cerro transparent mosaic group1 
+with pineapple fruit detections using 
+the optimized mo del. 
+Across all three orthomosaics, the CPU shows signiﬁcantly higher processing 
+times, which is expected, whereas GPU execution reduces computation to well 
+under 20 min. This demonstrates the clear advantage of GPU acceleration for 
+large-scale image inference.
+Across all orthomosaics, GPU inference consistently reduces execution time 
+by 6080% compared to CPU execution. This makes GPU p rocessing indispens-
+able for real-time or near r eal-time applications in agricultural monitoring.
+B06-112DDF shows the highest CPU and GPU time, due to larger spatial 
+resolution and more complex vegetation patterns. On the other side, the two 
+WENDYs are s maller images with a more consistent vegetation patterns which 
+is reﬂected in lower execution time.
+
+Orthomosaic 
+Time (min) 
+0 
+5 
+10 
+15 
+20 
+25 
+WENDY007_12_90DDF
+WENDY006_11_90DDF 
+B06-112DDF_transparent_mosaic_group1 
+CPU Time
+Final GPU Time 
+Fig. 7. Time duration comparison between CPU vs. GPU. 
+While GPU acceleration provides superior speed, it is not always available 
+in the ﬁeld due to low-budget setups. Because a CPU is considerably more 
+aﬀordable, accessible, and widely available, i t is important to evaluate how the 
+proposed detection system p erforms when executed on CPU hardw are.
+Table 5 presents summary across three representative orthomosaics, provid-
+ing execution time and resource consumption in CPU-only environments, which 
+reports the system’s performance when running the full detection pipeline on a 
+CPU architecture. Prediction time accounts for nearly 9899% of the total exe-
+cution time for each orthomosaic. Maximum memory usage ranges from 3.7GB 
+to 8.7 GB, which is within the capabilities of common consumer laptops and 
+desktop computers.
+Table 5. Performance summary on CPU architecture 
+Orthomosaic Total Time (s) Max Memory U sage (MB) 
+WENDY007
+760.42
+3700.92 
+WENDY006
+696.29
+4164.56 
+B06-112DDF 1171.08
+8687.20 
+5
+Result Analysis 
+5.1
+Quantitative Performance 
+This section presents a comparison between the proposed pineapple-fruit detec-
+tion system and two state-of-the-art approaches: the DPD–YOLO model [9] 
+and the Faster/Mask R–CNN pipeline [17]. The comparison focuses on accuracy 
+metrics (Precision, Recall, F1-score, mAP) and computational performance. 
+48
+D. Mej´ıas–Hern´andez et al.
+
+The ensemble was trained on an expanded dataset of 171,900 labels, resulting 
+in the performance demonstrated in Table 6. 
+Table 6. Accuracy metrics of the proposed YOLOv8 ensemb le 
+Metric
+Value 
+Precision
+83–86% 
+Recall
+83–87% 
+mAP@0.5
+92–93.4% 
+F1-score
+83.9–86.5% 
+Visual Detection Improvement 128% 
+5.2
+Comparison with Existing Approaches 
+To better contextualize the performance of the proposed system, the results 
+were compared with those reported for DPD–YOLO and Faster/Mask R–CNN. 
+Although these methods were not evaluated on exactly the same dataset, the 
+comparison remains useful for understanding the relative strengths and limita-
+tions o f the proposed ensem ble approac h.
+In particular, the proposed system achieves a stronger balance between preci-
+sion and recall than the compared methods. This balance is especially important 
+in agricultural monitoring tasks, where high precision alone is not suﬃcient if a 
+large n umber of fruits remain undetected. For pineapple yield estimation, recall 
+is critical because missed detections directly aﬀect crop-count estimates and 
+downstream decision-making.
+DPD–YOLO reports the results shown in Table 7 on its benchmark dataset. 
+Table 7. DPD–YOLO reported metrics 
+Metric
+Value 
+Precision 86.2% 
+Recall
+62.0% 
+F1-score 72.1% 
+mAP@0.5 62.0% 
+While precision is comparable to the proposed system, both recall and mAP 
+are lower, indicating under-detection and weaker generalization in dense e nvi-
+ronments. 
+On the other hand, Wang et al. [17] metrics on fruit-hat detection are s hown 
+in Table 8. 
+Automated Pineapple Fruit Detection a nd Counting
+49
+
+Table 8. Metrics reported by faster R–CNN pipeline 
+Metric
+Value 
+Precision 99.0% 
+Recall
+74.3% 
+F1-score 84.9% 
+mAP@0.5 79.2% 
+Even for large and visually distinctive targets, recall remains lower than in 
+the propo sed YOLOv8 ensemble, suggesting persistent undercount tendencies. 
+Overall, the comparative analysis demonstrates that the proposed YOLOv8 
+ensemble achieves the most balanced and operationally robust performance 
+among the evaluated approaches. Its high mAP and competitive F1-score reﬂect 
+strong generalization. In contrast, DPDYOLO oﬀers precision but suﬀers from 
+low recall and mAP, limiting its eﬀectiveness in dense or visually complex envi-
+ronments. Meanwhile, the Faster RCNN model delivers exceptional precision 
+and a high F1-score but exhibits reduced recall, indicating a tendency to miss 
+a signiﬁcant portion of true instances. These results suggest that each method 
+presents particular advantages, the proposed ensemble provides the best trade-
+oﬀ bet ween accuracy, recall, though it still carries the computational o verhead 
+related to multi-mo del integration.
+6
+Conclusion 
+The proposed pineapple fruit detection system demonstrates that combining 
+dataset enhancement, active learning, and YOLOv8 ensemble modeling signif-
+icantly improves detection robustness in real agricultural environments. While 
+the overall mAP@0.5 remains stable, the substantial increase in precision and 
+the 128% growth in detected fruits highlight the eﬀectiveness of the data-centric 
+approach in reducing false negatives, particularly for early-stage fruits.
+A key contribution of this work is the integration of an ensemble strategy 
+that balances precision and recall across diﬀerent ﬁeld conditions. 
+Although the global mAP@0.5 remains similar, the increase in precision and 
+the 128% improvement in detected fruit counts c onﬁrm the eﬀectiveness of the 
+dataset reﬁnement and training strategy . 
+From a practical perspective, the system shows strong scalability. The GPU 
+acceleration reduces processing time by up to 80%, enabling near real-time anal-
+ysis of large orthomosaics, while CPU-only execution remains viable for l ow-
+budget or ﬁeld-deploy ed scenarios. 
+Compared with existing state-of-the-art methods, including DPD-YOLO and 
+Faster/Mask R-CNN pipelines, the proposed YOLOv8 ensemble achieves a more 
+balanced trade-oﬀ between accuracy, recall, and computational eﬃciency.
+50
+D. Mej´ıas–Hern´andez et al.
+
+However, the system presents limitations. The ensemble approach introduces 
+additional computational overhead, and performance evaluation is currently con-
+strained to speciﬁc datasets, limiting direct comparabilit y with prior work. 
+Future work will focus on benchmarking on standardized datasets, and 
+exploring lightweight ensemble alternatives to improve deployment eﬃciency. 
+These improvements will further strengthen the applicability of the system for 
+large-scale precision agriculture. 
+Acknowledgment. The authors would like to express their sincere gratitude to Carlos 
+Saito and Hanzel Le´on from the Green Xpo Lab for their valuable support during the 
+data acquisition process. Their technical expertise, ﬁeld coordination, and commitment 
+were fundamental for ensuring the quality and consistency of the dataset used in this 
+study. Their contribution signiﬁcantly f acilitated the development and validation of 
+the proposed methodology .
+References 
+1. Authors, T.: Small object detection in remote sensing images based on super-
+resolution. Remote Sens. 12(19), 3152 (2020). https://doi.org/10.3390/rs12193152 
+2. Authors, T.: Fruit detection and recognition based on deep learning for automatic 
+harvesting: an overview and review. Agronomy 13(6), 1625 (2023). https://doi. 
+org/10.3390/agronomy13061625 
+3. Badillo, F.L., Hern´andez, C.A.R., Narv´aez, B.M., Arias Trillos, Y.E.: Redes neu-
+ronales convolucionales: un modelo de deep learning en im´agenes diagn´osticas. 
+Revista Colombiana de Radiolog ´ıa 32(3), 5591–5599 (2021) 
+4. Bishop, C.M.: Pattern Recognition and Mach ine Learning. Springer (2006) 
+5. Carrasco, R.A., Bueno, I., Montero, J.M.: ´Arboles de clasiﬁcaci´on y regresi´ on 
+(2020). https://cdr-book.github.io/cap-arboles.html 
+6. Garcia-Downing, G., Leit´on-Jim´enez, J., Barboza-Artavia, L., Chavarr´ıa-Zamora, 
+L.: Automated coﬀee plant detection and counting system using machine learning. 
+In: 2025 7th International Conference on Internet of Things, Automation and Arti-
+ﬁcial Intelligence (IoTAAI 2025), pp. 15–23. Institute of E lectrical and Electronics 
+Engineers, Guangzhou, China (2025). https://doi.org/10.1109/IoTAAI66837.2025. 
+11213470 
+7. IBM: What are convolutional neural networks? (2025). https://www.ibm.com/es-
+es/think/topics/convolutional-neural-networks 
+8. Langpoklakpam, B., Murry, L.K., Kumar, R.: Automated pineapple detection, 
+ripeness classiﬁcation, and weight prediction using YOLOv8 and drone imagery. J. 
+Food Measure. Character. 19, 8657–8678 (2025). https://doi.org/10.1007/s11694-
+025-03565-3 
+9. Li, X., Zhao, Y., Huang, P., Sun, J.: Dpd-yolo: dense pineapple fruit target detec-
+tion algorithm in complex environments based on yolov8 com bined with attention 
+mechanisms. Front. Plant Sci. 16, 1523552 (2025) 
+10. Liu, W., Anguelov, D., Erhan, D., Szegedy, C., Reed, S., Fu, C.Y., Berg, A .: Ssd: 
+single shot multibox detector. In: ECCV (2016). https://arxiv.org/abs/1512.02325 
+11. Lukose, D.: Garbage in, garbage out: why data quality is the k ey to trustworthy ai 
+(2023). https://medium.com/@dickson.lukose/garbage-in-garbage-out-why-data-
+quality-is-the-key-to-trustworthy-ai-e506f4001433 
+Automated Pineapple Fruit Detection a nd Counting
+51
+
+12. Redmon, J., Divvala, S., Girshick, R., Farhadi, A.: You only look once: Uniﬁed, 
+real-time object detection (2016), https://arxiv.org/abs/1506.02640 
+13. Shen, W., Dong, M., Zhang, Z., Hao, X., Su, Y., Xue, Z.: ESLC-YOLOv8: advanc-
+ing real-time pineapple recognition with ligh tweight deep learning. Smart Agricul-
+tural Technol. 12, 101139 (2025). https://doi.org/10.1016/j.atech.2025.101139 
+14. Shiu, Y.S., Lee, R.Y., Chang, Y.C.: Pineapples’ detection and segmentation based 
+on faster and mask R -CNN in UAV imagery. Remote S ensing 15(3), 814 (2023). 
+https://doi.org/10.3390/rs15030814 
+15. Solovyev, R., Wang, W., Gabruseva, T.: Weighted boxes fusion: ensembling boxes 
+from diﬀerent ob ject detection models. Image Vision Comput. 107, 104117 (2021). 
+https://doi.org/10.1016/j.imavis.2021.104117 
+16. Wang, X., Xie, L., Dong, C., Shan, Y.: Real-ESRGAN: training real-world blind 
+super-resolution w ith pure synthetic data. In: ICCV Workshops (2021) 
+17. Wang, Y., Chen, L., Zhang, Q., Li, H.: Pineapples’ detection and segmentation 
+based on faster and mask R-CNN in UAV imagery. Remote S ens. 15(3), 814 (2023) 
+18. Yang, C., Huang, L., Crowley, E.J.: Plug and play active l earning for object detec-
+tion. arXiv (2022) 
+52
+D. Mej´ıas–Hern´andez et al.
